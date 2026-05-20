@@ -1,0 +1,1252 @@
+/*
+ * Jellyfin Liquid Glass Theme
+ * Inspired by Apple Liquid Glass (WWDC 2025)
+ * https://developer.apple.com/documentation/TechnologyOverviews/liquid-glass
+ * Design patterns aligned with:
+ * https://medium.com/@madebyluddy/overview-37b3685227aa
+ * https://www.figma.com/community/file/1512771057687946089/apple-wwdc25-glass-effect
+ * https://applemagazine.com/apples-liquid-glass-design-evolves-in-ios-26-beta-6-with-subtle-user-focused-tweaks/
+ *
+ * Paste this entire file into:
+ *   Dashboard → General → Custom CSS
+ *   — or —
+ *   User → Settings → Display → Custom CSS
+ *
+ * Compatible with Jellyfin 10.9+
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* ── Design tokens ─────────────────────────────────────────────── */
+@property --lg-rainbow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  --lg-font: "Inter", system-ui, -apple-system, "SF Pro Display", "Segoe UI", sans-serif;
+
+  /* Glass surfaces — Figma WWDC25: ~1–2% white fill + heavy blur */
+  --lg-glass-fill: rgba(255, 255, 255, 0.025);
+  --lg-glass-fill-strong: rgba(255, 255, 255, 0.08);
+  --lg-glass-border: rgba(255, 255, 255, 0.18);
+  --lg-glass-highlight: rgba(255, 255, 255, 0.35);
+  --lg-blur: blur(32px) saturate(195%);
+  --lg-blur-heavy: blur(48px) saturate(210%);
+  --lg-blur-light: blur(10px) saturate(170%);
+
+  /* Figma dual inner shadows (depth + puffy glass) */
+  --lg-inner-dark: inset 2px 2px 10px rgba(0, 0, 0, 0.32);
+  --lg-inner-light: inset -2px -2px 8px rgba(255, 255, 255, 0.1);
+
+  /* Subtle liquid texture (Figma noise ~90/40) */
+  --lg-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+
+  /* Beta 6 chromatic dispersion (RGB fringe on toggles/tabs) */
+  --lg-chromatic-idle:
+    -1px 0 6px rgba(255, 55, 95, 0.12),
+    1px 0 6px rgba(100, 210, 255, 0.12);
+  --lg-chromatic-active:
+    -2px 0 12px rgba(255, 55, 95, 0.28),
+    0 0 14px rgba(255, 214, 10, 0.18),
+    2px 0 12px rgba(100, 210, 255, 0.28),
+    0 0 10px rgba(191, 90, 242, 0.22);
+
+  /* Shape */
+  --lg-radius-sm: 10px;
+  --lg-radius-md: 18px;
+  --lg-radius-lg: 26px;
+  --lg-radius-xl: 34px;
+  --lg-radius-pill: 999px;
+
+  /* Depth */
+  --lg-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.38),
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  --lg-shadow-soft:
+    0 6px 24px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* Rainbow spectrum (lensing / tint energize on interaction) */
+  --lg-rainbow: conic-gradient(
+    from var(--lg-rainbow-angle),
+    #ff375f 0deg,
+    #ff9f0a 60deg,
+    #ffd60a 120deg,
+    #30d158 180deg,
+    #64d2ff 240deg,
+    #bf5af2 300deg,
+    #ff375f 360deg
+  );
+  --lg-rainbow-linear: linear-gradient(
+    90deg,
+    #ff375f,
+    #ff9f0a,
+    #ffd60a,
+    #30d158,
+    #64d2ff,
+    #bf5af2,
+    #ff375f
+  );
+
+  --lg-spring: cubic-bezier(0.34, 1.45, 0.64, 1);
+  --lg-bounce: cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  --lg-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Variant fills — .regular vs .glassProminent */
+  --lg-regular-fill: rgba(255, 255, 255, 0.04);
+  --lg-prominent-fill: rgba(255, 255, 255, 0.11);
+  --lg-specular: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.05) 38%,
+    transparent 62%
+  );
+
+  /* Lock-screen prismatic dispersion (light → rainbow on glass edge) */
+  --lg-prism-spectrum: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 59, 48, 0.95) 10%,
+    rgba(255, 149, 0, 1) 22%,
+    rgba(255, 214, 10, 1) 34%,
+    rgba(48, 209, 88, 0.95) 46%,
+    rgba(100, 210, 255, 0.95) 58%,
+    rgba(94, 92, 230, 0.9) 72%,
+    rgba(191, 90, 242, 0.88) 84%,
+    transparent 100%
+  );
+  --lg-prism-chromatic:
+    0 1px 0 rgba(255, 59, 48, 0.45),
+    0 2px 1px rgba(255, 149, 0, 0.4),
+    0 3px 2px rgba(255, 214, 10, 0.35),
+    0 4px 3px rgba(48, 209, 88, 0.3),
+    0 5px 4px rgba(100, 210, 255, 0.32),
+    0 6px 5px rgba(191, 90, 242, 0.38);
+  --lg-hotspot: radial-gradient(
+    ellipse at center,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.18) 38%,
+    transparent 70%
+  );
+
+  /* Apple TV+ style player glass */
+  --lg-player-glass: rgba(255, 255, 255, 0.14);
+  --lg-player-stroke: rgba(255, 255, 255, 0.32);
+  --lg-player-blur: blur(18px) saturate(180%);
+}
+
+/* ── Base typography & canvas ──────────────────────────────────── */
+html,
+body,
+.skinBody,
+.mainAnimatedPage {
+  font-family: var(--lg-font) !important;
+}
+
+/* Beta 6: more transparent canvas — wallpaper colors bleed through glass */
+.backgroundContainer,
+.backgroundContainer.withBackdrop {
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 12, 0.22) 0%,
+    rgba(8, 8, 12, 0.48) 100%
+  ) !important;
+}
+
+.backdropImage {
+  filter: saturate(1.14) brightness(0.98) contrast(1.02);
+}
+
+/* ── Floating navigation layer (Regular variant) ───────────────── */
+.skinHeader,
+.skinHeader-withBackground,
+.skinHeader.semiTransparent {
+  background-color: var(--lg-glass-fill) !important;
+  background-image: var(--lg-specular), var(--lg-texture) !important;
+  background-blend-mode: screen, soft-light !important;
+  backdrop-filter: var(--lg-blur) !important;
+  -webkit-backdrop-filter: var(--lg-blur) !important;
+  border-bottom: 1px solid var(--lg-glass-border) !important;
+  box-shadow: var(--lg-inner-dark), var(--lg-inner-light), var(--lg-shadow-soft) !important;
+}
+
+.mainDrawer {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  background-image: var(--lg-specular), var(--lg-texture) !important;
+  background-blend-mode: screen, soft-light !important;
+  backdrop-filter: var(--lg-blur-heavy) !important;
+  -webkit-backdrop-filter: var(--lg-blur-heavy) !important;
+  border-right: 1px solid var(--lg-glass-border) !important;
+  box-shadow: var(--lg-inner-dark), var(--lg-inner-light), 8px 0 32px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Floating sidebar — larger glass with ambient depth (iPadOS/macOS pattern) */
+.layout-desktop .mainDrawer,
+.layout-tv .mainDrawer {
+  margin: 0.65em 0 0.65em 0.65em !important;
+  border-radius: var(--lg-radius-lg) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-right: 1px solid var(--lg-glass-border) !important;
+  box-shadow: var(--lg-inner-dark), var(--lg-inner-light), var(--lg-shadow) !important;
+  background-image: var(--lg-specular), var(--lg-texture) !important;
+  background-blend-mode: screen, soft-light !important;
+  background-color: rgba(255, 255, 255, 0.035) !important;
+}
+
+/* Scroll-edge fade — dissolves content under floating nav (deliquify pattern) */
+.libraryPage::after,
+.homePage::after,
+.mediaPage::after {
+  content: "" !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: min(22vh, 180px) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background: linear-gradient(
+    0deg,
+    rgba(8, 8, 12, 0.82) 0%,
+    rgba(8, 8, 12, 0.35) 45%,
+    transparent 100%
+  ) !important;
+}
+
+.navMenuOption:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: var(--lg-radius-sm) !important;
+}
+
+.navMenuOption-selected {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--lg-radius-sm) !important;
+}
+
+/* ── Glass buttons: .regular (secondary) + .glassProminent (primary) ── */
+.emby-button,
+.paper-icon-button-light,
+.button-flat,
+.detailButton,
+.btnPlay,
+.btnPlayState,
+.btnUserRating,
+.btnMoreCommands,
+.btnShuffle,
+.btnReplay,
+.btnPreviousTrack,
+.btnNextTrack,
+.btnRewind,
+.btnFastForward,
+.btnPause,
+.btnPlayPause,
+.btnFullscreen,
+.btnSubtitles,
+.btnAudio,
+.btnChromecast,
+.btnPreviousChapter,
+.btnNextChapter,
+.btnPreviousItem,
+.btnNextItem,
+.btnRecord,
+.btnCancelTimer,
+.btnGuide,
+.btnLiveTv,
+.btnSyncPlay,
+.btnPlayerSettings,
+.btnPreviousPage,
+.btnNextPage,
+.headerButton,
+.emby-tab-button,
+.listItemButton,
+.cardOverlayButton,
+.cardOverlayButton-hover,
+.cardOverlayFab-primary,
+.playstatebutton-icon-play,
+.playstatebutton-icon-pause {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  border-radius: var(--lg-radius-pill) !important;
+  background: var(--lg-regular-fill) !important;
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  box-shadow: var(--lg-shadow-soft) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  transition:
+    transform 0.28s var(--lg-bounce),
+    box-shadow 0.28s var(--lg-ease),
+    color 0.2s ease,
+    background 0.2s ease !important;
+}
+
+/* Specular highlight layer (responds to geometry like native glass) */
+.emby-button::after,
+.paper-icon-button-light::after,
+.button-flat::after,
+.detailButton::after,
+.btnPlay::after,
+.btnPlayState::after,
+.emby-tab-button::after,
+.headerButton::after,
+.cardOverlayButton::after,
+.cardOverlayFab-primary::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  background: var(--lg-specular) !important;
+  opacity: 0.55 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease !important;
+}
+
+.emby-button > *,
+.paper-icon-button-light > *,
+.detailButton > *,
+.btnPlay > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Rainbow rim — idle rest; spins only on interaction (performance best practice) */
+.emby-button::before,
+.paper-icon-button-light::before,
+.button-flat::before,
+.detailButton::before,
+.btnPlay::before,
+.btnPlayState::before,
+.emby-tab-button::before,
+.headerButton::before,
+.cardOverlayButton::before,
+.cardOverlayFab-primary::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: inherit !important;
+  background: var(--lg-rainbow) !important;
+  opacity: 0 !important;
+  z-index: -1 !important;
+  transition: opacity 0.35s var(--lg-ease) !important;
+}
+
+@keyframes lg-rainbow-spin {
+  to {
+    --lg-rainbow-angle: 360deg;
+  }
+}
+
+/* Interactive: scale, shimmer rim, touch-point illumination to neighbors */
+@media (hover: hover) and (pointer: fine) {
+  .emby-button:hover:not(:disabled),
+  .paper-icon-button-light:hover:not(:disabled),
+  .button-flat:hover:not(:disabled),
+  .detailButton:hover:not(:disabled),
+  .btnPlay:hover:not(:disabled),
+  .btnPlayState:hover:not(:disabled),
+  .emby-tab-button:hover:not(.emby-tab-button-active),
+  .headerButton:hover:not(:disabled),
+  .cardOverlayButton:hover:not(:disabled),
+  .cardOverlayFab-primary:hover:not(:disabled) {
+    transform: scale(1.06) translateY(-1px) !important;
+    box-shadow:
+      0 0 28px rgba(100, 210, 255, 0.22),
+      0 0 48px rgba(191, 90, 242, 0.14),
+      var(--lg-shadow) !important;
+  }
+
+  .emby-button:hover:not(:disabled)::before,
+  .paper-icon-button-light:hover:not(:disabled)::before,
+  .button-flat:hover:not(:disabled)::before,
+  .detailButton:hover:not(:disabled)::before,
+  .btnPlay:hover:not(:disabled)::before,
+  .btnPlayState:hover:not(:disabled)::before,
+  .emby-tab-button:hover:not(.emby-tab-button-active)::before,
+  .headerButton:hover:not(:disabled)::before,
+  .cardOverlayButton:hover:not(:disabled)::before,
+  .cardOverlayFab-primary:hover:not(:disabled)::before {
+    opacity: 1 !important;
+    animation: lg-rainbow-spin 4s linear infinite !important;
+  }
+
+  .emby-button:hover:not(:disabled)::after,
+  .paper-icon-button-light:hover:not(:disabled)::after,
+  .detailButton:hover:not(:disabled)::after,
+  .btnPlay:hover:not(:disabled)::after {
+    opacity: 0.85 !important;
+  }
+
+  /* Illumination spreads to nearby glass controls in the same cluster */
+  .videoOsdBottom .buttons:hover .paper-icon-button-light:not(:hover),
+  .osdControls .buttons:hover .paper-icon-button-light:not(:hover),
+  .headerTop:hover .headerButton:not(:hover) {
+    box-shadow: 0 0 18px rgba(100, 210, 255, 0.12) !important;
+  }
+}
+
+.emby-button:active:not(:disabled),
+.paper-icon-button-light:active:not(:disabled),
+.detailButton:active:not(:disabled),
+.btnPlay:active:not(:disabled),
+.btnPlayState:active:not(:disabled),
+.emby-tab-button:active:not(:disabled) {
+  transform: scale(0.94) !important;
+  transition-duration: 0.12s !important;
+}
+
+.emby-button:active:not(:disabled)::before,
+.paper-icon-button-light:active:not(:disabled)::before,
+.detailButton:active:not(:disabled)::before,
+.btnPlay:active:not(:disabled)::before {
+  opacity: 1 !important;
+  animation: lg-rainbow-spin 2s linear infinite !important;
+}
+
+.emby-button:focus-visible,
+.paper-icon-button-light:focus-visible,
+.detailButton:focus-visible {
+  outline: 2px solid rgba(100, 210, 255, 0.65) !important;
+  outline-offset: 2px !important;
+}
+
+/* .glassProminent — primary actions with selective tint (not decorative) */
+.btnPlay,
+.btnPlay.detailButton,
+.btnPlayState,
+.cardOverlayFab-primary,
+.emby-button.raised,
+.button-submit,
+#btnSave,
+#btnSubmit,
+#btnConnect,
+.videoOsdBottom .btnPlayPause,
+.videoOsdBottom .btnPause,
+.nowPlayingBar .playPauseButton,
+.nowPlayingBarCenter .paper-icon-button-light {
+  background: var(--lg-prominent-fill) !important;
+  font-weight: 600 !important;
+  box-shadow:
+    var(--lg-shadow-soft),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.btnPlay::before,
+.btnPlayState::before,
+.cardOverlayFab-primary::before,
+.emby-button.raised::before,
+.button-submit::before,
+#btnSave::before,
+#btnSubmit::before,
+.videoOsdBottom .btnPlayPause::before,
+.videoOsdBottom .btnPause::before,
+.nowPlayingBar .playPauseButton::before,
+.nowPlayingBarCenter .paper-icon-button-light::before {
+  opacity: 0.45 !important;
+}
+
+/* ── Tab bars — beta 6 legibility + chromatic dispersion ─────────── */
+.emby-tabs-slider {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: rgba(0, 0, 0, 0.36) !important;
+  background-image: var(--lg-specular) !important;
+  background-blend-mode: screen !important;
+  backdrop-filter: var(--lg-blur) !important;
+  -webkit-backdrop-filter: var(--lg-blur) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-radius: var(--lg-radius-pill) !important;
+  padding: 0.22em !important;
+  box-shadow: var(--lg-inner-dark), var(--lg-inner-light), var(--lg-shadow-soft) !important;
+}
+
+.skinHeader .emby-tab-button,
+.libraryPage .emby-tab-button,
+.itemDetailPage .emby-tab-button {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: var(--lg-radius-pill) !important;
+  padding: 0.6em 1.05em !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.72) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.skinHeader .emby-tab-button::before,
+.skinHeader .emby-tab-button::after,
+.libraryPage .emby-tab-button::before,
+.libraryPage .emby-tab-button::after,
+.itemDetailPage .emby-tab-button::before,
+.itemDetailPage .emby-tab-button::after {
+  content: none !important;
+  display: none !important;
+}
+
+.emby-tab-button-active {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: var(--lg-chromatic-active), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+}
+
+.emby-tab-button:hover:not(.emby-tab-button-active) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  box-shadow: var(--lg-chromatic-idle) !important;
+  transform: none !important;
+}
+
+/* ── Toggles — beta 6 chromatic shimmer on tap ─────────────────── */
+.mdl-switch__track {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: var(--lg-blur-light) !important;
+  -webkit-backdrop-filter: var(--lg-blur-light) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: var(--lg-inner-dark) !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+.mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__track {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 55, 95, 0.45),
+    rgba(255, 214, 10, 0.35),
+    rgba(100, 210, 255, 0.45),
+    rgba(191, 90, 242, 0.4)
+  ) !important;
+  box-shadow: var(--lg-chromatic-active) !important;
+}
+
+.mdl-switch__thumb {
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: var(--lg-chromatic-idle), 0 2px 8px rgba(0, 0, 0, 0.28) !important;
+}
+
+.mdl-switch__input:checked + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__thumb {
+  background: #fff !important;
+  box-shadow: var(--lg-chromatic-active), 0 2px 10px rgba(0, 0, 0, 0.32) !important;
+}
+
+.mdl-switch__input:active + .mdl-switch__label + .mdl-switch__trackContainer > .mdl-switch__thumb {
+  animation: lg-chromatic-pulse 0.45s var(--lg-ease) !important;
+}
+
+@keyframes lg-chromatic-pulse {
+  0% {
+    box-shadow: var(--lg-chromatic-idle);
+    transform: scale(1);
+  }
+  40% {
+    box-shadow: var(--lg-chromatic-active), 0 0 20px rgba(255, 214, 10, 0.35);
+    transform: scale(1.08);
+  }
+  100% {
+    box-shadow: var(--lg-chromatic-idle);
+    transform: scale(1);
+  }
+}
+
+/* Checkboxes — glass outline with chromatic check state */
+.checkboxOutline {
+  border-radius: 0.45em !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: var(--lg-blur-light) !important;
+  -webkit-backdrop-filter: var(--lg-blur-light) !important;
+  box-shadow: var(--lg-inner-dark) !important;
+}
+
+.emby-checkbox:checked + span + .checkboxOutline {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 55, 95, 0.35),
+    rgba(100, 210, 255, 0.35),
+    rgba(191, 90, 242, 0.35)
+  ) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: var(--lg-chromatic-active) !important;
+}
+
+/* ── Dialogs & menus (thicker glass at larger sizes) ───────────── */
+.dialog,
+.formDialogHeader,
+.paperList,
+.scrollSlider,
+.flyout,
+.actionSheet,
+.emby-select-withcolor,
+.selectContainer,
+.inputContainer,
+.checkboxContainer,
+.itemSelectionPanel {
+  background: rgba(16, 16, 22, 0.62) !important;
+  backdrop-filter: var(--lg-blur-heavy) !important;
+  -webkit-backdrop-filter: var(--lg-blur-heavy) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-radius: var(--lg-radius-lg) !important;
+  box-shadow: var(--lg-shadow) !important;
+}
+
+.formDialogHeader {
+  border-radius: var(--lg-radius-lg) var(--lg-radius-lg) 0 0 !important;
+}
+
+.listItem:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-radius: var(--lg-radius-sm) !important;
+}
+
+/* ── Cards — content layer stays clean; glass only on overlays ─── */
+.cardBox,
+.cardPadder,
+.cardImageContainer {
+  border-radius: var(--lg-radius-md) !important;
+}
+
+.card:focus .cardBox,
+.card:hover .cardBox {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Rainbow progress on library cards */
+.itemProgressBar {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--lg-radius-pill) !important;
+  overflow: hidden !important;
+}
+
+.itemProgressBarForeground {
+  background: var(--lg-rainbow-linear) !important;
+  background-size: 200% 100% !important;
+  animation: lg-progress-shimmer 6s linear infinite !important;
+  border-radius: inherit !important;
+}
+
+@keyframes lg-progress-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* ── VIDEO PLAYER — Apple TV+ open glass layout ────────────────── */
+
+/* Remove legacy heavy gradients */
+.skinHeader-withBackground.osdHeader,
+.videoOsdBottom {
+  background: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.videoOsdBottom {
+  padding: 0 max(1.5em, env(safe-area-inset-right)) max(1.1em, env(safe-area-inset-bottom))
+    max(1.5em, env(safe-area-inset-left)) !important;
+  pointer-events: none !important;
+  align-items: stretch !important;
+  justify-content: flex-end !important;
+}
+
+/* Soft bottom vignette only — UI floats openly on video */
+.videoOsdBottom::before {
+  content: "" !important;
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 38vh !important;
+  pointer-events: none !important;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(0, 0, 0, 0.22) 45%,
+    transparent 100%
+  ) !important;
+  z-index: -1 !important;
+}
+
+.videoOsdBottom::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Top bar — minimal back / cast only */
+.skinHeader-withBackground.osdHeader {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0.85em 1.25em !important;
+  pointer-events: none !important;
+}
+
+.osdHeader .headerTop {
+  pointer-events: all !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: none !important;
+}
+
+.osdHeader .headerTop::before,
+.osdHeader .headerTop::after {
+  display: none !important;
+}
+
+.osdHeader .headerButton {
+  width: 2.5em !important;
+  height: 2.5em !important;
+  background: var(--lg-player-glass) !important;
+  backdrop-filter: var(--lg-player-blur) !important;
+  -webkit-backdrop-filter: var(--lg-player-blur) !important;
+  border: 1px solid var(--lg-player-stroke) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28) !important;
+}
+
+.osdHeader::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  height: 18vh !important;
+  pointer-events: none !important;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, transparent 100%) !important;
+  z-index: -1 !important;
+}
+
+/* Open OSD — no capsule; elements float on video */
+.osdControls {
+  pointer-events: all !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.65em !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  animation: lg-materialize 0.4s var(--lg-ease) both !important;
+}
+
+.osdControls::before,
+.osdControls::after {
+  display: none !important;
+}
+
+/* Metadata stack — episode line above title */
+.osdControls .osdMainTextContainer {
+  order: 2 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: flex-start !important;
+}
+
+.osdControls .osdSecondaryMediaInfo {
+  order: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  opacity: 0.88 !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.osdTitle {
+  font-size: clamp(1.25rem, 3.2vw, 1.85rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.15 !important;
+  margin: 0 !important;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55) !important;
+}
+
+.osdTitleSmall {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  opacity: 0.9 !important;
+}
+
+.osdTextContainer {
+  margin-bottom: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Progress row — bar full width, times underneath */
+.osdControls > .flex.flex-direction-row.align-items-center {
+  order: 3 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  grid-template-rows: auto auto !important;
+  gap: 0.4em 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.osdControls .sliderContainer.flex-grow {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  height: auto !important;
+}
+
+.osdControls .startTimeText,
+.osdControls .osdPositionText {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  justify-self: start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums !important;
+  opacity: 0.9 !important;
+}
+
+.osdControls .endTimeText,
+.osdControls .osdDurationText {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  justify-self: end !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  font-variant-numeric: tabular-nums !important;
+  opacity: 0.9 !important;
+}
+
+/* Thin white scrubber (rainbow on hover) */
+.videoOsdBottom .sliderContainer,
+.osdControls .sliderContainer {
+  height: 3px !important;
+  border-radius: var(--lg-radius-pill) !important;
+}
+
+.videoOsdBottom .mdl-slider-background-flex,
+.osdControls .mdl-slider-background-flex {
+  height: 3px !important;
+  border-radius: var(--lg-radius-pill) !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+.videoOsdBottom .mdl-slider-background-lower,
+.osdControls .mdl-slider-background-lower {
+  background: rgba(255, 255, 255, 0.95) !important;
+  animation: none !important;
+  border-radius: inherit !important;
+  transition: background 0.25s ease !important;
+}
+
+.videoOsdBottom .sliderContainer:hover .mdl-slider-background-lower,
+.osdControls .sliderContainer:hover .mdl-slider-background-lower {
+  background: var(--lg-rainbow-linear) !important;
+  background-size: 200% 100% !important;
+}
+
+/* Controls row — transport left, utilities right */
+.videoOsdBottom .buttons {
+  order: 4 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.55em !important;
+  padding: 0.15em 0 0 !important;
+  width: 100% !important;
+}
+
+.videoOsdBottom .buttons > div:first-child {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.4em !important;
+  flex: 1 1 auto !important;
+}
+
+.videoOsdBottom .osdTimeText,
+.videoOsdBottom .endsAtText {
+  display: none !important;
+}
+
+/* Transport — frosted pills (play cluster) */
+.videoOsdBottom .buttons > div:first-child .paper-icon-button-light {
+  width: auto !important;
+  height: 2.35em !important;
+  min-width: 2.35em !important;
+  padding: 0 0.65em !important;
+  border-radius: var(--lg-radius-pill) !important;
+  background: var(--lg-player-glass) !important;
+  backdrop-filter: var(--lg-player-blur) !important;
+  -webkit-backdrop-filter: var(--lg-player-blur) !important;
+  border: 1px solid var(--lg-player-stroke) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+  margin: 0 !important;
+}
+
+.videoOsdBottom .btnPause,
+.videoOsdBottom .btnPlayPause {
+  min-width: 2.65em !important;
+  padding: 0 0.85em !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  font-weight: 600 !important;
+}
+
+/* Utility cluster — circular icons (subs, settings, PiP) */
+.videoOsdBottom .btnSubtitles,
+.videoOsdBottom .btnAudio,
+.videoOsdBottom .btnVideoOsdSettings,
+.videoOsdBottom .btnPip,
+.videoOsdBottom .btnFullscreen,
+.videoOsdBottom .btnAirPlay,
+.videoOsdBottom .btnUserRating {
+  width: 2.45em !important;
+  height: 2.45em !important;
+  min-width: 2.45em !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--lg-player-glass) !important;
+  backdrop-filter: var(--lg-player-blur) !important;
+  -webkit-backdrop-filter: var(--lg-player-blur) !important;
+  border: 1px solid var(--lg-player-stroke) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+  margin: 0 0 0 0.35em !important;
+}
+
+.videoOsdBottom .btnSubtitles {
+  margin-left: auto !important;
+}
+
+.videoOsdBottom .volumeButtons {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 0 0 0.35em !important;
+}
+
+.videoOsdBottom .volumeButtons .paper-icon-button-light {
+  width: 2.45em !important;
+  height: 2.45em !important;
+  border-radius: 50% !important;
+  background: var(--lg-player-glass) !important;
+  border: 1px solid var(--lg-player-stroke) !important;
+}
+
+.videoOsdBottom .osdVolumeSliderContainer {
+  width: 5.5em !important;
+}
+
+/* Player buttons — subtle rainbow rim on hover only */
+.videoOsdBottom .paper-icon-button-light::before,
+.videoOsdBottom .emby-button::before {
+  opacity: 0 !important;
+  animation: none !important;
+  inset: -1px !important;
+  background: var(--lg-prism-spectrum) !important;
+  filter: blur(1.5px) saturate(1.3) !important;
+  mask-image: linear-gradient(to top, black 40%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to top, black 40%, transparent 100%) !important;
+}
+
+.videoOsdBottom .paper-icon-button-light:hover::before,
+.videoOsdBottom .emby-button:hover::before {
+  opacity: 0.85 !important;
+}
+
+.videoOsdBottom .paper-icon-button-light::after,
+.videoOsdBottom .emby-button::after {
+  opacity: 0.25 !important;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    transparent 45%
+  ) !important;
+}
+
+.videoOsdBottom .paper-icon-button-light:hover,
+.videoOsdBottom .emby-button:hover {
+  transform: scale(1.04) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.28),
+    var(--lg-chromatic-idle) !important;
+}
+
+@keyframes lg-materialize {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.videoOsdBottom .mdl-slider-background-upper,
+.osdControls .mdl-slider-background-upper {
+  background: transparent !important;
+}
+
+/* Scrubber thumb — hidden until hover (minimal bar like Apple TV+) */
+.videoOsdBottom .mdl-slider::-webkit-slider-thumb,
+.osdControls .mdl-slider::-webkit-slider-thumb {
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  transition: all 0.2s var(--lg-ease) !important;
+}
+
+.videoOsdBottom .mdl-slider:hover::-webkit-slider-thumb,
+.osdControls .mdl-slider:hover::-webkit-slider-thumb,
+.videoOsdBottom .mdl-slider:focus::-webkit-slider-thumb,
+.osdControls .mdl-slider:focus::-webkit-slider-thumb {
+  width: 0.85em !important;
+  height: 0.85em !important;
+  opacity: 1 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), var(--lg-chromatic-idle) !important;
+}
+
+.videoOsdBottom .mdl-slider::-moz-range-thumb,
+.osdControls .mdl-slider::-moz-range-thumb {
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  border: none !important;
+}
+
+.videoOsdBottom .mdl-slider:hover::-moz-range-thumb,
+.osdControls .mdl-slider:hover::-moz-range-thumb {
+  width: 0.85em !important;
+  height: 0.85em !important;
+  opacity: 1 !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4), var(--lg-chromatic-idle) !important;
+}
+
+.osdVolumeSliderContainer .mdl-slider-background-lower {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+.nowPlayingBar .mdl-slider-background-lower {
+  background: var(--lg-rainbow-linear) !important;
+  background-size: 200% 100% !important;
+}
+
+.sliderBubble {
+  background: rgba(12, 12, 16, 0.82) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-radius: var(--lg-radius-sm) !important;
+  box-shadow: var(--lg-shadow-soft) !important;
+}
+
+/* Chapter preview card */
+.chapterThumbContainer {
+  border-radius: var(--lg-radius-md) !important;
+  overflow: hidden !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  box-shadow: var(--lg-shadow) !important;
+}
+
+/* Up Next overlay */
+.upNextContainer,
+.upNextDialog {
+  background: rgba(10, 10, 14, 0.55) !important;
+  backdrop-filter: var(--lg-blur-heavy) !important;
+  -webkit-backdrop-filter: var(--lg-blur-heavy) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-radius: var(--lg-radius-lg) !important;
+  box-shadow: var(--lg-shadow) !important;
+}
+
+/* ── Now Playing bar (music) — lock-screen prism retained ─────── */
+.nowPlayingBar {
+  position: relative !important;
+  overflow: visible !important;
+  left: 1.25em !important;
+  right: 1.25em !important;
+  bottom: max(0.85em, env(safe-area-inset-bottom)) !important;
+  height: auto !important;
+  min-height: 4.25em !important;
+  padding: 0.35em 0.5em 0.55em !important;
+  border-radius: var(--lg-radius-xl) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  background-image: var(--lg-specular), var(--lg-texture) !important;
+  background-blend-mode: screen, soft-light !important;
+  backdrop-filter: blur(52px) saturate(220%) !important;
+  -webkit-backdrop-filter: blur(52px) saturate(220%) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  box-shadow:
+    var(--lg-inner-dark),
+    var(--lg-inner-light),
+    var(--lg-shadow),
+    var(--lg-prism-chromatic) !important;
+  z-index: 2 !important;
+}
+
+.nowPlayingBar::before {
+  content: "" !important;
+  position: absolute !important;
+  bottom: -18% !important;
+  left: 4% !important;
+  width: 42% !important;
+  height: 65% !important;
+  background: var(--lg-hotspot) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  mix-blend-mode: screen !important;
+  filter: blur(10px) !important;
+  opacity: 0.85 !important;
+}
+
+.nowPlayingBar::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 5% !important;
+  right: 5% !important;
+  bottom: -2px !important;
+  height: 4px !important;
+  background: var(--lg-prism-spectrum) !important;
+  border-radius: 0 0 50% 50% / 0 0 100% 100% !important;
+  filter: blur(1.2px) brightness(1.2) saturate(1.35) !important;
+  pointer-events: none !important;
+  z-index: 4 !important;
+  opacity: 0.95 !important;
+}
+
+.nowPlayingBarTop {
+  padding: 0.25em 0.5em !important;
+}
+
+.nowPlayingBarPositionContainer {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  margin: 0 1em !important;
+}
+
+.nowPlayingImage {
+  border-radius: var(--lg-radius-md) !important;
+  box-shadow: var(--lg-shadow-soft) !important;
+}
+
+/* ── Login page ────────────────────────────────────────────────── */
+#loginPage .readOnlyContent,
+#loginPage .padded-left.padded-right.padded-bottom-page {
+  background: rgba(12, 12, 16, 0.5) !important;
+  backdrop-filter: var(--lg-blur-heavy) !important;
+  -webkit-backdrop-filter: var(--lg-blur-heavy) !important;
+  border: 1px solid var(--lg-glass-border) !important;
+  border-radius: var(--lg-radius-xl) !important;
+  box-shadow: var(--lg-shadow) !important;
+  padding: 1.5em !important;
+}
+
+#loginPage .emby-input,
+#loginPage .emby-select-withcolor {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: var(--lg-radius-md) !important;
+}
+
+/* ── Inputs ────────────────────────────────────────────────────── */
+.emby-input,
+.emby-textarea,
+.emby-select-withcolor,
+.searchfields input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: var(--lg-radius-md) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-select-withcolor:focus {
+  border-color: rgba(100, 210, 255, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(100, 210, 255, 0.15) !important;
+}
+
+/* ── Scrollbars ────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--lg-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* ── Accessibility modifiers (mirrors system settings) ─────────── */
+@media (prefers-reduced-transparency: reduce) {
+  .skinHeader,
+  .mainDrawer,
+  .osdControls,
+  .osdHeader .headerTop,
+  .nowPlayingBar,
+  .dialog,
+  .emby-button,
+  .paper-icon-button-light {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(22, 22, 28, 0.94) !important;
+  }
+
+  .videoOsdBottom::before,
+  .osdHeader::before {
+    opacity: 0.85 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .emby-button:hover:not(:disabled),
+  .paper-icon-button-light:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .emby-button,
+  .paper-icon-button-light,
+  .osdControls,
+  .mainDrawer,
+  .skinHeader {
+    border-width: 2px !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
+  }
+}
