@@ -92,263 +92,674 @@ option {
   display: none !important;
 }
 
-/* ── VIDEO PLAYER ──────────────────────────────────────────────── */
+/* ── VIDEO PLAYER · LIQUID GLASS ───────────────────────────────────
+ * Layout: five independent floating glass pieces around the video.
+ *
+ *   ┌─ top-left pill ─────────┐         ┌─ top-right volume pill ─┐
+ *   │ back · cast · settings  │         │  ▭▭▭▭───   🔊            │
+ *   └─────────────────────────┘         └──────────────────────────┘
+ *
+ *           ╭─────╮     ╭─────╮     ╭─────╮         ┌─ a/cc pill ─┐
+ *           │ ⟲15 │     │  ▮▮ │     │ 15⟳ │         │  🎵   💬    │
+ *           ╰─────╯     ╰─────╯     ╰─────╯         └─────────────┘
+ *
+ *   ┌─ bottom scrubber pill ─────────────────────────────────────────┐
+ *   │ 16:50  ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱  -42:10 │
+ *   └────────────────────────────────────────────────────────────────┘
+ *
+ * Every control is its own floating glass circle:
+ *   · top-left:  back / home / menu       · top-right: volume + cast + pip + fullscreen
+ *   · center:    rewind / play-pause / forward  (3 buttons; play-pause largest)
+ *   · bottom-right: audio · subtitles · settings
+ *   · bottom:    scrubber pill (lifted) with start | bar | end | "ends at" inline
+ *
+ * Every icon is brand-neutral white — no tint.
+ * ─────────────────────────────────────────────────────────────────── */
 
-.skinHeader-withBackground.osdHeader {
-  border: 0 !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  background: none !important;
-  color: #eee !important;
-  height: auto !important;
-  min-height: 0 !important;
-  padding: 0.85em 1.25em !important;
-  pointer-events: none !important;
-  position: relative !important;
-  transition: opacity 0.3s ease-out !important;
-  z-index: 1 !important;
+:root {
+  --osd-pill-bg: rgba(20, 22, 28, 0.42);
+  --osd-pill-highlight: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 38%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  --osd-pill-blur: blur(28px) saturate(180%);
+  --osd-pill-border: 1px solid rgba(255, 255, 255, 0.18);
+  --osd-pill-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 10px 30px rgba(0, 0, 0, 0.42);
+  --osd-icon: rgba(255, 255, 255, 0.92);
+  --osd-icon-accent: rgba(255, 255, 255, 0.95);
+  --osd-icon-accent-strong: #ffffff;
+  --osd-scrub-track: rgba(255, 255, 255, 0.18);
+  --osd-scrub-fill: rgba(255, 255, 255, 0.92);
+  --osd-edge: max(1.1em, env(safe-area-inset-bottom));
+  --osd-top-edge: max(1em, env(safe-area-inset-top));
+  --osd-right-edge: max(1.2em, env(safe-area-inset-right));
+  --osd-left-edge: max(1.2em, env(safe-area-inset-left));
+  --osd-btn-size: 2.6em;
+  --osd-btn-gap: 0.7em;
+  /* Transport sizes are separate from --osd-btn-size so play/pause
+     can stay visually dominant. Scrub-lift is DERIVED from the
+     play/pause height so the scrubber pill always clears the
+     transport row without ever colliding with it. */
+  --osd-transport-size: 4em;
+  --osd-transport-large: 5.4em;
+  --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.85em);
 }
 
-.skinHeader-withBackground.osdHeader::before {
-  content: "" !important;
-  position: absolute !important;
-  left: 0 !important;
-  right: 0 !important;
-  top: 0 !important;
-  height: 22vh !important;
-  pointer-events: none !important;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, transparent 100%) !important;
-  z-index: -1 !important;
-}
+/* ── Reusable glass surface ────────────────────────────────────── */
 
-.osdHeader .headerTop {
-  pointer-events: all !important;
-  max-height: none !important;
+.videoOsdBottom .paper-icon-button-light,
+.osdHeader .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay),
+.osdHeader .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) {
   margin: 0 !important;
   padding: 0 !important;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 0.65em !important;
-  width: 100% !important;
-}
-
-.osdHeader .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton),
-.osdHeader .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton) {
-  flex: 0 0 auto !important;
-  width: 2.6em !important;
-  height: 2.6em !important;
-  min-width: 2.6em !important;
-  max-width: 2.6em !important;
-  padding: 0 !important;
-  margin: 0 !important;
   border-radius: 50% !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: var(--osd-pill-border) !important;
   border-image: none !important;
-  background-color: var(--player-panel) !important;
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  color: var(--osd-icon) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
   box-sizing: border-box !important;
+  transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
+}
+
+/* ── Top header — separate floating buttons (no shared pill) ──── */
+
+.skinHeader-withBackground.osdHeader {
+  background: none !important;
+  border: 0 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  color: #fff !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: var(--osd-top-edge) var(--osd-right-edge) 0 var(--osd-left-edge) !important;
+  pointer-events: none !important;
+  position: relative !important;
+  z-index: 4 !important;
+  transition: opacity 0.3s ease-out !important;
+}
+
+/* No top vignette — the header buttons stand on their own glass. */
+.skinHeader-withBackground.osdHeader::before {
+  content: none !important;
+  display: none !important;
+}
+
+.osdHeader .headerTop {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: var(--osd-btn-gap) !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  pointer-events: all !important;
 }
 
 .osdHeader .pageTitle {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 0.25em !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  font-size: 0.95rem !important;
-  font-weight: 500 !important;
+  display: none !important;
 }
+
+/* Each header button is its own glass circle (size + base styles
+   inherited from the reusable glass-surface rule above) */
+.osdHeader .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay),
+.osdHeader .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) {
+  flex: 0 0 auto !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  max-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  max-height: var(--osd-btn-size) !important;
+}
+
+.osdHeader .headerButton .material-icons,
+.osdHeader .paper-icon-button-light .material-icons {
+  font-size: 1.2em !important;
+  line-height: 1 !important;
+}
+
+/* ── Main OSD container: invisible — pieces float independently ── */
 
 .videoOsdBottom,
 .videoOsdBottom-maincontrols {
-  bottom: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  padding: 0 1.25em max(1.1em, env(safe-area-inset-bottom)) !important;
-  padding-top: 0 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  padding: 0 !important;
   background: none !important;
   pointer-events: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: flex-end !important;
+  display: block !important;
 }
 
+/* Soft bottom vignette to give the scrubber pill contrast */
 .videoOsdBottom::before {
   content: "" !important;
   position: fixed !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  height: 38vh !important;
+  height: 30vh !important;
   pointer-events: none !important;
   background: linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.55) 0%,
-    rgba(0, 0, 0, 0.18) 50%,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.15) 55%,
     transparent 100%
   ) !important;
   z-index: -1 !important;
 }
 
-.osdControls {
-  pointer-events: all !important;
-  position: relative !important;
-  display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) auto auto !important;
-  grid-template-rows: minmax(2em, auto) auto !important;
-  column-gap: 0.75em !important;
-  row-gap: 0.55em !important;
-  align-items: center !important;
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0.85em 1.15em 0.85em !important;
-  border-radius: 1.1em !important;
-  background-color: var(--player-panel) !important;
-  background-image: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    transparent 42%
-  ) !important;
-  backdrop-filter: var(--player-glass-blur) !important;
-  -webkit-backdrop-filter: var(--player-glass-blur) !important;
-  border: 1px solid var(--player-border) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.28) !important;
-}
-
-.osdControls::before {
-  content: none !important;
-  display: none !important;
-}
-
-.osdControls > * {
-  position: relative !important;
-  z-index: 1 !important;
-}
-
-/* Title — shown in top header during playback */
+/* Hide the title block (and Jellyfin's "endsAt" spacer) but NOT the
+   generic `.osdTextContainer`, because that same class is reused for
+   the time text and the "Ends at" line. Catch the title at every
+   ancestor Jellyfin might attach it to. */
+.videoOsdBottom .osdMainTextContainer,
+.videoOsdBottom .osdMainText,
+.videoOsdBottom .osdSecondaryText,
+.videoOsdBottom .osdTitle,
+.videoOsdBottom .osdSecondaryMediaInfo,
 .osdControls .osdMainTextContainer,
-.osdControls .osdSecondaryMediaInfo {
+.osdControls .osdMainText,
+.osdControls .osdSecondaryText,
+.osdControls .osdTitle,
+.osdControls .osdSecondaryMediaInfo,
+.osdControls .endsAtTextSpacer {
   display: none !important;
 }
 
-.osdControls .osdTextContainer {
-  margin-bottom: 0 !important;
-  padding-left: 0 !important;
-}
-
-/* Scrubber row */
+/* `.buttons` and (if present) `.flex.flex-direction-row` are flattened
+   so their children become flex items of the `.osdControls` pill,
+   while fixed-positioned ones (transport, side clusters) escape. */
+.videoOsdBottom .buttons,
+.osdControls > .flex.flex-direction-row,
 .osdControls .flex.flex-direction-row {
   display: contents !important;
 }
 
-.osdControls .startTimeText,
-.osdControls .osdPositionText {
-  grid-column: 1 !important;
-  grid-row: 1 !important;
-  justify-self: start !important;
-  align-self: center !important;
+/* ── Bottom scrubber: `.osdControls` IS the pill ─────────────────── *
+ * IMPORTANT: the glass (background + backdrop-filter + border) lives on
+ * a `::before` pseudo, NOT on `.osdControls` itself. `backdrop-filter`
+ * (and `filter` / `transform`) on a positioned ancestor would create a
+ * containing block for `position: fixed` descendants — that would pull
+ * the top-right and bottom-right floating button clusters back into the
+ * pill. Keep `.osdControls` "plain" so fixed descendants stay viewport-
+ * relative.                                                           */
+
+.osdControls {
+  position: fixed !important;
+  left: var(--osd-left-edge) !important;
+  right: var(--osd-right-edge) !important;
+  bottom: var(--osd-scrub-lift) !important;
+  margin: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  gap: 0.95em !important;
+  padding: 0.6em 1.2em !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  pointer-events: all !important;
+  z-index: 3 !important;
 }
 
-.osdControls .flex.flex-direction-row .sliderContainer,
-.osdControls .sliderContainer {
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  width: 100% !important;
-  align-self: center !important;
+/* Glass surface drawn on the pseudo — keeps the containing block off
+   `.osdControls` so fixed descendants stay glued to the viewport */
+.osdControls::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  border-radius: inherit !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  pointer-events: none !important;
 }
 
-.osdControls .endTimeText,
-.osdControls .osdDurationText {
-  grid-column: 3 / -1 !important;
-  grid-row: 1 !important;
-  justify-self: end !important;
-  align-self: start !important;
-  padding-top: 0.1em !important;
-  padding-bottom: 1.15em !important;
+.osdControls::after {
+  content: none !important;
+  display: none !important;
 }
 
+/* Shared base for every time-text variant Jellyfin might emit */
 .osdControls .startTimeText,
 .osdControls .osdPositionText,
 .osdControls .endTimeText,
-.osdControls .osdDurationText {
+.osdControls .osdDurationText,
+.osdControls .osdTextContainer,
+.osdControls .osdTimeText,
+.videoOsdBottom .osdTimeText {
+  flex: 0 0 auto !important;
   margin: 0 !important;
   padding: 0 !important;
-  font-size: 0.8rem !important;
-  font-weight: 500 !important;
-  font-variant-numeric: tabular-nums !important;
-  opacity: 0.85 !important;
-  white-space: nowrap !important;
-}
-
-.videoOsdBottom .osdTimeText {
-  position: absolute !important;
-  right: 0 !important;
-  top: -1.85em !important;
-  display: block !important;
-  margin: 0 !important;
+  height: auto !important;
+  background: none !important;
+  color: #fff !important;
   font-size: 0.78rem !important;
   font-weight: 500 !important;
   font-variant-numeric: tabular-nums !important;
-  opacity: 0.82 !important;
   white-space: nowrap !important;
-  pointer-events: none !important;
-  z-index: 2 !important;
   line-height: 1.2 !important;
+  opacity: 0.92 !important;
+  align-self: center !important;
+  position: static !important;
+  pointer-events: none !important;
 }
 
-.videoOsdBottom .endsAtText {
+/* Left side of the pill: elapsed (or elapsed/duration combined) */
+.osdControls .startTimeText,
+.osdControls .osdPositionText,
+.osdControls .osdTextContainer:not(.endsAt):not(.endsAtTextContainer) {
+  order: 1 !important;
+  text-align: left !important;
+  min-width: 3.6em !important;
+}
+
+/* The position/duration H3 contains `<span class="positionTime"/> / <span
+   class="runtimeDuration"/>` — make sure both spans are visible */
+.osdControls .osdTextContainer .positionTime,
+.osdControls .osdTextContainer .runtimeDuration,
+.osdControls .positionTime,
+.osdControls .runtimeDuration {
+  display: inline !important;
+  opacity: 1 !important;
+  color: inherit !important;
+  font: inherit !important;
+}
+
+.osdControls .sliderContainer {
+  order: 2 !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  height: 0.4em !important;
+  margin: 0 !important;
+  align-self: center !important;
+}
+
+/* Right side of the pill: total / remaining (when Jellyfin renders it) */
+.osdControls .endTimeText,
+.osdControls .osdDurationText {
+  order: 3 !important;
+  text-align: right !important;
+  min-width: 3.6em !important;
+}
+
+/* Far right of the pill: "Ends at HH:MM" */
+.osdControls .osdTextContainer.endsAt,
+.osdControls .osdTextContainer.endsAtTextContainer,
+.osdControls .osdTimeText,
+.videoOsdBottom .osdTimeText {
+  order: 4 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  text-align: right !important;
+  font-size: 0.72rem !important;
+  opacity: 0.72 !important;
+  padding-left: 0.35em !important;
+}
+
+.videoOsdBottom .endsAtText,
+.osdControls .endsAtText {
   display: inline !important;
 }
 
-@media all and (max-width: 75em) {
-  .videoOsdBottom .endsAtText {
-    display: inline !important;
-  }
+/* ── Bottom-center transport: rewind / play-pause / forward ────── *
+ * Bottom-anchored so it lives in the same row as the volume pill
+ * (left) and audio/subs/settings (right). `align-items: flex-end`
+ * keeps every button on a shared baseline so the larger play/pause
+ * "pops" upward without throwing the row off-center.              */
+
+.videoOsdBottom .buttons > div:first-child {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.8em !important;
+  width: auto !important;
+  flex: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  pointer-events: all !important;
+  z-index: 3 !important;
 }
 
-@media all and (max-width: 42em) {
-  .osdControls {
-    grid-template-columns: auto minmax(0, 1fr) auto !important;
-    padding: 0.55em 0.85em 0.5em !important;
-  }
-
-  .videoOsdBottom .osdTimeText {
-    top: -1.7em !important;
-    font-size: 0.74rem !important;
-  }
+/* Hide every child that isn't one of: rewind, play/pause, forward */
+.videoOsdBottom .buttons > div:first-child > *:not(.btnRewind):not(.btnFastForward):not(.btnPlayPause):not(.btnPause):not(.btnPlay) {
+  display: none !important;
 }
 
-.videoOsdBottom .sliderContainer,
-.osdControls .sliderContainer {
-  height: 0.35em !important;
+.videoOsdBottom .buttons > div:first-child .btnRewind,
+.videoOsdBottom .buttons > div:first-child .btnFastForward {
+  width: var(--osd-transport-size) !important;
+  height: var(--osd-transport-size) !important;
+  min-width: var(--osd-transport-size) !important;
+  max-width: var(--osd-transport-size) !important;
+  min-height: var(--osd-transport-size) !important;
+  max-height: var(--osd-transport-size) !important;
+  color: var(--osd-icon-accent) !important;
+  display: inline-flex !important;
+}
+
+/* Play / pause is the largest in the row */
+.videoOsdBottom .buttons > div:first-child .btnPause,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause,
+.videoOsdBottom .buttons > div:first-child .btnPlay {
+  width: var(--osd-transport-large) !important;
+  height: var(--osd-transport-large) !important;
+  min-width: var(--osd-transport-large) !important;
+  max-width: var(--osd-transport-large) !important;
+  min-height: var(--osd-transport-large) !important;
+  max-height: var(--osd-transport-large) !important;
+  color: var(--osd-icon-accent) !important;
+  display: inline-flex !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .paper-icon-button-light .material-icons {
+  font-size: 1.7em !important;
+  line-height: 1 !important;
+  color: inherit !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .btnPause .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
+  font-size: 2.2em !important;
+}
+
+/* ── Top-right cluster: cast · pip · fullscreen (3 buttons) ──────
+ * Glass painted INLINE here (not relying on the shared
+ * `.videoOsdBottom .paper-icon-button-light` rule), because some
+ * Jellyfin builds render these as `<button is="paper-icon-button-light">`
+ * which doesn't pick up the class-based selector. Without inline glass
+ * they fall back to small naked icons in the top-right corner. */
+
+.videoOsdBottom .btnAirPlay,
+.videoOsdBottom .btnPip,
+.videoOsdBottom .btnFullscreen {
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
+  bottom: auto !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  max-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  max-height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: var(--osd-pill-border) !important;
+  border-image: none !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  color: var(--osd-icon) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+  transition: background-color 0.2s ease, transform 0.18s ease !important;
+}
+
+.videoOsdBottom .btnFullscreen {
+  right: var(--osd-right-edge) !important;
+}
+
+.videoOsdBottom .btnPip {
+  right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
+}
+
+.videoOsdBottom .btnAirPlay {
+  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
+}
+
+.videoOsdBottom .btnAirPlay .material-icons,
+.videoOsdBottom .btnPip .material-icons,
+.videoOsdBottom .btnFullscreen .material-icons {
+  font-size: 1.2em !important;
+  line-height: 1 !important;
+}
+
+/* ── Volume pill: bottom-LEFT, aligned with the button row ─────── *
+ * Lives at `bottom: --osd-edge`, the same baseline as the transport
+ * buttons and the audio/subs/settings cluster on the right.        */
+
+.videoOsdBottom .volumeButtons {
+  position: fixed !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: var(--osd-edge) !important;
+  left: var(--osd-left-edge) !important;
+  height: var(--osd-btn-size) !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.55em !important;
+  margin: 0 !important;
+  padding: 0 0.85em 0 0.4em !important;
+  border-radius: 999px !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+}
+
+.videoOsdBottom .volumeButtons .buttonMute {
+  flex: 0 0 auto !important;
+  width: 2.1em !important;
+  height: 2.1em !important;
+  min-width: 2.1em !important;
+  max-width: 2.1em !important;
+  min-height: 2.1em !important;
+  max-height: 2.1em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  border-image: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  color: var(--osd-icon) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.videoOsdBottom .volumeButtons .buttonMute .material-icons {
+  font-size: 1.15em !important;
+  line-height: 1 !important;
+}
+
+.videoOsdBottom .volumeButtons .sliderContainer {
+  width: 9em !important;
+  height: 0.32em !important;
   margin: 0 !important;
 }
 
+/* ── Bottom-right cluster: audio · subtitles · settings ─────────
+ * Same baseline as the transport row (bottom = --osd-edge), so the
+ * full bottom row reads:  [volume]  …  [rewind  play  forward]  …  [a · cc · ⚙] */
+
+.videoOsdBottom .btnAudio,
+.videoOsdBottom .btnSubtitles,
+.videoOsdBottom .btnVideoOsdSettings {
+  position: fixed !important;
+  top: auto !important;
+  bottom: var(--osd-edge) !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  max-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  max-height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: var(--osd-pill-border) !important;
+  border-image: none !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  color: var(--osd-icon) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+  transition: background-color 0.2s ease, transform 0.18s ease !important;
+}
+
+.videoOsdBottom .btnVideoOsdSettings {
+  right: var(--osd-right-edge) !important;
+}
+
+.videoOsdBottom .btnSubtitles {
+  right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
+}
+
+.videoOsdBottom .btnAudio {
+  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
+}
+
+.videoOsdBottom .btnAudio .material-icons,
+.videoOsdBottom .btnSubtitles .material-icons,
+.videoOsdBottom .btnVideoOsdSettings .material-icons {
+  font-size: 1.2em !important;
+  line-height: 1 !important;
+}
+
+/* ── Subtitle de-duplication ──────────────────────────────────────
+ * Jellyfin renders subtitles via its own overlay (centered above the
+ * bottom controls). On WebKit (Safari, Jellyfin in WKWebView, etc.)
+ * the browser ALSO renders the same WebVTT cues on top of the
+ * <video> element, anchored bottom-right of the video — which is
+ * exactly where our audio/cc/settings cluster lives, so they overlap.
+ *
+ * Nuke the browser-native cue rendering. Jellyfin's overlay is the
+ * only one we want. */
+video::-webkit-media-text-track-container,
+video::-webkit-media-text-track-display,
+video::-webkit-media-text-track-display-backdrop,
+video::-webkit-media-text-track-background {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+::cue,
+::cue(*) {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  background: transparent !important;
+  color: transparent !important;
+  text-shadow: none !important;
+  font-size: 0 !important;
+}
+
+/* Some Jellyfin builds also surface a subtitle preview/duplicate inside
+   the OSD itself — hide any of the usual suspects, but keep the real
+   centered subtitle overlay (`.videoSubtitlesInner`, `.htmlvideoplayer
+   .subtitle`) untouched. */
+.videoOsdBottom .subtitleAppearance,
+.videoOsdBottom .subtitleappearance-preview,
+.videoOsdBottom .subtitlePreview,
+.videoOsdBottom .subtitlePreviewContainer,
+.osdControls .subtitleAppearance,
+.osdControls .subtitleappearance-preview,
+.osdControls .subtitlePreview,
+.osdControls .subtitlePreviewContainer {
+  display: none !important;
+}
+
+/* Hide transport-only utility buttons we no longer surface */
+.videoOsdBottom .btnRecord,
+.videoOsdBottom .btnPreviousTrack,
+.videoOsdBottom .btnNextTrack,
+.videoOsdBottom .btnPreviousChapter,
+.videoOsdBottom .btnNextChapter,
+.videoOsdBottom .btnUserRating,
+.videoOsdBottom button[is="emby-ratingbutton"] {
+  display: none !important;
+}
+
+/* ── Slider styling (scrubber + volume) ───────────────────────── */
+
 .videoOsdBottom .mdl-slider-background-flex,
 .osdControls .mdl-slider-background-flex {
-  height: 0.3em !important;
+  height: 0.32em !important;
   border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: var(--osd-scrub-track) !important;
+  overflow: hidden !important;
 }
 
 .videoOsdBottom .mdl-slider-background-lower,
 .osdControls .mdl-slider-background-lower {
-  background: var(--accent) !important;
+  background: var(--osd-scrub-fill) !important;
   border-radius: inherit !important;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.18) !important;
 }
 
 .videoOsdBottom .mdl-slider-background-upper,
@@ -367,7 +778,9 @@ option {
 }
 
 .videoOsdBottom .mdl-slider::-webkit-slider-thumb,
-.osdControls .mdl-slider::-webkit-slider-thumb {
+.osdControls .mdl-slider::-webkit-slider-thumb,
+.videoOsdBottom .mdl-slider::-moz-range-thumb,
+.osdControls .mdl-slider::-moz-range-thumb {
   width: 0 !important;
   height: 0 !important;
   opacity: 0 !important;
@@ -380,281 +793,162 @@ option {
 .videoOsdBottom .mdl-slider:hover::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider:focus::-webkit-slider-thumb,
 .osdControls .mdl-slider:hover::-webkit-slider-thumb,
-.osdControls .mdl-slider:focus::-webkit-slider-thumb {
-  width: 0.85em !important;
-  height: 0.85em !important;
-  opacity: 1 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) !important;
-}
-
-.videoOsdBottom .mdl-slider::-moz-range-thumb,
-.osdControls .mdl-slider::-moz-range-thumb {
-  width: 0 !important;
-  height: 0 !important;
-  opacity: 0 !important;
-  background: #fff !important;
-  border: none !important;
-  box-shadow: none !important;
-  transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease !important;
-}
-
+.osdControls .mdl-slider:focus::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider:hover::-moz-range-thumb,
 .videoOsdBottom .mdl-slider:focus::-moz-range-thumb,
 .osdControls .mdl-slider:hover::-moz-range-thumb,
 .osdControls .mdl-slider:focus::-moz-range-thumb {
-  width: 0.85em !important;
-  height: 0.85em !important;
+  width: 0.95em !important;
+  height: 0.95em !important;
   opacity: 1 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.32) !important;
 }
 
-.osdControls .osdTitle {
-  display: none !important;
-}
-
-/* Controls row — transport centered inside the bar */
-.videoOsdBottom .buttons {
-  grid-column: 1 / -1 !important;
-  grid-row: 2 !important;
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  position: relative !important;
-  gap: 0.3em !important;
-  width: 100% !important;
-  min-height: 4.85em !important;
-  padding: 0.55em 0 0.35em !important;
-  margin: 0 !important;
-  border-top: none !important;
-}
-
-.videoOsdBottom .btnVideoOsdSettings {
-  margin-left: auto !important;
-}
-
-.videoOsdBottom .volumeButtons {
-  display: flex !important;
-  align-items: center !important;
-  margin: 0 !important;
-}
-
-/* Transport pill — centered in bottom bar */
-.videoOsdBottom .buttons > div:first-child {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.85em !important;
-  flex: none !important;
-  width: auto !important;
-  margin: 0 !important;
-  padding: 0.45em 0.85em !important;
-  border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.06) !important;
-  backdrop-filter: blur(18px) saturate(165%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(165%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 4px 16px rgba(0, 0, 0, 0.2) !important;
-  z-index: 3 !important;
-  pointer-events: all !important;
-}
-
-.videoOsdBottom .buttons > div:first-child .btnRecord,
-.videoOsdBottom .buttons > div:first-child .btnPreviousTrack,
-.videoOsdBottom .buttons > div:first-child .btnNextTrack,
-.videoOsdBottom .buttons > div:first-child .btnPreviousChapter,
-.videoOsdBottom .buttons > div:first-child .btnNextChapter {
-  display: none !important;
-}
-
-.videoOsdBottom .btnRewind,
-.videoOsdBottom .btnFastForward {
-  display: inline-flex !important;
-}
-
-@media all and (max-width: 50em) {
-  .videoOsdBottom .btnFastForward,
-  .videoOsdBottom .btnRewind {
-    display: inline-flex !important;
-  }
-
-  .videoOsdBottom .buttons > div:first-child {
-    gap: 0.65em !important;
-    padding: 0.4em 0.7em !important;
-  }
-}
-
-.videoOsdBottom .btnSubtitles,
-.videoOsdBottom .btnAudio,
-.videoOsdBottom .btnVideoOsdSettings,
-.videoOsdBottom .btnAirPlay,
-.videoOsdBottom .btnPip,
-.videoOsdBottom .btnFullscreen,
-.videoOsdBottom .btnUserRating {
-  flex: 0 0 auto !important;
-  z-index: 2 !important;
-}
-
-/* Bottom bar buttons — comfortable tap targets */
-.videoOsdBottom .buttons > .paper-icon-button-light,
-.videoOsdBottom .buttons > .btnUserRating,
-.videoOsdBottom .buttons > button[is="emby-ratingbutton"] {
-  width: 2.65em !important;
-  height: 2.65em !important;
-  min-width: 2.65em !important;
-  max-width: 2.65em !important;
-  min-height: 2.65em !important;
-  max-height: 2.65em !important;
-}
-
-/* Player buttons — true circles (border-image breaks border-radius) */
-.videoOsdBottom .paper-icon-button-light,
-.videoOsdBottom .btnUserRating,
-.videoOsdBottom button[is="emby-ratingbutton"] {
-  width: 2.65em !important;
-  height: 2.65em !important;
-  min-width: 2.65em !important;
-  max-width: 2.65em !important;
-  min-height: 2.65em !important;
-  max-height: 2.65em !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-image: none !important;
-  background-color: var(--player-btn) !important;
-  background-image: none !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28) !important;
-  color: #fff !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  transition: background 0.2s ease, transform 0.15s ease !important;
-}
-
-.videoOsdBottom .paper-icon-button-light .material-icons,
-.videoOsdBottom .btnUserRating .material-icons {
-  margin: 0 !important;
-  font-size: 1.35em !important;
-  line-height: 1 !important;
-}
-
-.videoOsdBottom .volumeButtons .buttonMute {
-  flex: 0 0 auto !important;
-}
-
-.videoOsdBottom .btnPause,
-.videoOsdBottom .btnPlayPause {
-  width: 3.1em !important;
-  height: 3.1em !important;
-  min-width: 3.1em !important;
-  max-width: 3.1em !important;
-  min-height: 3.1em !important;
-  max-height: 3.1em !important;
-  background-color: var(--accent) !important;
-  color: #000 !important;
-  border: none !important;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
-}
-
-.videoOsdBottom .btnPause .material-icons,
-.videoOsdBottom .btnPlayPause .material-icons {
-  font-size: 1.65em !important;
-}
-
-/* Transport sizing — in-bar glass (not fullscreen overlay) */
-.videoOsdBottom .buttons > div:first-child .paper-icon-button-light {
-  width: 3.15em !important;
-  height: 3.15em !important;
-  min-width: 3.15em !important;
-  max-width: 3.15em !important;
-  min-height: 3.15em !important;
-  max-height: 3.15em !important;
-  background: var(--player-glass) !important;
-  backdrop-filter: blur(16px) saturate(165%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(165%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
-}
-
-.videoOsdBottom .buttons > div:first-child .paper-icon-button-light .material-icons {
-  font-size: 1.5em !important;
-}
-
-.videoOsdBottom .buttons > div:first-child .btnPause,
-.videoOsdBottom .buttons > div:first-child .btnPlayPause {
-  width: 3.85em !important;
-  height: 3.85em !important;
-  min-width: 3.85em !important;
-  max-width: 3.85em !important;
-  min-height: 3.85em !important;
-  max-height: 3.85em !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  color: #000 !important;
-  border: 1px solid rgba(255, 255, 255, 0.45) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    0 4px 14px rgba(0, 0, 0, 0.22) !important;
-}
-
-.videoOsdBottom .buttons > div:first-child .btnPause .material-icons,
-.videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons {
-  font-size: 1.85em !important;
-}
+/* ── Hover states (desktop only) ──────────────────────────────── */
 
 @media (hover: hover) and (pointer: fine) {
-  .videoOsdBottom .paper-icon-button-light:hover:not(:disabled) {
-    background-color: var(--player-btn-hover) !important;
-    color: #fff !important;
+  .osdHeader .headerButton:hover:not(:disabled),
+  .osdHeader .paper-icon-button-light:hover:not(:disabled),
+  .videoOsdBottom .btnAirPlay:hover,
+  .videoOsdBottom .btnPip:hover,
+  .videoOsdBottom .btnFullscreen:hover,
+  .videoOsdBottom .btnVideoOsdSettings:hover,
+  .videoOsdBottom .btnAudio:hover,
+  .videoOsdBottom .btnSubtitles:hover,
+  .videoOsdBottom .volumeButtons .buttonMute:hover,
+  .videoOsdBottom .buttons > div:first-child .paper-icon-button-light:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--osd-icon-accent-strong) !important;
     transform: scale(1.05) !important;
   }
 
-  .videoOsdBottom .buttons > div:first-child .paper-icon-button-light:hover:not(:disabled) {
-    background: var(--player-glass-strong) !important;
-    transform: scale(1.06) !important;
-  }
-
-  .videoOsdBottom .btnPause:hover,
-  .videoOsdBottom .btnPlayPause:hover,
   .videoOsdBottom .buttons > div:first-child .btnPause:hover,
-  .videoOsdBottom .buttons > div:first-child .btnPlayPause:hover {
-    background-color: #fff !important;
-    color: #000 !important;
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause:hover,
+  .videoOsdBottom .buttons > div:first-child .btnPlay:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: var(--osd-icon-accent-strong) !important;
   }
 }
 
-.videoOsdBottom .volumeButtons .sliderContainer {
-  width: 5em !important;
-  height: 0.28em !important;
+/* ── Responsive: tablet / small landscape ─────────────────────── */
+
+@media all and (max-width: 60em) {
+  :root {
+    --osd-btn-size: 2.4em;
+    --osd-btn-gap: 0.55em;
+    --osd-transport-size: 3.4em;
+    --osd-transport-large: 4.5em;
+  }
+
+  .videoOsdBottom .buttons > div:first-child {
+    gap: 1.1em !important;
+  }
 }
 
-/* Chapter preview & up next */
-.chapterThumbContainer {
-  border-radius: 0.75em !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+/* ── Responsive: mobile ───────────────────────────────────────── */
+
+@media all and (max-width: 42em) {
+  :root {
+    --osd-btn-size: 2.3em;
+    --osd-btn-gap: 0.4em;
+    --osd-transport-size: 2.9em;
+    --osd-transport-large: 3.9em;
+  }
+
+  .osdControls {
+    padding: 0.5em 0.95em !important;
+    gap: 0.65em !important;
+  }
+
+  .osdControls .startTimeText,
+  .osdControls .osdPositionText,
+  .osdControls .endTimeText,
+  .osdControls .osdDurationText,
+  .osdControls .osdTextContainer {
+    font-size: 0.7rem !important;
+    min-width: 3em !important;
+  }
+
+  .osdControls .osdTimeText,
+  .videoOsdBottom .osdTimeText,
+  .osdControls .osdTextContainer.endsAt,
+  .osdControls .osdTextContainer.endsAtTextContainer {
+    font-size: 0.66rem !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child {
+    gap: 0.85em !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .paper-icon-button-light .material-icons {
+    font-size: 1.25em !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .btnPause .material-icons,
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons,
+  .videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
+    font-size: 1.55em !important;
+  }
+
+  /* Volume slider hidden on phones — keep only the mute toggle (so
+     it sits at the bottom-left without the slider taking up width) */
+  .videoOsdBottom .volumeButtons {
+    padding: 0 !important;
+    background: none !important;
+    background-image: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .videoOsdBottom .volumeButtons .sliderContainer {
+    display: none !important;
+  }
+
+  .videoOsdBottom .volumeButtons .buttonMute {
+    width: var(--osd-btn-size) !important;
+    height: var(--osd-btn-size) !important;
+    min-width: var(--osd-btn-size) !important;
+    max-width: var(--osd-btn-size) !important;
+    min-height: var(--osd-btn-size) !important;
+    max-height: var(--osd-btn-size) !important;
+    border: var(--osd-pill-border) !important;
+    background-color: var(--osd-pill-bg) !important;
+    background-image: var(--osd-pill-highlight) !important;
+    -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+    backdrop-filter: var(--osd-pill-blur) !important;
+    box-shadow: var(--osd-pill-shadow) !important;
+  }
+}
+
+/* ── Chapter preview & up next ────────────────────────────────── */
+
+/* Suppress the slider's hover/seek tooltip and chapter-preview popup
+   (the floating "-2:20:04" + thumbnail bubble that pops out of the
+   scrubber). Keep them hidden in every interaction state. */
+.chapterThumbContainer,
+.sliderBubble,
+.sliderBubbleText,
+.osdControls .sliderBubble,
+.osdControls .sliderBubbleText,
+.videoOsdBottom .sliderBubble,
+.videoOsdBottom .sliderBubbleText {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .upNextContainer,
 .upNextDialog {
-  background-color: var(--player-panel) !important;
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  border-radius: 1em !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  border-radius: 1.1em !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
 }
 
 /* Overlay elements */
@@ -1136,14 +1430,8 @@ h2 {
   background-clip: padding-box;
 }
 
-.sliderBubble {
-  background-color: #000;
-  z-index: 1;
-}
-
-.sliderBubbleText {
-  font-size: medium;
-}
+/* `.sliderBubble` and `.sliderBubbleText` are hidden globally in the
+ * video-player section; their old base styles are intentionally removed. */
 
 @keyframes rotating {
   from {
@@ -1261,21 +1549,37 @@ h2 {
   border-radius: 0;
 }
 
-/* Header — hide music, search, profile (must beat .osdHeader .headerButton) */
+/* Header — hide music, search, profile, syncplay
+ * (must beat .osdHeader .headerButton glass rule). SyncPlay is the
+ * three-people icon Jellyfin renders in the OSD header on the right;
+ * it's not a video-transport control and was bleeding into our
+ * top-right cluster. */
 .skinHeader .headerButton.headerAudioPlayerButton,
 .skinHeader .headerButton.headerSearchButton,
 .skinHeader .headerButton.headerUserButton,
+.skinHeader .headerButton.headerSyncButton,
+.skinHeader .headerButton.btnSyncPlay,
 .skinHeader .headerAudioPlayerButton,
 .skinHeader .headerSearchButton,
 .skinHeader .headerUserButton,
+.skinHeader .headerSyncButton,
+.skinHeader .btnSyncPlay,
+.skinHeader .syncPlayButton,
 .skinHeader .audioPlayerButton,
 .skinHeader .headerUserButtonRound,
 .osdHeader .headerButton.headerAudioPlayerButton,
 .osdHeader .headerButton.headerSearchButton,
 .osdHeader .headerButton.headerUserButton,
+.osdHeader .headerButton.headerSyncButton,
+.osdHeader .headerButton.btnSyncPlay,
 .osdHeader .headerAudioPlayerButton,
 .osdHeader .headerSearchButton,
-.osdHeader .headerUserButton {
+.osdHeader .headerUserButton,
+.osdHeader .headerSyncButton,
+.osdHeader .btnSyncPlay,
+.osdHeader .syncPlayButton,
+.videoOsdBottom .btnSyncPlay,
+.videoOsdBottom .headerSyncButton {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -1290,4 +1594,4 @@ h2 {
   opacity: 0 !important;
   pointer-events: none !important;
 }
-image.png
+

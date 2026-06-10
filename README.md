@@ -9,7 +9,7 @@ A custom CSS theme for [Jellyfin](https://jellyfin.org) with frosted glass navig
 - **Split detail layout** — backdrop art on the right, metadata on the left (desktop)
 - **Card lift animations** — hover and active states on library cards
 - **Now playing bar** — floating glass bar with rotating album art ring
-- **Revamped video player** — floating glass panel, centered rewind / play-pause / forward, utilities on a second row
+- **Liquid-glass video player** — every control is its own floating glass circle: header buttons top-left; volume + cast + PiP + fullscreen top-right; just rewind / play-pause (oversize) / forward in the center; audio + subtitles + settings bottom-right; lifted scrubber pill with elapsed / remaining / "ends at" inline; soft blue accent on transport icons; fully responsive desktop ↔ mobile
 
 ## Installation
 
