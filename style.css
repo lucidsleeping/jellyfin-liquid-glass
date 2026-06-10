@@ -117,24 +117,56 @@ option {
  * ─────────────────────────────────────────────────────────────────── */
 
 :root {
-  --osd-pill-bg: rgba(20, 22, 28, 0.42);
+  /* ── Liquid glass tokens ──────────────────────────────────────────
+   * The goal is real glass that REFRACTS and REFLECTS the live video
+   * behind it, not a flat frosted panel. Three ingredients:
+   *   1. Near-transparent base tint so the backdrop dominates.
+   *   2. A heavy `backdrop-filter` stack that distorts the backdrop
+   *      via an inline SVG `feDisplacementMap` (live refraction),
+   *      then saturates / brightens it the way Vision Pro does so
+   *      colors "pop" through the glass.
+   *   3. A multi-stop diagonal gradient + inset rim-light that fakes
+   *      the specular highlight you see when light hits curved glass,
+   *      i.e. the "reflection" half of the request. */
+  --osd-pill-bg: rgba(255, 255, 255, 0.04);
   --osd-pill-highlight: linear-gradient(
-    155deg,
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(255, 255, 255, 0.06) 38%,
-    rgba(255, 255, 255, 0) 72%
+    140deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.05) 22%,
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(255, 255, 255, 0.04) 78%,
+    rgba(255, 255, 255, 0.10) 100%
   );
-  --osd-pill-blur: blur(28px) saturate(180%);
-  --osd-pill-border: 1px solid rgba(255, 255, 255, 0.18);
+  /* `url(...)` is an inline SVG turbulence + displacement-map filter.
+   * Applied to the backdrop layer of `backdrop-filter`, it warps the
+   * video pixels behind the button — that's the live refraction.
+   * Saturate / brightness / contrast then push the warped backdrop
+   * toward the vibrant "lit glass" look. */
+  --osd-pill-blur:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-20%25' y='-20%25' width='140%25' height='140%25'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='4' result='t'/><feDisplacementMap in='SourceGraphic' in2='t' scale='14'/></filter></svg>#g")
+    blur(16px)
+    saturate(170%)
+    brightness(105%)
+    contrast(102%);
+  --osd-pill-border: 1px solid rgba(255, 255, 255, 0.14);
+  /* Layered insets form the curved-edge rim-light. Toned WAY down so
+   * the glass reads as transparent + neutral, not chalky white. */
   --osd-pill-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    0 10px 30px rgba(0, 0, 0, 0.42);
-  --osd-icon: rgba(255, 255, 255, 0.92);
-  --osd-icon-accent: rgba(255, 255, 255, 0.95);
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 1px 0 0 rgba(255, 255, 255, 0.07),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 8px 26px rgba(0, 0, 0, 0.34);
+  --osd-icon: rgba(255, 255, 255, 0.88);
+  /* Apple system blue (dark-mode variant) — used for the scrubber
+   * fill, slider thumbs, and any "active / progress" affordance. */
+  --osd-accent-blue: #0a84ff;
+  --osd-accent-blue-soft: rgba(10, 132, 255, 0.85);
+  --osd-icon-accent: rgba(255, 255, 255, 0.92);
   --osd-icon-accent-strong: #ffffff;
-  --osd-scrub-track: rgba(255, 255, 255, 0.18);
-  --osd-scrub-fill: rgba(255, 255, 255, 0.92);
+  --osd-scrub-track: rgba(255, 255, 255, 0.16);
+  --osd-scrub-fill: var(--osd-accent-blue);
   --osd-edge: max(1.1em, env(safe-area-inset-bottom));
   --osd-top-edge: max(1em, env(safe-area-inset-top));
   --osd-right-edge: max(1.2em, env(safe-area-inset-right));
@@ -380,25 +412,30 @@ option {
   pointer-events: none !important;
 }
 
-/* Left side of the pill: elapsed (or elapsed/duration combined) */
-.osdControls .startTimeText,
-.osdControls .osdPositionText,
-.osdControls .osdTextContainer:not(.endsAt):not(.endsAtTextContainer) {
-  order: 1 !important;
-  text-align: left !important;
-  min-width: 3.6em !important;
+/* The h3 that wraps `<span class="positionTime"/>` + `<span
+ * class="runtimeDuration"/>` is collapsed via `display: contents` so
+ * the two spans become DIRECT flex items of `.osdControls`. That way
+ * we can order them independently — elapsed on the FAR LEFT,
+ * remaining on the FAR RIGHT — with the slider stretching between
+ * them. Without this the two times stay glued together on the left
+ * of the slider, which is the asymmetric layout we just had. */
+.osdControls .osdTextContainer:not(.endsAt):not(.endsAtTextContainer):not(.osdMainTextContainer) {
+  display: contents !important;
 }
 
-/* The position/duration H3 contains `<span class="positionTime"/> / <span
-   class="runtimeDuration"/>` — make sure both spans are visible */
-.osdControls .osdTextContainer .positionTime,
-.osdControls .osdTextContainer .runtimeDuration,
-.osdControls .positionTime,
-.osdControls .runtimeDuration {
-  display: inline !important;
-  opacity: 1 !important;
-  color: inherit !important;
-  font: inherit !important;
+.osdControls .startTimeText,
+.osdControls .osdPositionText,
+.osdControls .positionTime {
+  order: 1 !important;
+  flex: 0 0 auto !important;
+  text-align: left !important;
+  min-width: 3.6em !important;
+  margin: 0 0.6em 0 0.2em !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  opacity: 0.95 !important;
+  color: #fff !important;
 }
 
 .osdControls .sliderContainer {
@@ -410,26 +447,53 @@ option {
   align-self: center !important;
 }
 
-/* Right side of the pill: total / remaining (when Jellyfin renders it) */
+/* Remaining time (-24:25) — right of the slider, mirrors the elapsed
+ * time's margins/width for visual symmetry. */
 .osdControls .endTimeText,
-.osdControls .osdDurationText {
+.osdControls .osdDurationText,
+.osdControls .runtimeDuration {
   order: 3 !important;
+  flex: 0 0 auto !important;
   text-align: right !important;
   min-width: 3.6em !important;
+  margin: 0 0.6em !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  opacity: 0.95 !important;
+  color: #fff !important;
 }
 
-/* Far right of the pill: "Ends at HH:MM" */
+/* "Ends at HH:MM" sits on the far right, separated from the
+ * remaining-time by a subtle dot, and rendered slightly smaller +
+ * dimmer to read as secondary info. */
 .osdControls .osdTextContainer.endsAt,
 .osdControls .osdTextContainer.endsAtTextContainer,
 .osdControls .osdTimeText,
 .videoOsdBottom .osdTimeText {
   order: 4 !important;
+  flex: 0 0 auto !important;
   display: inline-flex !important;
   align-items: center !important;
   text-align: right !important;
-  font-size: 0.72rem !important;
-  opacity: 0.72 !important;
-  padding-left: 0.35em !important;
+  font-size: 0.7rem !important;
+  opacity: 0.6 !important;
+  padding: 0 0.2em 0 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+}
+
+.osdControls .osdTextContainer.endsAt::before,
+.osdControls .osdTextContainer.endsAtTextContainer::before,
+.osdControls .osdTimeText::before,
+.videoOsdBottom .osdTimeText::before {
+  content: "·" !important;
+  display: inline-block !important;
+  opacity: 0.55 !important;
+  margin: 0 0.5em 0 0.1em !important;
+  font-size: 1.1em !important;
+  line-height: 1 !important;
 }
 
 .videoOsdBottom .endsAtText,
@@ -759,7 +823,7 @@ video::-webkit-media-text-track-background {
 .osdControls .mdl-slider-background-lower {
   background: var(--osd-scrub-fill) !important;
   border-radius: inherit !important;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 0 10px rgba(10, 132, 255, 0.45) !important;
 }
 
 .videoOsdBottom .mdl-slider-background-upper,
@@ -777,31 +841,40 @@ video::-webkit-media-text-track-background {
   outline: none !important;
 }
 
+/* Slider thumb — small Apple-blue dot, always visible (no longer
+ * hover-gated), with a thin white inner stroke for that iOS slider feel. */
 .videoOsdBottom .mdl-slider::-webkit-slider-thumb,
 .osdControls .mdl-slider::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider::-moz-range-thumb,
 .osdControls .mdl-slider::-moz-range-thumb {
-  width: 0 !important;
-  height: 0 !important;
-  opacity: 0 !important;
-  background: #fff !important;
-  border: none !important;
-  box-shadow: none !important;
-  transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease !important;
+  width: 0.78em !important;
+  height: 0.78em !important;
+  opacity: 1 !important;
+  background: var(--osd-accent-blue) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 50% !important;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    0 0 0 0 rgba(10, 132, 255, 0) !important;
+  transition: transform 0.15s ease, box-shadow 0.2s ease !important;
 }
 
 .videoOsdBottom .mdl-slider:hover::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider:focus::-webkit-slider-thumb,
+.videoOsdBottom .mdl-slider:active::-webkit-slider-thumb,
 .osdControls .mdl-slider:hover::-webkit-slider-thumb,
 .osdControls .mdl-slider:focus::-webkit-slider-thumb,
+.osdControls .mdl-slider:active::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider:hover::-moz-range-thumb,
 .videoOsdBottom .mdl-slider:focus::-moz-range-thumb,
+.videoOsdBottom .mdl-slider:active::-moz-range-thumb,
 .osdControls .mdl-slider:hover::-moz-range-thumb,
-.osdControls .mdl-slider:focus::-moz-range-thumb {
-  width: 0.95em !important;
-  height: 0.95em !important;
-  opacity: 1 !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.32) !important;
+.osdControls .mdl-slider:focus::-moz-range-thumb,
+.osdControls .mdl-slider:active::-moz-range-thumb {
+  transform: scale(1.15) !important;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.5),
+    0 0 0 6px rgba(10, 132, 255, 0.22) !important;
 }
 
 /* ── Hover states (desktop only) ──────────────────────────────── */
@@ -862,11 +935,14 @@ video::-webkit-media-text-track-background {
 
   .osdControls .startTimeText,
   .osdControls .osdPositionText,
+  .osdControls .positionTime,
   .osdControls .endTimeText,
   .osdControls .osdDurationText,
+  .osdControls .runtimeDuration,
   .osdControls .osdTextContainer {
     font-size: 0.7rem !important;
     min-width: 3em !important;
+    margin: 0 0.3em !important;
   }
 
   .osdControls .osdTimeText,
