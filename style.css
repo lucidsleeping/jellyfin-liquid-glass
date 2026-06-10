@@ -13,42 +13,103 @@
 
 
 
-/* Global Variables */
+/* ──────────────────────────────────────────────────────────────────
+ * Global design tokens
+ *
+ * The video player (further down) uses its own `--osd-*` tokens for
+ * the floating glass surfaces; the rest of the UI uses the variables
+ * below. Both halves share the same design language: near-transparent
+ * surfaces, Apple-blue accent, identical blur recipe.
+ *
+ * Tweak the values here once and every legacy rule (header, drawer,
+ * cards, indicators, etc.) follows the new look automatically.
+ * ────────────────────────────────────────────────────────────────── */
 :root {
-  --w-color: #18181849;
-  --blur: blur(16px) saturate(180%);
+  /* Surfaces */
+  --bg-color: rgb(14, 14, 16);
+  --w-color: rgba(20, 20, 24, 0.42);
+  --card-bg: rgba(20, 20, 24, 0.46);
+  --indicator-bg: rgba(20, 20, 24, 0.72);
+  --transparent-bg: rgba(0, 0, 0, 0);
+
+  /* The blur stack used app-wide. Same flavour as `--osd-pill-blur`
+   * but a touch lighter so non-player panels aren't excessive. */
+  --blur: blur(22px) saturate(170%) brightness(102%);
   --border-color: linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 41%,
-    rgba(255, 255, 255, 0.1) 57%,
-    rgba(255, 255, 255, 0.3) 100%
+    140deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.06) 38%,
+    rgba(255, 255, 255, 0.04) 62%,
+    rgba(255, 255, 255, 0.14) 100%
   );
-  --card-bg: #101010;
-  --indicator-bg: #10101094;
-  --transparent-bg: #10101000;
-  --bg-color: rgb(24, 24, 24);
+
+  /* Interactions */
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --hover-text: rgba(255, 255, 255, 0.96);
+  --active-bg: rgba(10, 132, 255, 0.18);
+
+  /* Apple system blue — single source of truth for every accent in
+   * the whole theme. Mirrors `--osd-accent-blue` used by the player
+   * scrubber so the language stays consistent. */
+  --accent-blue: #0a84ff;
+  --accent-blue-soft: rgba(10, 132, 255, 0.85);
+  --accent-blue-ghost: rgba(10, 132, 255, 0.16);
+  --accent: var(--accent-blue);
+
+  /* Progress / scrubber colors */
+  --progress: var(--accent-blue);
+  --progress-track: rgba(255, 255, 255, 0.16);
+
+  /* Typography */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+    system-ui, sans-serif;
+
+  /* Misc */
   --card-gap: 1vw;
-  --hover-bg: rgba(255, 255, 255, 0.08);
-  --hover-text: rgba(255, 255, 255, 0.92);
-  --accent: rgba(255, 255, 255, 0.9);
-  --progress: rgba(255, 255, 255, 0.55);
+  /* Radii — all surfaces are heavily rounded ("fluid"); small, mid and
+   * large interactives become full pills via `--radius-pill`. */
+  --radius-sm: 0.9em;
+  --radius-md: 1.5em;
+  --radius-lg: 2.2em;
+  --radius-xl: 2.8em;
+  --radius-pill: 999px;
+
+  /* Legacy player aliases kept for any old rules that referenced them */
   --player-panel: rgba(12, 12, 14, 0.38);
-  --player-btn: rgba(255, 255, 255, 0.08);
-  --player-btn-hover: rgba(255, 255, 255, 0.14);
-  --player-glass: rgba(255, 255, 255, 0.07);
-  --player-glass-strong: rgba(255, 255, 255, 0.12);
-  --player-glass-blur: blur(24px) saturate(170%);
-  --player-border: rgba(255, 255, 255, 0.12);
+  --player-btn: rgba(255, 255, 255, 0.06);
+  --player-btn-hover: rgba(255, 255, 255, 0.12);
+  --player-glass: rgba(255, 255, 255, 0.05);
+  --player-glass-strong: rgba(255, 255, 255, 0.10);
+  --player-glass-blur: var(--blur);
+  --player-border: rgba(255, 255, 255, 0.10);
 }
 
 /* Global Styles */
 html {
   background-color: var(--bg-color) !important;
   box-sizing: border-box;
-  font-family: "Inter", sans-serif !important;
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv11", "cv02";
   margin: 0;
   padding: 0;
+}
+
+body {
+  font-family: var(--font-sans) !important;
+  letter-spacing: -0.005em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display) !important;
+  letter-spacing: -0.015em;
+  font-weight: 600;
 }
 
 /* Elements with transparency and blur effects */
@@ -77,7 +138,7 @@ option {
   border-left: 0;
   border-right: 0;
   border-top: 0;
-  border-radius: 5px;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 /* Form elements */
@@ -177,8 +238,8 @@ option {
      can stay visually dominant. Scrub-lift is DERIVED from the
      play/pause height so the scrubber pill always clears the
      transport row without ever colliding with it. */
-  --osd-transport-size: 4em;
-  --osd-transport-large: 5.4em;
+  --osd-transport-size: 5.6em;
+  --osd-transport-large: 7.6em;
   --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.85em);
 }
 
@@ -841,18 +902,18 @@ video::-webkit-media-text-track-background {
   outline: none !important;
 }
 
-/* Slider thumb — small Apple-blue dot, always visible (no longer
- * hover-gated), with a thin white inner stroke for that iOS slider feel. */
+/* Slider thumb — horizontal Apple-blue pill (iOS slider style), always
+ * visible. Wider than it is tall so it reads as a capsule, not a dot. */
 .videoOsdBottom .mdl-slider::-webkit-slider-thumb,
 .osdControls .mdl-slider::-webkit-slider-thumb,
 .videoOsdBottom .mdl-slider::-moz-range-thumb,
 .osdControls .mdl-slider::-moz-range-thumb {
-  width: 0.78em !important;
+  width: 1.55em !important;
   height: 0.78em !important;
   opacity: 1 !important;
   background: var(--osd-accent-blue) !important;
   border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
-  border-radius: 50% !important;
+  border-radius: 999px !important;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.4),
     0 0 0 0 rgba(10, 132, 255, 0) !important;
@@ -871,10 +932,10 @@ video::-webkit-media-text-track-background {
 .osdControls .mdl-slider:hover::-moz-range-thumb,
 .osdControls .mdl-slider:focus::-moz-range-thumb,
 .osdControls .mdl-slider:active::-moz-range-thumb {
-  transform: scale(1.15) !important;
+  transform: scaleY(1.18) scaleX(1.08) !important;
   box-shadow:
     0 1px 4px rgba(0, 0, 0, 0.5),
-    0 0 0 6px rgba(10, 132, 255, 0.22) !important;
+    0 0 0 5px rgba(10, 132, 255, 0.22) !important;
 }
 
 /* ── Hover states (desktop only) ──────────────────────────────── */
@@ -909,8 +970,8 @@ video::-webkit-media-text-track-background {
   :root {
     --osd-btn-size: 2.4em;
     --osd-btn-gap: 0.55em;
-    --osd-transport-size: 3.4em;
-    --osd-transport-large: 4.5em;
+    --osd-transport-size: 4.6em;
+    --osd-transport-large: 6.2em;
   }
 
   .videoOsdBottom .buttons > div:first-child {
@@ -924,8 +985,8 @@ video::-webkit-media-text-track-background {
   :root {
     --osd-btn-size: 2.3em;
     --osd-btn-gap: 0.4em;
-    --osd-transport-size: 2.9em;
-    --osd-transport-large: 3.9em;
+    --osd-transport-size: 3.8em;
+    --osd-transport-large: 5em;
   }
 
   .osdControls {
@@ -1022,7 +1083,7 @@ video::-webkit-media-text-track-background {
   background-image: var(--osd-pill-highlight) !important;
   backdrop-filter: var(--osd-pill-blur) !important;
   -webkit-backdrop-filter: var(--osd-pill-blur) !important;
-  border-radius: 1.1em !important;
+  border-radius: var(--radius-lg) !important;
   border: var(--osd-pill-border) !important;
   box-shadow: var(--osd-pill-shadow) !important;
 }
@@ -1038,15 +1099,14 @@ video::-webkit-media-text-track-background {
   background-color: var(--transparent-bg);
 }
 
-/* List and transition effects */
+/* `.listItem` hover effect — kept simple. The full menu/list rules
+ * further down in the GLOBAL LIQUID GLASS section handle the actual
+ * design (flow layout, hairline dividers, blue-selected state). We do
+ * NOT stack a second `backdrop-filter` here because list rows
+ * normally already live inside a blurred container and double-blur
+ * tanks scrolling performance. */
 .listItem {
-  transition: 0.3s all ease-in-out;
-}
-
-.listItem:hover {
-  background-color: var(--hover-bg);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: var(--blur);
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
 /* Card styles */
@@ -1055,7 +1115,7 @@ video::-webkit-media-text-track-background {
     linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--border-color) border-box;
   border: 1px solid transparent;
-  border-radius: 15px;
+  border-radius: var(--radius-md);
   box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3);
   padding: 25px;
   transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -1079,7 +1139,7 @@ video::-webkit-media-text-track-background {
     linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
     var(--border-color) border-box;
   border: 1px solid transparent;
-  border-radius: 15px;
+  border-radius: var(--radius-md);
   box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3);
   transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
@@ -1368,7 +1428,7 @@ html.preload.layout-desktop {
 /* Progress bars and inner card styles */
 .itemProgressBarForeground {
   background-color: var(--progress);
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   z-index: 1;
 }
 
@@ -1376,7 +1436,7 @@ html.preload.layout-desktop {
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: var(--blur);
   background-color: #18181849;
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   margin-bottom: 10px;
   margin-left: 20px;
   overflow: hidden;
@@ -1394,7 +1454,7 @@ h2 {
 .layout-desktop .btnPlay {
   color: #000;
   background-color: var(--accent);
-  border-radius: 2em;
+  border-radius: var(--radius-pill);
 }
 
 .layout-desktop .btnPlay:hover {
@@ -1421,7 +1481,7 @@ h2 {
 
 /* Other styles */
 .raised {
-  border-radius: 4em;
+  border-radius: var(--radius-pill);
 }
 
 #btnShutdown {
@@ -1429,7 +1489,7 @@ h2 {
 }
 
 .paperList {
-  border-radius: 1em;
+  border-radius: var(--radius-md);
 }
 
 .sliderContainer:not(.osdVolumeSliderContainer) {
@@ -1441,8 +1501,8 @@ h2 {
 }
 
 .cardImageContainer {
-  border-top-right-radius: 15px;
-  border-top-left-radius: 15px;
+  border-top-right-radius: var(--radius-md);
+  border-top-left-radius: var(--radius-md);
 }
 
 /* Now Playing Bar Styles */
@@ -1452,7 +1512,7 @@ h2 {
   left: 3vw;
   right: 3vw;
   height: 7vh;
-  border-radius: 1em;
+  border-radius: var(--radius-lg);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: var(--blur);
   background-color: #18181849;
@@ -1554,7 +1614,7 @@ h2 {
   left: 60vw;
   top: -10vh;
   position: absolute;
-  border-radius: 30px;
+  border-radius: var(--radius-lg);
 }
 
 :has(.backgroundContainer:not(.withBackdrop)) .detailImageContainer .card:has(.cardImageIcon.tv) {
@@ -1669,5 +1729,949 @@ h2 {
   overflow: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *
+ *  GLOBAL LIQUID GLASS · UI-WIDE
+ *
+ *  Brings the same translucent + Apple-blue language used by the video
+ *  player to every other Jellyfin surface: dialogs, menus, settings
+ *  panels, drawer, header, forms, cards, lists, tabs, etc.
+ *
+ *  Everything below this header references either the global tokens
+ *  defined in `:root` (top of file) or the OSD pill tokens used by
+ *  the player. Change a token, every surface follows.
+ *
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── Surfaces: header, drawer, dialogs, sheets, popups ───────────── *
+ * Every floating surface in Jellyfin shares a single recipe — heavy
+ * blur on a near-transparent base, a hair of border, soft outer
+ * shadow. We do NOT use `--osd-pill-blur` directly here because the
+ * SVG displacement filter is great on small player buttons but reads
+ * as visual noise on large flat panels; `--blur` (plain blur +
+ * saturate + brightness) is the right tool for the bigger surfaces. */
+
+/* Floating surfaces (dialogs / sheets / popups / toasts) — heavily
+ * frosted, soft outer shadow, large radius. These FEEL like detached
+ * panels lifted off the page. */
+.dialog,
+.dialogContainer .dialog,
+.formDialog,
+.actionSheet,
+.actionsheetMenuOptions,
+.popup,
+.popupMenu,
+.menuOptions,
+.toast {
+  background-color: var(--w-color) !important;
+  background-image: var(--border-color) !important;
+  background-blend-mode: overlay !important;
+  -webkit-backdrop-filter: var(--blur) !important;
+  backdrop-filter: var(--blur) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* Top header / left drawer — different rules: edge-to-edge, no chunky
+ * outer shadow (they sit against the viewport edge), and MUCH more
+ * transparent so the backdrop actually shows through. */
+.skinHeader:not(.osdHeader),
+.skinHeader.semiTransparent:not(.osdHeader),
+.mainDrawer {
+  background-color: rgba(14, 14, 16, 0.32) !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: var(--blur) !important;
+  backdrop-filter: var(--blur) !important;
+  border: 0 !important;
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(0, 0, 0, 0.2) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.mainDrawer {
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    1px 0 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Action sheet titles / dialog headers */
+.actionSheetTitle,
+.dialogTitle,
+.formDialogHeader,
+.formDialogHeader h3 {
+  color: #fff !important;
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+}
+
+/* ── Lists, menu items, action-sheet rows ────────────────────────── *
+ *
+ * Design principle: items inside a glass container FLOW. They are not
+ * individual rounded pills with gaps between them — that reads as a
+ * stack of disconnected chips. The CONTAINER owns the radius and the
+ * `overflow: hidden` that clips item corners. Items themselves are
+ * rectangular, edge-to-edge, separated only by a hairline divider
+ * (iOS Settings / Vision Pro action-sheet pattern).
+ *
+ * Hover and "selected" fill the row to its full width, so the user's
+ * eye reads a continuous panel, not a stack of buttons.
+ * ────────────────────────────────────────────────────────────────── */
+
+/* Containers clip their children at the rounded corners */
+.actionSheet,
+.actionsheetMenuOptions,
+.popupMenu,
+.menuOptions,
+.popup {
+  overflow: hidden !important;
+  padding: 0.4em 0 !important;
+}
+
+/* Row reset: items flow as one continuous list. */
+.actionSheetMenuItem,
+.menuOption,
+.actionSheet .listItem,
+.menuOptions .listItem,
+.popupMenu .listItem {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0.85em 1.1em !important;
+  min-height: 0 !important;
+  position: relative !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.96rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease !important;
+}
+
+/* Hairline divider between consecutive rows. Skipped on the first
+ * item because there's nothing above it. */
+.actionSheetMenuItem + .actionSheetMenuItem::before,
+.menuOption + .menuOption::before,
+.popupMenu .listItem + .listItem::before,
+.menuOptions .listItem + .listItem::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 1.1em !important;
+  right: 1.1em !important;
+  height: 1px !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  pointer-events: none !important;
+}
+
+/* Hover: fill the row edge-to-edge */
+.actionSheetMenuItem:hover,
+.menuOption:hover,
+.actionSheet .listItem:hover,
+.menuOptions .listItem:hover,
+.popupMenu .listItem:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: #fff !important;
+}
+
+.actionSheetMenuItem:active,
+.menuOption:active {
+  background-color: rgba(255, 255, 255, 0.11) !important;
+}
+
+/* "Selected" / "active" row — Apple-blue full-width fill, no inset gap */
+.listItem.selected,
+.actionSheetMenuItem.actionSheetMenuItemSelected,
+.menuOption.selected {
+  background-color: var(--accent-blue-ghost) !important;
+  color: #fff !important;
+}
+
+/* Action sheet item icons — flat, no chunky square background. Sit
+ * in a fixed-width column so the text labels line up perfectly. */
+.actionSheetItemIcon,
+.actionSheetMenuItem .listItemIcon,
+.menuOption .listItemIcon,
+.actionSheet .material-icons,
+.popupMenu .material-icons {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  width: 1.6em !important;
+  min-width: 1.6em !important;
+  margin-right: 0.85em !important;
+  color: rgba(255, 255, 255, 0.68) !important;
+  font-size: 1.25rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.actionSheetMenuItem:hover .actionSheetItemIcon,
+.actionSheetMenuItem:hover .listItemIcon,
+.menuOption:hover .listItemIcon,
+.actionSheetMenuItem:hover .material-icons {
+  color: #fff !important;
+}
+
+/* "Cancel" / destructive row at the bottom — separates from the list
+ * with a slightly thicker divider so it reads as its own group. */
+.actionSheetCancel,
+.actionSheetCancelButton {
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+  font-weight: 600 !important;
+  color: var(--accent-blue) !important;
+}
+
+/* ── Drawer nav items (left side panel) ──────────────────────────── *
+ * Same flow-not-pill rule as the action sheet, plus an Apple-style
+ * "selected" leading bar in blue. */
+
+.mainDrawer .navMenuOption,
+.navMenuOption {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0.85em 1.4em !important;
+  position: relative !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease !important;
+}
+
+.navMenuOption:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #fff !important;
+}
+
+.navMenuOption.selected,
+.navMenuOption.navMenuOption-selected,
+.navMenuOption-selected {
+  background-color: var(--accent-blue-ghost) !important;
+  color: #fff !important;
+}
+
+/* Blue leading bar on the selected drawer item — iOS Mail / Notes
+ * sidebar pattern. */
+.navMenuOption.selected::before,
+.navMenuOption.navMenuOption-selected::before,
+.navMenuOption-selected::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 18% !important;
+  bottom: 18% !important;
+  width: 3px !important;
+  border-radius: 0 2px 2px 0 !important;
+  background-color: var(--accent-blue) !important;
+  box-shadow: 0 0 8px rgba(10, 132, 255, 0.55) !important;
+}
+
+.navMenuOption.selected .navMenuOptionIcon,
+.navMenuOption-selected .navMenuOptionIcon {
+  color: var(--accent-blue) !important;
+}
+
+/* Drawer "section" labels (Media / Administration / User) — small caps
+ * style for hierarchy */
+.navMenuDivider,
+.sidebarHeader,
+.navMenuSectionHeader {
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.42) !important;
+  padding: 1.2em 1.4em 0.4em !important;
+}
+
+/* Settings paper-list items — same flow-not-pill treatment as the
+ * action sheet. Rows inside the rounded settings group should NOT
+ * each have their own pill background. */
+.paperList .listItem,
+.serverList .listItem,
+.userList .listItem,
+.paperList.itemsContainer .listItem {
+  background-color: transparent !important;
+  background-image: none !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  margin: 0 !important;
+  padding: 0.95em 1.2em !important;
+}
+
+.paperList .listItem:last-child,
+.serverList .listItem:last-child,
+.userList .listItem:last-child,
+.paperList.itemsContainer .listItem:last-child {
+  border-bottom: 0 !important;
+}
+
+.paperList .listItem:hover,
+.serverList .listItem:hover,
+.userList .listItem:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Buttons that happen to live INSIDE an action sheet / popup menu
+ * (Jellyfin occasionally renders `.raised` buttons in there) should
+ * inherit the row treatment, NOT the chunky standalone-button look. */
+.actionSheet .raised,
+.actionsheetMenuOptions .raised,
+.popupMenu .raised,
+.menuOptions .raised {
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0.85em 1.1em !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────── *
+ * Three button families to handle:
+ *   1. `.button-submit` / `.raised` — primary, Apple-blue filled.
+ *   2. `.button-cancel` and generic `.raised:not(.button-submit)` —
+ *      translucent glass.
+ *   3. `.paper-icon-button-light` — icon-only, ghost glass on hover. */
+
+.button-submit,
+.raised.button-submit,
+button.raised.button-submit,
+.fab.primary,
+.detailButton-primary,
+button[is="emby-button"].button-submit {
+  background-color: var(--accent-blue) !important;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14),
+    rgba(255, 255, 255, 0) 60%
+  ) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 4px 14px rgba(10, 132, 255, 0.32),
+    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em !important;
+  transition:
+    transform 0.16s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.button-submit:hover:not(:disabled),
+.raised.button-submit:hover:not(:disabled),
+.fab.primary:hover:not(:disabled) {
+  background-color: #1c8eff !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 6px 20px rgba(10, 132, 255, 0.45),
+    0 2px 4px rgba(0, 0, 0, 0.35) !important;
+}
+
+.button-submit:active:not(:disabled),
+.raised.button-submit:active:not(:disabled) {
+  transform: translateY(0) scale(0.985) !important;
+}
+
+/* Secondary / cancel buttons — glass */
+.button-cancel,
+.raised:not(.button-submit):not(.button-flat),
+button.raised:not(.button-submit):not(.button-flat),
+button[is="emby-button"]:not(.button-submit):not(.button-flat) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-image: var(--border-color) !important;
+  background-blend-mode: overlay !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  transition:
+    transform 0.16s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.button-cancel:hover:not(:disabled),
+.raised:not(.button-submit):not(.button-flat):hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.11) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Flat / text buttons — no background, just blue tint on hover */
+.button-flat,
+button.button-flat {
+  background: transparent !important;
+  color: var(--accent-blue) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.button-flat:hover:not(:disabled) {
+  background-color: var(--accent-blue-ghost) !important;
+}
+
+/* FAB / circular utility buttons */
+.fab,
+button.fab {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Icon buttons app-wide — soft glass hover, blue active */
+.paper-icon-button-light {
+  border-radius: 50% !important;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .paper-icon-button-light:hover:not(:disabled) {
+    background-color: var(--hover-bg) !important;
+    color: var(--hover-text) !important;
+  }
+}
+
+/* ── Form controls ───────────────────────────────────────────────── *
+ * Inputs / textareas / selects all get a glass background with a
+ * subtle border and an Apple-blue focus ring. Toggles look like
+ * the iOS Settings switch.                                            */
+
+.emby-input,
+.emby-textarea,
+.emby-select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  background-color: rgba(255, 255, 255, 0.045) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
+  backdrop-filter: blur(10px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-pill) !important;
+  color: rgba(255, 255, 255, 0.96) !important;
+  padding: 0.7em 1.1em !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.95rem !important;
+  letter-spacing: -0.005em !important;
+  outline: none !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Multi-line text fields shouldn't be pills (they'd look like
+ * pill-shaped sausages with text in them). Override the radius only. */
+.emby-textarea,
+textarea {
+  border-radius: var(--radius-md) !important;
+}
+
+.emby-input::placeholder,
+.emby-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.42) !important;
+}
+
+.emby-input:focus,
+.emby-textarea:focus,
+.emby-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-blue) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 3px var(--accent-blue-ghost) !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Field labels */
+.fieldDescription,
+.inputContainer .fieldDescription,
+.fieldDescription[for] {
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-size: 0.82rem !important;
+}
+
+.inputLabel,
+label.inputLabel,
+.checkboxLabel {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500 !important;
+}
+
+/* Checkboxes — Apple blue when checked. The Jellyfin checkbox is a
+ * styled <input type="checkbox">; we restyle both the input and the
+ * label::before that some themes use. */
+input[type="checkbox"],
+.emby-checkbox {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 1.15em !important;
+  height: 1.15em !important;
+  border-radius: 0.32em !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease !important;
+  vertical-align: middle !important;
+}
+
+input[type="checkbox"]:checked,
+.emby-checkbox:checked {
+  background-color: var(--accent-blue) !important;
+  border-color: var(--accent-blue) !important;
+}
+
+input[type="checkbox"]:checked::after,
+.emby-checkbox:checked::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' d='M3.5 8.2 L6.8 11.5 L12.5 4.8'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 90% !important;
+}
+
+input[type="checkbox"]:focus-visible,
+.emby-checkbox:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-blue-ghost) !important;
+  outline: none !important;
+}
+
+/* Radio buttons */
+input[type="radio"],
+.emby-radio {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 1.15em !important;
+  height: 1.15em !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  cursor: pointer !important;
+  position: relative !important;
+  vertical-align: middle !important;
+}
+
+input[type="radio"]:checked,
+.emby-radio:checked {
+  border-color: var(--accent-blue) !important;
+}
+
+input[type="radio"]:checked::after,
+.emby-radio:checked::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 0.55em !important;
+  height: 0.55em !important;
+  border-radius: 50% !important;
+  background-color: var(--accent-blue) !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* iOS-style toggle switch — applies to any Jellyfin "toggle" pattern */
+.toggleButton,
+.mdl-switch__track,
+input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
+  /* Hint at how the toggle could be styled; Jellyfin's exact markup
+     for switches varies by page, so this is a soft baseline. */
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-radius: 999px !important;
+  transition: background-color 0.25s ease !important;
+}
+
+/* ── Cards & list items ─────────────────────────────────────────── *
+ * Library cards used to use a chunky 8px drop shadow on a solid
+ * #101010 background. Now they use the same translucent-glass surface
+ * as the rest of the UI — much softer, more "panel of light" than
+ * "panel of black". */
+
+.cardBox {
+  background-color: var(--card-bg) !important;
+  background-image: var(--border-color) !important;
+  background-blend-mode: overlay !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 8px 24px rgba(0, 0, 0, 0.32) !important;
+  padding: 1em !important;
+  overflow: hidden !important;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease !important;
+}
+
+.itemsContainer > .card > .cardBox:hover {
+  transform: translateY(-4px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 32px rgba(0, 0, 0, 0.42) !important;
+}
+
+.itemsContainer > .card > .cardBox:active {
+  transform: translateY(-2px) scale(0.992) !important;
+}
+
+.cardImageContainer {
+  border-radius: var(--radius-lg) !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Library / home buttons — same recipe */
+.homeLibraryButton {
+  background-color: var(--card-bg) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 8px 24px rgba(0, 0, 0, 0.32) !important;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease !important;
+}
+
+.homeLibraryButton:hover {
+  transform: translateY(-4px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 12px 32px rgba(0, 0, 0, 0.42) !important;
+}
+
+/* Indicators (now-playing, count, etc.) — small glass pills */
+.countIndicator,
+.fullSyncIndicator,
+.mediaSourceIndicator,
+.playedIndicator,
+.unplayedIndicator {
+  background-color: var(--indicator-bg) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32) !important;
+}
+
+.playedIndicator {
+  background-color: var(--accent-blue) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* ── Tabs & navigation ──────────────────────────────────────────── *
+ * Selected tab gets an Apple-blue underline (iOS Settings style)
+ * rather than the default Material Design ripple bar.                 */
+
+.emby-tab-button {
+  color: rgba(255, 255, 255, 0.55) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  transition: color 0.18s ease !important;
+  position: relative !important;
+  border: 0 !important;
+}
+
+.emby-tab-button:hover {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background-color: transparent !important;
+}
+
+/* Active tab — text goes white, underline goes blue. Jellyfin's
+ * default `active` styling paints a chunky gray pill behind the
+ * label; force the background back to transparent so only our
+ * underline reads as the "selected" affordance. */
+.emby-tab-button.emby-tab-button-active,
+.emby-tab-button[aria-selected="true"],
+.emby-tab-button.ui-btn-active {
+  color: #fff !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.emby-tab-button.emby-tab-button-active::after,
+.emby-tab-button[aria-selected="true"]::after,
+.emby-tab-button.ui-btn-active::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 22% !important;
+  right: 22% !important;
+  bottom: 0 !important;
+  height: 2.5px !important;
+  border-radius: 2px !important;
+  background-color: var(--accent-blue) !important;
+  box-shadow: 0 0 8px rgba(10, 132, 255, 0.55) !important;
+}
+
+/* Links inherit from their context (drawer items, card titles, etc.
+ * are all `<a>`s, so we deliberately do NOT recolor them globally —
+ * that would turn the whole nav blue). Only inline links inside body
+ * copy / overview text get the Apple-blue tint. */
+.overview a,
+.itemOverview a,
+.detailPageContent p a,
+.formDialogContent p a,
+.fieldDescription a {
+  color: var(--accent-blue) !important;
+  text-decoration: none !important;
+  transition: color 0.18s ease !important;
+}
+
+.overview a:hover,
+.itemOverview a:hover,
+.detailPageContent p a:hover,
+.formDialogContent p a:hover,
+.fieldDescription a:hover {
+  color: #1c8eff !important;
+}
+
+/* ── Non-OSD sliders & progress bars ─────────────────────────────── *
+ * Library cards, settings pages, etc. all use `<input type="range">`
+ * or Jellyfin's MDL sliders. The OSD has its own (more elaborate)
+ * styling — this block covers the rest of the UI so progress bars
+ * everywhere read as Apple blue. */
+
+.itemProgressBarForeground,
+.detailImageProgressContainer .itemProgressBarForeground,
+progress::-webkit-progress-value,
+progress::-moz-progress-bar {
+  background-color: var(--accent-blue) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 8px rgba(10, 132, 255, 0.4) !important;
+}
+
+.itemProgressBarBackground,
+progress {
+  background-color: var(--progress-track) !important;
+  border-radius: 999px !important;
+}
+
+/* ── Toasts ─────────────────────────────────────────────────────── */
+
+.toast {
+  border-radius: var(--radius-lg) !important;
+  padding: 0.9em 1.2em !important;
+  font-weight: 500 !important;
+}
+
+/* ── Tooltips ───────────────────────────────────────────────────── */
+
+.tooltip,
+[role="tooltip"] {
+  background-color: var(--w-color) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
+  color: #fff !important;
+  font-size: 0.82rem !important;
+  padding: 0.5em 0.95em !important;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28);
+  background-clip: content-box;
+}
+
+/* ── Focus rings (keyboard / accessibility) ─────────────────────── */
+
+:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--accent-blue-ghost) !important;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Detail page primary play / detail buttons ──────────────────── *
+ * `.layout-desktop .btnPlay` used to be a white pill; promote it to
+ * Apple-blue to match every other primary action. */
+
+.layout-desktop .btnPlay,
+.detailPagePrimaryContent .btnPlay,
+.btnPlay.detailButton {
+  background-color: var(--accent-blue) !important;
+  color: #fff !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 4px 14px rgba(10, 132, 255, 0.34) !important;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease !important;
+}
+
+.layout-desktop .btnPlay:hover,
+.detailPagePrimaryContent .btnPlay:hover,
+.btnPlay.detailButton:hover {
+  background-color: #1c8eff !important;
+  transform: translateX(4px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 6px 20px rgba(10, 132, 255, 0.45) !important;
+}
+
+/* ── Secondary detail buttons (favorite / mark watched / etc.) ─── */
+
+.detailButton-content,
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit) {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* ── Shutdown button — keep it red, dampen the glow ─────────────── */
+
+#btnShutdown {
+  background-color: #d04444 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 14px rgba(208, 68, 68, 0.32) !important;
+}
+
+#btnShutdown:hover {
+  background-color: #db5454 !important;
+}
+
+/* ── Paper-list (settings groups) ───────────────────────────────── */
+
+.paperList,
+.itemsContainer.paperList,
+.serverList .listItem,
+.userList .listItem {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+}
+
+/* List item rows inside paper-list — divider only, no chunky bg */
+.paperList .listItem,
+.serverList .listItem {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 0 !important;
+}
+
+.paperList .listItem:last-child,
+.serverList .listItem:last-child {
+  border-bottom: 0 !important;
+}
+
+/* ── Search bar (header search input) ───────────────────────────── */
+
+.searchFields input,
+.headerSearchInputContainer input {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  border-radius: 999px !important;
+  padding-left: 1em !important;
+}
+
+/* ── Misc small fixes ───────────────────────────────────────────── */
+
+/* H2 was over-bold globally; tune it down a tick to match SF's
+ * native weight scale */
+h2 {
+  font-weight: 600 !important;
+}
+
+/* Page titles */
+.pageTitle,
+.sectionTitle {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Material icons should follow the parent button's color rather
+ * than always being white, so blue primary buttons get blue-ish
+ * icons (they're white on blue, which is fine because the icon
+ * inherits `color`). This rule just lets Jellyfin's color cascade
+ * work without explicit colors being baked into icon styles. */
+.material-icons {
+  color: inherit !important;
 }
 

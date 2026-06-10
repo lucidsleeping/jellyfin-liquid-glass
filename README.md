@@ -1,15 +1,16 @@
-# Jellyfin Dark Glass Theme
+# Jellyfin Liquid Glass Theme
 
-A custom CSS theme for [Jellyfin](https://jellyfin.org) with frosted glass navigation, gradient borders, and a consistent black-and-white palette.
+A full-app CSS theme for [Jellyfin](https://jellyfin.org) modeled on Apple's Vision Pro / iOS liquid-glass language: translucent surfaces with live refraction, an Apple-blue accent, and Apple system typography — applied uniformly to the video player **and** the rest of the UI (settings, dialogs, menus, library cards, forms, etc.).
 
 ## Features
 
-- **Frosted glass UI** — blur on header, sidebar, action sheets, and now-playing bar
-- **Gradient borders** — subtle white edge highlights on cards and panels
-- **Split detail layout** — backdrop art on the right, metadata on the left (desktop)
-- **Card lift animations** — hover and active states on library cards
-- **Now playing bar** — floating glass bar with rotating album art ring
-- **Liquid-glass video player** — every control is its own floating glass circle: header buttons top-left; volume + cast + PiP + fullscreen top-right; just rewind / play-pause (oversize) / forward in the center; audio + subtitles + settings bottom-right; lifted scrubber pill with elapsed / remaining / "ends at" inline; soft blue accent on transport icons; fully responsive desktop ↔ mobile
+- **One design language, everywhere** — header, drawer, dialogs, action sheets, context menus, settings panels, forms, library cards, lists, tabs and the video player all share the same translucent glass recipe and Apple-blue accent.
+- **Live refracting video player** — every control is its own floating glass circle: header buttons top-left; AirPlay + Cast top-right; oversize rewind / play-pause / forward in the center; audio + subtitles + settings bottom-right; volume bottom-left; full-width scrubber pill with elapsed `1:09` · `[========]` · `-24:25` · *Ends at 10:42 PM* inline. Uses an inline SVG `<feDisplacementMap>` so the video pixels behind each button literally warp like glass refraction.
+- **Apple-blue accent system** — primary buttons, scrubber fill, slider thumbs (iOS-style pills, not dots), checkbox/radio fills, focus rings, tab indicators and progress bars are all `#0a84ff` (Apple system blue, dark-mode variant).
+- **iOS-style form controls** — checkboxes, radios, text inputs and selects rebuilt as glass surfaces with Apple-blue active/checked states and a soft blue glow focus ring.
+- **Apple system typography** — `-apple-system` / `SF Pro` first, Inter as fallback; tabular numerics for time-like text; tightened display tracking on headings.
+- **Refined cards** — the chunky 8px drop-shadow card aesthetic is replaced with the same translucent glass + soft lift used elsewhere.
+- **Fully responsive** — desktop ↔ tablet ↔ mobile breakpoints for both the player and the global UI.
 
 ## Installation
 
@@ -27,18 +28,28 @@ A custom CSS theme for [Jellyfin](https://jellyfin.org) with frosted glass navig
 
 ## Customization
 
-Edit the `:root` variables at the top of `jellyfin-liquid-glass.css`:
+Two token blocks at the top of `style.css` drive the whole theme:
 
 ```css
 :root {
-  --bg-color: rgb(24, 24, 24);       /* page background */
-  --w-color: #18181849;              /* glass panel fill */
-  --blur: blur(16px) saturate(180%); /* frost strength */
-  --card-gap: 1vw;                   /* grid gap between cards */
-  --hover-bg: rgba(255, 255, 255, 0.08);
-  --accent: rgba(255, 255, 255, 0.9); /* primary button fill */
+  /* ── Global UI tokens ─────────────────────────────── */
+  --bg-color: rgb(14, 14, 16);             /* page background */
+  --w-color: rgba(20, 20, 24, 0.42);       /* glass panel fill */
+  --blur: blur(22px) saturate(170%) brightness(102%);
+  --accent-blue: #0a84ff;                  /* the one accent  */
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --card-gap: 1vw;
+
+  /* ── Player-only tokens (further down) ────────────── */
+  --osd-pill-bg: rgba(255, 255, 255, 0.04);
+  --osd-pill-blur: url(/* SVG displacement filter */) blur(16px) saturate(170%) brightness(105%);
+  --osd-accent-blue: #0a84ff;
+  --osd-transport-size: 5.6em;             /* rewind / forward */
+  --osd-transport-large: 7.6em;            /* play / pause     */
 }
 ```
+
+Change `--accent-blue` to recolor every primary action, focus ring, tab indicator, progress bar and slider thumb in one shot. Change `--blur` to make the whole UI more or less frosted. Player sizing is independent of global sizing, so the OSD scales without affecting library cards.
 
 ## License
 
