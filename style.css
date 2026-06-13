@@ -233,7 +233,12 @@ option {
   --osd-right-edge: max(1.2em, env(safe-area-inset-right));
   --osd-left-edge: max(1.2em, env(safe-area-inset-left));
   --osd-btn-size: 2.6em;
-  --osd-btn-gap: 0.7em;
+  /* Visual gap between adjacent floating glass buttons. 0.85em reads
+     as evenly-spaced when the icons inside are mixed weights (chevron
+     vs. solid house vs. hamburger lines) — the previous 0.7em looked
+     uneven because the chevron's left-leaning optical centre pulled
+     the back-button toward its neighbour. */
+  --osd-btn-gap: 0.85em;
   /* Transport sizes are separate from --osd-btn-size so play/pause
      can stay visually dominant. Scrub-lift is DERIVED from the
      play/pause height so the scrubber pill always clears the
@@ -316,8 +321,32 @@ option {
   pointer-events: all !important;
 }
 
-.osdHeader .pageTitle {
+/* Kill every page-title variant Jellyfin might render inside the OSD
+   header. Different builds use different class names — `.pageTitle` is
+   the bare text, but many builds wrap it in `.pageTitleWithLogo`,
+   `.pageTitleWithDefaultLogo`, `.headerTitle`, or
+   `.headerTitleContainer` (these can render as a small pill with the
+   page name, e.g. "Start Page", floating between the back/home/menu
+   trio and the airplay/pip/fullscreen trio — the stray pill we want
+   to nuke). Cast a wide net so none of them ever bleed in. */
+.osdHeader .pageTitle,
+.osdHeader .pageTitleWithLogo,
+.osdHeader .pageTitleWithDefaultLogo,
+.osdHeader .headerTitle,
+.osdHeader .headerTitleContainer,
+.osdHeader .headerLeft .pageTitle,
+.osdHeader .headerTop > .pageTitle,
+.osdHeader .headerTop > h1,
+.osdHeader .headerTop > h2,
+.osdHeader .headerTop > h3 {
   display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Each header button is its own glass circle (size + base styles
@@ -649,63 +678,60 @@ option {
   font-size: 2.2em !important;
 }
 
-/* ── Top-right cluster: cast · pip · fullscreen (3 buttons) ──────
- * Glass painted INLINE here (not relying on the shared
- * `.videoOsdBottom .paper-icon-button-light` rule), because some
- * Jellyfin builds render these as `<button is="paper-icon-button-light">`
- * which doesn't pick up the class-based selector. Without inline glass
- * they fall back to small naked icons in the top-right corner. */
+/* ── Top-right cluster: cast button (alone) ─────────────────────
+ * AirPlay / PiP / Fullscreen are no-ops on this build (the buttons
+ * fire but nothing happens — Jellyfin can't reach them through the
+ * webview / browser policy). Hide them entirely and surface ONLY
+ * the cast button, sitting alone at the top-right corner so the
+ * pair of header rows reads:
+ *
+ *   [back · home · menu]                                  [cast]
+ *
+ * The cast button gets its glass surface from the shared
+ * `.osdHeader .headerButton` rule above; we only need the
+ * positioning + dimensions here. */
 
+/* Hard-hide the broken trio so they don't take up layout slots. */
 .videoOsdBottom .btnAirPlay,
 .videoOsdBottom .btnPip,
 .videoOsdBottom .btnFullscreen {
-  position: fixed !important;
-  top: var(--osd-top-edge) !important;
-  bottom: auto !important;
-  width: var(--osd-btn-size) !important;
-  height: var(--osd-btn-size) !important;
-  min-width: var(--osd-btn-size) !important;
-  max-width: var(--osd-btn-size) !important;
-  min-height: var(--osd-btn-size) !important;
-  max-height: var(--osd-btn-size) !important;
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
-  border-radius: 50% !important;
-  border: var(--osd-pill-border) !important;
-  border-image: none !important;
-  background-color: var(--osd-pill-bg) !important;
-  background-image: var(--osd-pill-highlight) !important;
-  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
-  backdrop-filter: var(--osd-pill-blur) !important;
-  box-shadow: var(--osd-pill-shadow) !important;
-  color: var(--osd-icon) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  box-sizing: border-box !important;
-  pointer-events: all !important;
-  z-index: 4 !important;
-  /* Match the shared glass-surface transition (back/home/menu use
-     the same triplet) so hover feels identical on both clusters. */
-  transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-.videoOsdBottom .btnFullscreen {
+/* Single cast button, pinned to the top-right corner so it mirrors
+   the back/home/menu cluster on the top-left. `position: fixed`
+   takes it out of `.osdHeader`'s flex flow so it doesn't crowd the
+   left cluster, and pins it to the viewport at the same vertical
+   offset as the left buttons (`--osd-top-edge`). */
+.osdHeader .headerCastButton,
+.osdHeader .btnCast,
+.osdHeader .headerButton.headerCastButton,
+.osdHeader .headerButton.btnCast,
+.osdHeader .paper-icon-button-light.headerCastButton,
+.osdHeader .paper-icon-button-light.btnCast {
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
   right: var(--osd-right-edge) !important;
+  bottom: auto !important;
+  left: auto !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+  pointer-events: all !important;
 }
 
-.videoOsdBottom .btnPip {
-  right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
-}
-
-.videoOsdBottom .btnAirPlay {
-  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
-}
-
-.videoOsdBottom .btnAirPlay .material-icons,
-.videoOsdBottom .btnPip .material-icons,
-.videoOsdBottom .btnFullscreen .material-icons {
+.osdHeader .headerCastButton .material-icons,
+.osdHeader .btnCast .material-icons {
   font-size: 1.2em !important;
   line-height: 1 !important;
 }
@@ -957,11 +983,13 @@ video::-webkit-media-text-track-background {
 /* ── Hover states (desktop only) ──────────────────────────────── */
 
 @media (hover: hover) and (pointer: fine) {
+  /* `.osdHeader .headerButton`/`.paper-icon-button-light` covers the
+     back/home/menu trio AND the lone cast button (which is also a
+     `.headerButton` — just absolutely positioned at top-right). The
+     old `.btnAirPlay/.btnPip/.btnFullscreen` hover entries were
+     dropped along with those buttons. */
   .osdHeader .headerButton:hover:not(:disabled),
   .osdHeader .paper-icon-button-light:hover:not(:disabled),
-  .videoOsdBottom .btnAirPlay:hover,
-  .videoOsdBottom .btnPip:hover,
-  .videoOsdBottom .btnFullscreen:hover,
   .videoOsdBottom .btnVideoOsdSettings:hover,
   .videoOsdBottom .btnAudio:hover,
   .videoOsdBottom .btnSubtitles:hover,
@@ -985,7 +1013,7 @@ video::-webkit-media-text-track-background {
 @media all and (max-width: 60em) {
   :root {
     --osd-btn-size: 2.4em;
-    --osd-btn-gap: 0.55em;
+    --osd-btn-gap: 0.7em;
     --osd-transport-size: 4.6em;
     --osd-transport-large: 6.2em;
   }
@@ -1000,7 +1028,7 @@ video::-webkit-media-text-track-background {
 @media all and (max-width: 42em) {
   :root {
     --osd-btn-size: 2.3em;
-    --osd-btn-gap: 0.4em;
+    --osd-btn-gap: 0.55em;
     --osd-transport-size: 3.8em;
     --osd-transport-large: 5em;
   }
@@ -1701,11 +1729,21 @@ h2 {
   border-radius: 0;
 }
 
-/* Header — hide music, search, profile, syncplay
- * (must beat .osdHeader .headerButton glass rule). SyncPlay is the
- * three-people icon Jellyfin renders in the OSD header on the right;
- * it's not a video-transport control and was bleeding into our
- * top-right cluster. */
+/* Header — hide music, search, profile, syncplay, remote
+ * (must beat .osdHeader .headerButton glass rule).
+ *
+ * SyncPlay is the three-people icon Jellyfin renders in the OSD header
+ * on the right; it's not a video-transport control and was bleeding
+ * into our top-right cluster.
+ *
+ * Cast (`.headerCastButton` / `.btnCast`) is INTENTIONALLY KEPT — it's
+ * the only working "send video elsewhere" affordance on this build.
+ * AirPlay / PiP / Fullscreen are the no-ops we hide further up
+ * (`.videoOsdBottom .btnAirPlay`/`.btnPip`/`.btnFullscreen`).
+ *
+ * Remote-control / screen-share helpers (`.btnRemoteControl`,
+ * `.btnScreenShare`) some Jellyfin builds add are still suppressed
+ * since they duplicate the cast button visually. */
 .skinHeader .headerButton.headerAudioPlayerButton,
 .skinHeader .headerButton.headerSearchButton,
 .skinHeader .headerButton.headerUserButton,
@@ -1730,6 +1768,12 @@ h2 {
 .osdHeader .headerSyncButton,
 .osdHeader .btnSyncPlay,
 .osdHeader .syncPlayButton,
+.osdHeader .headerRemoteButton,
+.osdHeader .headerButton.headerRemoteButton,
+.osdHeader .btnRemoteControl,
+.osdHeader .headerButton.btnRemoteControl,
+.osdHeader .btnScreenShare,
+.osdHeader .headerButton.btnScreenShare,
 .videoOsdBottom .btnSyncPlay,
 .videoOsdBottom .headerSyncButton {
   display: none !important;
