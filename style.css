@@ -189,40 +189,103 @@ option {
    *   3. A multi-stop diagonal gradient + inset rim-light that fakes
    *      the specular highlight you see when light hits curved glass,
    *      i.e. the "reflection" half of the request. */
-  --osd-pill-bg: rgba(255, 255, 255, 0.04);
+  /* === Physics-based Liquid-Glass refraction (kube.io recipe) =========
+   * The displacement map below is BAKED by `tools/generate-liquid-glass.py`,
+   * which implements the math from Maxime Bourgeois's kube.io article:
+   *
+   *   1. Surface profile — convex squircle, the same shape Apple uses:
+   *           h(x) = (1 − (1 − x)^4)^(1/4)         x ∈ [0, 1]
+   *      (x is the normalized distance from the rim of the glass; 0 at
+   *      the outer edge, 1 at the start of the flat interior.)
+   *
+   *   2. Surface normal — derivative of h, rotated 90°:
+   *           n(x) = (−h′(x), 1)
+   *
+   *   3. Snell-Descartes refraction with n₁ = 1 (air), n₂ = 1.5 (glass):
+   *           θ₁ = atan(h′(x))
+   *           θ₂ = asin(sin(θ₁) / 1.5)
+   *
+   *   4. Per-pixel displacement of an axially-incident ray:
+   *           d(x) = T · tan(θ₁ − θ₂)             T = glass thickness
+   *
+   *   5. The (Δx, Δy) vectors are projected radially outward from the
+   *      glass centre, then normalized to [-1, 1] and packed as RGBA:
+   *           R = 128 + (Δx / max|d|) · 127       (X-axis displacement)
+   *           G = 128 + (Δy / max|d|) · 127       (Y-axis displacement)
+   *           B = 128                              (ignored)
+   *           A = 255                              (opaque)
+   *      `<feDisplacementMap scale="24.3553">` then re-multiplies by max|d|
+   *      to recover the real pixel-shift in screen space.
+   *
+   * The result is REAL refraction (not a turbulence fake): each pixel is
+   * sampled from the position the bent light ray would actually have
+   * landed at, given the bezel's curvature and Snell's law.
+   *
+   * Bake parameters (edit + re-run the generator to retune):
+   *   size        256 × 256 px
+   *   bezel       18 px wide
+   *   thickness   22 px deep
+   *   max disp    24.3553 px  ← used as the <feDisplacementMap> `scale`
+   * ==================================================================== */
+  --liquid-glass-disp: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'><filter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'><feImage href='data:image/png;base64,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' x='0' y='0' width='100%25' height='100%25' preserveAspectRatio='none' result='disp'/><feDisplacementMap in='SourceGraphic' in2='disp' scale='24.3553' xChannelSelector='R' yChannelSelector='G'/></filter></svg>#g");
+  --liquid-glass-scale: 24.3553;
+  --osd-pill-bg: rgba(255, 255, 255, 0.012);
+  /* Specular highlight gradient — only the rim peaks (top-left ~18%,
+   * bottom-right ~10%) remain visible; the body of the pill is now
+   * effectively pure refracted video. The shape of the curve (sharp
+   * peak → near-zero centre → soft rear lift) is preserved — only
+   * the magnitudes were shrunk hard for max video visibility.
+   *
+   * Lineage:
+   *   v1  0.38 / 0.10 / 0.02  / 0.06 / 0.20   (designed look)
+   *   v2  0.28 / 0.07 / 0.015 / 0.04 / 0.14   ("more transparent")
+   *   v3  0.18 / 0.04 / 0.008 / 0.02 / 0.10   (current — "very visible") */
   --osd-pill-highlight: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.05) 22%,
-    rgba(255, 255, 255, 0.02) 55%,
-    rgba(255, 255, 255, 0.04) 78%,
+    rgba(255, 255, 255, 0.04) 14%,
+    rgba(255, 255, 255, 0.008) 48%,
+    rgba(255, 255, 255, 0.02) 80%,
     rgba(255, 255, 255, 0.10) 100%
   );
-  /* `url(...)` is an inline SVG turbulence + displacement-map filter.
-   * Applied to the backdrop layer of `backdrop-filter`, it warps the
-   * video pixels behind the button — that's the live refraction.
-   * Saturate / brightness / contrast then push the warped backdrop
-   * toward the vibrant "lit glass" look. */
+  /* Liquid refraction filter chain — uses the physics-based
+   * displacement map defined in `--liquid-glass-disp` above (real
+   * Snell-Descartes refraction baked from the convex-squircle
+   * surface), followed by a much GENTLER post-processing stack so
+   * the underlying video reads sharply through the chrome:
+   *   - blur(10px)       was 18px. Reduced so the video behind the
+   *                      pill is visibly sharp, not heavily frosted.
+   *                      The refraction warp still does the "glass"
+   *                      work; the blur is just a soft scatter pass.
+   *   - saturate(135%)   was 195%. Lower colour push keeps the video
+   *                      looking like itself, not like a Vision Pro
+   *                      poster. Just a touch of pop.
+   *   - brightness(103%) was 108%. Tiny lift so the glass doesn't
+   *                      darken the patch behind it.
+   *   - contrast(102%)   was 106%. Minimal tightening; the video's
+   *                      own contrast should dominate. */
   --osd-pill-blur:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-20%25' y='-20%25' width='140%25' height='140%25'><feTurbulence type='fractalNoise' baseFrequency='0.012' numOctaves='2' seed='4' result='t'/><feDisplacementMap in='SourceGraphic' in2='t' scale='14'/></filter></svg>#g")
-    blur(16px)
-    saturate(170%)
-    brightness(105%)
+    var(--liquid-glass-disp)
+    blur(10px)
+    saturate(135%)
+    brightness(103%)
     contrast(102%);
-  --osd-pill-border: 1px solid rgba(255, 255, 255, 0.14);
-  /* Layered insets form the curved-edge rim-light. Toned WAY down so
-   * the glass reads as transparent + neutral, not chalky white.
+  --osd-pill-border: 1px solid rgba(255, 255, 255, 0.07);
+  /* Layered insets recreate the bezel — now down to just the top
+   * rim and a whisper of side-rim. The bottom rim and inner glow
+   * are off (alpha 0); we don't need them when the pill is this
+   * transparent, they only re-introduce visible chrome.
    *
-   * NOTE: outer drop shadows were intentionally removed — they cast a
-   * dark halo around every circular button that read as a "weird
-   * shadow effect" against bright backdrops. Only inset rim-light
-   * remains, so each button reads as a piece of glass instead of a
-   * pill with a heavy ground shadow underneath. */
+   * Lineage of the top-rim alpha:
+   *   v1  0.45    (designed look — strong glass edge)
+   *   v2  0.34    ("more transparent")
+   *   v3  0.22    (current — "very visible") */
   --osd-pill-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
-    inset 1px 0 0 rgba(255, 255, 255, 0.07),
-    inset -1px 0 0 rgba(255, 255, 255, 0.04);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    inset -1px 0 0 rgba(255, 255, 255, 0.02),
+    inset 0 0 14px rgba(255, 255, 255, 0);
   --osd-icon: rgba(255, 255, 255, 0.88);
   /* Apple system blue (dark-mode variant) — used for the scrubber
    * fill, slider thumbs, and any "active / progress" affordance. */
@@ -389,7 +452,18 @@ option {
   font-size: 1rem !important;
 }
 
-/* Soft bottom vignette to give the scrubber pill contrast */
+/* Whisper-thin bottom vignette — just enough darkening (~12% at the
+ * very bottom) to anchor the time text against bright film footage.
+ * For all practical purposes the video shows through.
+ *
+ * Gradient-stop lineage:
+ *   v1  0.5  → 0.15 → 0   (designed look)
+ *   v2  0.26 → 0.06 → 0   ("more transparent")
+ *   v3  0.12 → 0.02 → 0   (current — "very visible")
+ *
+ * If you ever need to bring the chrome back, the only knobs that
+ * matter are these two stops + `--osd-pill-bg` and the top entry of
+ * `--osd-pill-shadow` higher up in :root. */
 .videoOsdBottom::before {
   content: "" !important;
   position: fixed !important;
@@ -400,8 +474,8 @@ option {
   pointer-events: none !important;
   background: linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.5) 0%,
-    rgba(0, 0, 0, 0.15) 55%,
+    rgba(0, 0, 0, 0.12) 0%,
+    rgba(0, 0, 0, 0.02) 55%,
     transparent 100%
   ) !important;
   z-index: -1 !important;
@@ -1908,11 +1982,22 @@ h2 {
 /* Header buttons — logo, hamburger, cast, search-result-back, etc.
  * Each becomes its own circular glass pill (same recipe as the OSD
  * floating buttons). */
-.skinHeader:not(.osdHeader) .headerButton,
-.skinHeader:not(.osdHeader) .paper-icon-button-light,
+/* IMPORTANT: every selector in this rule MUST exclude the buttons we
+ * intentionally hide further up (line ~1840 — SyncPlay, AudioPlayer,
+ * Search, User, RemoteControl, ScreenShare). Without these `:not()`
+ * exclusions, this glass-pill rule (specificity 0,3,0) BEATS the hide
+ * rule (specificity 0,2,0), forcing those buttons back to
+ * `display: inline-flex` with a `1px solid` border. The hidden buttons
+ * then render as ~2px-wide invisible border slivers that still occupy
+ * layout space, pushing the Cast button away from the top-right
+ * corner and creating uneven gaps in the right-side cluster. The
+ * `:not()` chain keeps the glass treatment scoped to genuinely visible
+ * header buttons only (Home, Menu, Back, Cast). */
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
 .skinHeader:not(.osdHeader) .headerHomeButton,
 .skinHeader:not(.osdHeader) .headerCastButton,
-.skinHeader:not(.osdHeader) a.headerButton {
+.skinHeader:not(.osdHeader) a.headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound) {
   background-color: rgba(255, 255, 255, 0.05) !important;
   background-image: linear-gradient(
     140deg,
@@ -1939,8 +2024,8 @@ h2 {
     transform 0.18s ease !important;
 }
 
-.skinHeader:not(.osdHeader) .headerButton:hover:not(:disabled),
-.skinHeader:not(.osdHeader) .paper-icon-button-light:hover:not(:disabled) {
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled) {
   background-color: rgba(255, 255, 255, 0.10) !important;
   transform: scale(1.05) !important;
   color: #fff !important;
@@ -2725,14 +2810,14 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
  *
  * The radius here is intentionally SHARPER than the rest of the UI
  * (which uses the fluid `--radius-lg = 2.2em` pill family). Apple
- * TV / Apple Music posters use a ~12-14px radius — sharp enough that
+ * TV / Apple Music posters use a ~10-12px radius — sharp enough that
  * the artwork still reads as a "poster" rather than a soft pebble.
  * Hard-coding the value (instead of touching the global token) lets
  * the rest of the UI stay fluid while cards become crisper. */
 .cardImageContainer,
 .cardImage,
 .cardPadder {
-  border-radius: 0.85em !important;
+  border-radius: 0.6em !important;
 }
 
 .cardImageContainer {
@@ -3295,26 +3380,160 @@ h3.sectionTitle,
   pointer-events: auto !important;
 }
 
-/* Floating play FAB — make it smaller + cleaner glass, matching
- * the OSD pill recipe but at half the visual weight. */
+/* ── Floating play FAB · Liquid Glass v2 ─────────────────────────────
+ * Same recipe as the OSD pills (refraction filter + multi-stop
+ * specular highlight + bezel rim-light) but tuned for the larger
+ * surface area of the FAB:
+ *   - 28px scale displacement is enough to be visible across a
+ *     ~3em-wide circle without distorting the underlying poster
+ *     into mush.
+ *   - The specular peak is a touch brighter (44% vs 38%) because
+ *     the FAB sits over the full poster instead of a darkened OSD
+ *     bar — it needs more rim-light to cut through.
+ *   - Stronger backdrop saturate (200%) + brightness (110%) mimic
+ *     the way Apple's Liquid Glass over photography is more vivid
+ *     than the same glass over a UI background. */
 .cardOverlayFab-primary {
-  background-color: rgba(255, 255, 255, 0.18) !important;
+  background-color: rgba(255, 255, 255, 0.10) !important;
   background-image: linear-gradient(
     140deg,
-    rgba(255, 255, 255, 0.30) 0%,
-    rgba(255, 255, 255, 0.08) 60%
+    rgba(255, 255, 255, 0.44) 0%,
+    rgba(255, 255, 255, 0.10) 16%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.06) 80%,
+    rgba(255, 255, 255, 0.24) 100%
   ) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
-  backdrop-filter: blur(18px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  /* Inset rim-light only — outer halo removed. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+  -webkit-backdrop-filter:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-30%25' y='-30%25' width='160%25' height='160%25'><feTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='1' seed='3' result='t'/><feGaussianBlur in='t' stdDeviation='1.2' result='tb'/><feDisplacementMap in='SourceGraphic' in2='tb' scale='28'/><feGaussianBlur stdDeviation='0.4'/></filter></svg>#g")
+    blur(20px)
+    saturate(200%)
+    brightness(110%)
+    contrast(106%) !important;
+  backdrop-filter:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-30%25' y='-30%25' width='160%25' height='160%25'><feTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='1' seed='3' result='t'/><feGaussianBlur in='t' stdDeviation='1.2' result='tb'/><feDisplacementMap in='SourceGraphic' in2='tb' scale='28'/><feGaussianBlur stdDeviation='0.4'/></filter></svg>#g")
+    blur(20px)
+    saturate(200%)
+    brightness(110%)
+    contrast(106%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.50),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 16px rgba(255, 255, 255, 0.06) !important;
   color: #fff !important;
+  transition:
+    background-color 0.2s ease,
+    transform 0.18s ease,
+    box-shadow 0.2s ease !important;
 }
 
 .cardOverlayFab-primary:hover {
-  background-color: rgba(255, 255, 255, 0.28) !important;
-  transform: scale(1.05) !important;
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  transform: scale(1.06) !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.10),
+    inset 1px 0 0 rgba(255, 255, 255, 0.18),
+    inset -1px 0 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 18px rgba(255, 255, 255, 0.08) !important;
+}
+
+.cardOverlayFab-primary:active {
+  transform: scale(0.98) !important;
+}
+
+/* ── Card overlay action-button ROW · centred bottom rail ───────────
+ * Jellyfin emits the ✓ ❤ ⋮ trio inside `.cardOverlayButton-br`, a
+ * `position: absolute; right: 0; bottom: 0` container that packs them
+ * tightly into the bottom-right corner. Combined with the centred
+ * play FAB above it that reads as off-balance — centred big circle
+ * on top, right-clumped tiny circles below. Stretch the row to span
+ * the full card width and `justify-content: center` so the trio
+ * sits directly under the FAB, giving the overlay a clean vertical
+ * axis:
+ *
+ *      [   centred play FAB   ]
+ *      ─────────────────────────
+ *           [✓]  [♥]  [⋮]      ← centred instead of corner-stuck
+ *
+ * `gap` (instead of per-button margin) keeps the spacing identical
+ * regardless of how many buttons Jellyfin chooses to render (some
+ * card variants emit 2, some emit 4). A small bottom inset lifts the
+ * row off the very edge so the inset rim-light on each glass disc
+ * isn't clipped by the card's border-radius. */
+.cardOverlayContainer .cardOverlayButton-br {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0.5em !important;
+  justify-content: center !important;
+  gap: 0.45em !important;
+  padding: 0 0.6em !important;
+}
+
+/* ── Card overlay action icons (✓ ❤ ⋮) · Liquid Glass v2 ─────────────
+ * The individual small buttons inside the centred row above. We
+ * promote each to a small glass disc matching the OSD pill recipe
+ * (no SVG displacement filter — the buttons are too small for the
+ * warp to read; plain blur + saturate gives crisper text).
+ *
+ * IMPORTANT: every selector MUST exclude `.cardOverlayFab-primary`
+ * (the big centred play button). The FAB is ALSO a
+ * `.paper-icon-button-light`, so without the exclusion this rule
+ * shrinks it to 2.4em and clobbers its dedicated styling further
+ * down. Same trick we used for the header buttons. */
+.cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary),
+.cardOverlayContainer button.paper-icon-button-light:not(.cardOverlayFab-primary),
+.cardOverlayContainer .cardOverlayButton:not(.cardOverlayFab-primary),
+.cardOverlayContainer .cardOverlayButton-hover:not(.cardOverlayFab-primary) {
+  width: 2.2em !important;
+  height: 2.2em !important;
+  min-width: 2.2em !important;
+  border-radius: 50% !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(106%) !important;
+  backdrop-filter: blur(16px) saturate(180%) brightness(106%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 10px rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  /* `margin: 0` because `.cardOverlayButton-br` above now controls
+     spacing via `gap`. Per-button margin would compound. */
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.2s ease !important;
+}
+
+.cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary):hover:not(:disabled),
+.cardOverlayContainer button.paper-icon-button-light:not(.cardOverlayFab-primary):hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important;
+  transform: scale(1.08) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 12px rgba(255, 255, 255, 0.06) !important;
+}
+
+.cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary):active:not(:disabled) {
+  transform: scale(0.96) !important;
+}
+
+.cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary) .material-icons,
+.cardOverlayContainer button.paper-icon-button-light:not(.cardOverlayFab-primary) .material-icons {
+  font-size: 1.1em !important;
+  line-height: 1 !important;
 }
 
 /* Card grid spacing · Apple TV uses generous horizontal padding +
@@ -3331,4 +3550,3 @@ h3.sectionTitle,
   transform: translateY(-2px) !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
 }
-
