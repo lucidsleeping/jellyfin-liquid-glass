@@ -26,7 +26,7 @@
  * ────────────────────────────────────────────────────────────────── */
 :root {
   /* Surfaces */
-  --bg-color: rgb(14, 14, 16);
+  --bg-color: #000;
   --w-color: rgba(20, 20, 24, 0.42);
   --card-bg: rgba(20, 20, 24, 0.46);
   --indicator-bg: rgba(20, 20, 24, 0.72);
@@ -282,6 +282,13 @@ option {
   position: relative !important;
   z-index: 4 !important;
   transition: opacity 0.3s ease-out !important;
+  /* Anchor the em context so every `--osd-*` token (button size,
+     gaps, edges) computes IDENTICALLY here and inside `.videoOsdBottom`.
+     Without this, `.skinHeader` inherits Jellyfin's smaller base
+     font-size and the left cluster (back/home/menu) ends up a few
+     pixels smaller and offset from the right cluster (airplay/pip/
+     fullscreen) which lives in the body-rooted em context. */
+  font-size: 1rem !important;
 }
 
 /* No top vignette — the header buttons stand on their own glass. */
@@ -342,6 +349,11 @@ option {
   background: none !important;
   pointer-events: none !important;
   display: block !important;
+  /* Pinned em context — see matching note on `.skinHeader-withBackground.osdHeader`.
+     Both containers MUST share the same font-size so the OSD tokens
+     (`--osd-btn-size`, `--osd-btn-gap`, `--osd-top-edge`, etc.) yield
+     the same pixel values on the top-left and top-right clusters. */
+  font-size: 1rem !important;
 }
 
 /* Soft bottom vignette to give the scrubber pill contrast */
@@ -674,7 +686,9 @@ option {
   box-sizing: border-box !important;
   pointer-events: all !important;
   z-index: 4 !important;
-  transition: background-color 0.2s ease, transform 0.18s ease !important;
+  /* Match the shared glass-surface transition (back/home/menu use
+     the same triplet) so hover feels identical on both clusters. */
+  transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
 }
 
 .videoOsdBottom .btnFullscreen {
@@ -793,7 +807,9 @@ option {
   box-sizing: border-box !important;
   pointer-events: all !important;
   z-index: 4 !important;
-  transition: background-color 0.2s ease, transform 0.18s ease !important;
+  /* Same transition triplet as the top-right and shared glass-surface
+     rules — keeps hover behaviour identical across every OSD button. */
+  transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
 }
 
 .videoOsdBottom .btnVideoOsdSettings {
@@ -1779,27 +1795,214 @@ h2 {
   border-radius: var(--radius-lg) !important;
 }
 
-/* Top header / left drawer — different rules: edge-to-edge, no chunky
- * outer shadow (they sit against the viewport edge), and MUCH more
- * transparent so the backdrop actually shows through. */
+/* ── Top header: invisible bar, FLOATING buttons ───────────────────── *
+ *
+ * Same pattern as the video-player OSD: the bar itself is fully
+ * transparent — no background, no blur, no shadow, no border. The
+ * elements INSIDE it (logo, hamburger, cast button, tab pills) each
+ * get their own floating glass surface, so the header reads as a row
+ * of separate liquid-glass pieces hovering over the backdrop instead
+ * of one continuous chrome strip.
+ *
+ * The drawer (left sidebar) is unchanged — it's a panel, not a strip,
+ * so it keeps its frosted glass background.
+ * ────────────────────────────────────────────────────────────────── */
 .skinHeader:not(.osdHeader),
 .skinHeader.semiTransparent:not(.osdHeader),
-.mainDrawer {
-  background-color: rgba(14, 14, 16, 0.32) !important;
+.skinHeader.semiTransparent:not(.osdHeader)::before,
+.skinHeader-withBackground:not(.osdHeader) {
+  background-color: transparent !important;
   background-image: none !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  backdrop-filter: var(--blur) !important;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border: 0 !important;
-  box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    0 1px 0 rgba(0, 0, 0, 0.2) !important;
+  border-image: none !important;
+  box-shadow: none !important;
   color: rgba(255, 255, 255, 0.92) !important;
+  /* The floating buttons inside need room — without the bar to hide
+   * clipping, the header's default `overflow: hidden` + tight height
+   * was chopping the tops of the pills off. Give the header generous
+   * vertical padding and let shadows render outside its box. */
+  overflow: visible !important;
+  padding-top: 0.55em !important;
+  padding-bottom: 0.55em !important;
+  min-height: 3.6em !important;
 }
 
+/* Same `overflow: visible` to the immediate inner row(s) — Jellyfin's
+ * structure varies but these are the usual culprits. */
+.skinHeader:not(.osdHeader) > *,
+.skinHeader:not(.osdHeader) .headerTop,
+.skinHeader:not(.osdHeader) .headerTabs,
+.skinHeader:not(.osdHeader) .emby-tabs,
+.skinHeader:not(.osdHeader) .emby-tabs-slider,
+.skinHeader:not(.osdHeader) .header-content {
+  overflow: visible !important;
+  align-items: center !important;
+}
+
+/* Drawer · Apple TV sidebar. Very nearly transparent so it reads as
+ * a thin vertical rail blended into the black backdrop, with just a
+ * hairline boundary on the right edge for separation. No drop
+ * shadow, no border — Apple sidebars are flat against the window
+ * background. */
 .mainDrawer {
+  background-color: rgba(0, 0, 0, 0.55) !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: blur(40px) saturate(140%) !important;
+  backdrop-filter: blur(40px) saturate(140%) !important;
+  border: 0 !important;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  padding-top: 0.4em !important;
+}
+
+/* Header buttons — logo, hamburger, cast, search-result-back, etc.
+ * Each becomes its own circular glass pill (same recipe as the OSD
+ * floating buttons). */
+.skinHeader:not(.osdHeader) .headerButton,
+.skinHeader:not(.osdHeader) .paper-icon-button-light,
+.skinHeader:not(.osdHeader) .headerHomeButton,
+.skinHeader:not(.osdHeader) .headerCastButton,
+.skinHeader:not(.osdHeader) a.headerButton {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 50% !important;
   box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.06),
-    1px 0 0 rgba(0, 0, 0, 0.2) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  width: 2.4em !important;
+  height: 2.4em !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  transition:
+    background-color 0.18s ease,
+    transform 0.18s ease !important;
+}
+
+.skinHeader:not(.osdHeader) .headerButton:hover:not(:disabled),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  transform: scale(1.05) !important;
+  color: #fff !important;
+}
+
+/* Back button explicitly hidden — the user navigates via the drawer
+ * and the floating buttons. The header back-arrow is redundant noise. */
+.skinHeader:not(.osdHeader) .headerBackButton,
+.skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+.skinHeader:not(.osdHeader) .btnBack,
+.skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* The Jellyfin LOGO link in the header (image + "Jellyfin" wordmark)
+ * shouldn't be wrapped in a circle — let it sit as a wider pill. */
+.skinHeader:not(.osdHeader) .headerHomeButton,
+.skinHeader:not(.osdHeader) a.headerLogoButton,
+.skinHeader:not(.osdHeader) .headerButton:has(.pageTitleWithLogo) {
+  width: auto !important;
+  height: 2.4em !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0 1em !important;
+}
+
+/* Hide Jellyfin's server-name wordmark / page title in the header
+ * ("Jellyfin-Docker" etc.). Different Jellyfin builds use different
+ * class names, so cast a wide net. We intentionally do NOT hide
+ * `.pageTitle` globally — that class is also used for in-page
+ * headings outside the header. */
+.skinHeader:not(.osdHeader) .pageTitleWithDefaultLogo,
+.skinHeader:not(.osdHeader) .pageTitleWithLogo,
+.skinHeader:not(.osdHeader) .headerTitle,
+.skinHeader:not(.osdHeader) .headerTitleContainer,
+.skinHeader:not(.osdHeader) .pageTitle {
+  display: none !important;
+}
+
+/* Header tabs (Home / Favorites etc.) become floating glass capsules
+ * sitting on top of the (now-invisible) header. */
+.skinHeader:not(.osdHeader) .emby-tabs,
+.skinHeader:not(.osdHeader) .headerTabs {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.skinHeader:not(.osdHeader) .emby-tab-button,
+.skinHeader:not(.osdHeader) button.emby-tab-button {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0.45em 1.4em !important;
+  margin: 0 0.25em !important;
+  min-height: 0 !important;
+  height: auto !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.005em !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease !important;
+}
+
+.skinHeader:not(.osdHeader) .emby-tab-button:hover {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Active header tab — subtle translucent Apple blue tint with blue
+ * border. Much thinner than before, in line with the new glass
+ * recipe (no chunky drop shadow). */
+.skinHeader:not(.osdHeader) .emby-tab-button.emby-tab-button-active,
+.skinHeader:not(.osdHeader) .emby-tab-button[aria-selected="true"],
+.skinHeader:not(.osdHeader) .emby-tab-button.ui-btn-active {
+  background-color: rgba(10, 132, 255, 0.14) !important;
+  border-color: rgba(10, 132, 255, 0.48) !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 10px rgba(10, 132, 255, 0.22) !important;
+}
+
+.skinHeader:not(.osdHeader) .emby-tab-button.emby-tab-button-active::after,
+.skinHeader:not(.osdHeader) .emby-tab-button[aria-selected="true"]::after,
+.skinHeader:not(.osdHeader) .emby-tab-button.ui-btn-active::after {
+  display: none !important;
 }
 
 /* Action sheet titles / dialog headers */
@@ -1936,59 +2139,96 @@ h2 {
   color: var(--accent-blue) !important;
 }
 
+/* Group dividers between logical sections inside an action sheet
+ * (Jellyfin renders these as `<hr>` or `.actionSheetDivider`).
+ * The defaults render as chunky gray bars; render them as a single
+ * hairline so they match the per-row dividers. */
+.actionSheet hr,
+.actionSheet .actionSheetDivider,
+.actionsheetMenuOptions hr,
+.actionsheetMenuOptions .actionSheetDivider,
+.popupMenu hr,
+.menuOptions hr {
+  appearance: none !important;
+  border: 0 !important;
+  height: 1px !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  margin: 0.3em 1.1em !important;
+  padding: 0 !important;
+}
+
 /* ── Drawer nav items (left side panel) ──────────────────────────── *
  * Same flow-not-pill rule as the action sheet, plus an Apple-style
  * "selected" leading bar in blue. */
 
+/* Drawer rows · Apple TV / macOS sidebar pattern.
+ *
+ * Apple's sidebars in macOS Tahoe / Apple TV use a filled translucent
+ * rounded-rect for the selected item (NOT a leading blue bar). The
+ * pill is inset from both edges of the sidebar with a small
+ * horizontal margin so it reads as a "card" inside the rail. Icons
+ * and labels both stay white — the highlight does the selection
+ * communication, not a color shift.
+ *
+ * Rows themselves have tighter vertical padding (Apple's sidebars
+ * are denser than ours was) and a smaller font.
+ *
+ * The blue leading bar from the previous iteration is explicitly
+ * unset via `::before { content: none }`. */
 .mainDrawer .navMenuOption,
 .navMenuOption {
   background-color: transparent !important;
   background-image: none !important;
-  border-radius: 0 !important;
+  border-radius: var(--radius-md) !important;
   border: 0 !important;
-  margin: 0 !important;
-  padding: 0.85em 1.4em !important;
+  margin: 0.08em 0.5em !important;
+  padding: 0.55em 0.9em !important;
   position: relative !important;
   font-family: var(--font-sans) !important;
+  font-size: 0.92rem !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
-  color: rgba(255, 255, 255, 0.82) !important;
+  color: rgba(255, 255, 255, 0.78) !important;
   transition:
     background-color 0.16s ease,
     color 0.16s ease !important;
 }
 
 .navMenuOption:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
   color: #fff !important;
 }
 
 .navMenuOption.selected,
 .navMenuOption.navMenuOption-selected,
 .navMenuOption-selected {
-  background-color: var(--accent-blue-ghost) !important;
+  background-color: rgba(255, 255, 255, 0.10) !important;
   color: #fff !important;
 }
 
-/* Blue leading bar on the selected drawer item — iOS Mail / Notes
- * sidebar pattern. */
+/* Kill the leading blue bar from the previous design — the rounded
+ * fill IS the selection indicator now. */
 .navMenuOption.selected::before,
 .navMenuOption.navMenuOption-selected::before,
 .navMenuOption-selected::before {
-  content: "" !important;
-  position: absolute !important;
-  left: 0 !important;
-  top: 18% !important;
-  bottom: 18% !important;
-  width: 3px !important;
-  border-radius: 0 2px 2px 0 !important;
-  background-color: var(--accent-blue) !important;
-  box-shadow: 0 0 8px rgba(10, 132, 255, 0.55) !important;
+  content: none !important;
+  display: none !important;
 }
 
 .navMenuOption.selected .navMenuOptionIcon,
 .navMenuOption-selected .navMenuOptionIcon {
-  color: var(--accent-blue) !important;
+  color: #fff !important;
+}
+
+/* Icons in drawer rows — slightly muted by default, full white on
+ * hover/selected (Apple TV pattern: monochrome icon column). */
+.navMenuOption .navMenuOptionIcon {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 1.15em !important;
+}
+
+.navMenuOption:hover .navMenuOptionIcon {
+  color: #fff !important;
 }
 
 /* Drawer "section" labels (Media / Administration / User) — small caps
@@ -2032,13 +2272,39 @@ h2 {
   background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
-/* Buttons that happen to live INSIDE an action sheet / popup menu
- * (Jellyfin occasionally renders `.raised` buttons in there) should
- * inherit the row treatment, NOT the chunky standalone-button look. */
-.actionSheet .raised,
-.actionsheetMenuOptions .raised,
-.popupMenu .raised,
-.menuOptions .raised {
+/* Strip ALL button chrome from anything inside a menu / action sheet
+ * / popup, regardless of which Jellyfin component renders it.
+ *
+ * Jellyfin builds menu rows out of `<button is="emby-button">`, and
+ * sometimes `.raised`, sometimes `.button-flat`, sometimes just plain
+ * `<button>`. Every one of them was picking up either my standalone
+ * glass-button styling or Jellyfin's default Material Design button
+ * background, making each row look like an individual floating pill
+ * inside the container.
+ *
+ * SPECIFICITY NOTE: the standalone-button rule above is
+ *   `.raised:not(.button-submit):not(.button-flat)` — specificity
+ *   (0, 3, 0). To beat it, every selector below uses an extra
+ *   `:not(.button-submit):not(.button-flat)` chain (matching the
+ *   same exclusions but raising specificity to at least (0, 4, 0) or
+ *   higher). Without this trick the row glass background leaks back
+ *   in even with `!important`. */
+.actionSheet button:not(.button-submit):not(.button-flat),
+.actionSheet .raised:not(.button-submit):not(.button-flat),
+.actionSheet button[is="emby-button"]:not(.button-submit):not(.button-flat),
+.actionSheet .actionSheetMenuItem:not(.button-submit):not(.button-flat),
+.actionsheetMenuOptions button:not(.button-submit):not(.button-flat),
+.actionsheetMenuOptions .raised:not(.button-submit):not(.button-flat),
+.actionsheetMenuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat),
+.actionsheetMenuOptions .actionSheetMenuItem:not(.button-submit):not(.button-flat),
+.popupMenu button:not(.button-submit):not(.button-flat),
+.popupMenu .raised:not(.button-submit):not(.button-flat),
+.popupMenu button[is="emby-button"]:not(.button-submit):not(.button-flat),
+.menuOptions button:not(.button-submit):not(.button-flat),
+.menuOptions .raised:not(.button-submit):not(.button-flat),
+.menuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat),
+.dialogContainer .actionSheet > button,
+.dialogContainer .actionSheet > div > button {
   background-color: transparent !important;
   background-image: none !important;
   -webkit-backdrop-filter: none !important;
@@ -2047,9 +2313,32 @@ h2 {
   border-radius: 0 !important;
   box-shadow: none !important;
   padding: 0.85em 1.1em !important;
+  margin: 0 !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.96rem !important;
   font-weight: 500 !important;
+  letter-spacing: -0.005em !important;
+  color: rgba(255, 255, 255, 0.92) !important;
   text-align: left !important;
   justify-content: flex-start !important;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease !important;
+}
+
+.actionSheet button:not(.button-submit):not(.button-flat):hover:not(:disabled),
+.actionSheet .raised:not(.button-submit):not(.button-flat):hover:not(:disabled),
+.actionSheet .actionSheetMenuItem:not(.button-submit):not(.button-flat):hover,
+.actionsheetMenuOptions button:not(.button-submit):not(.button-flat):hover:not(:disabled),
+.popupMenu button:not(.button-submit):not(.button-flat):hover:not(:disabled),
+.menuOptions button:not(.button-submit):not(.button-flat):hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: #fff !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* ── Buttons ────────────────────────────────────────────────────── *
@@ -2130,17 +2419,26 @@ button[is="emby-button"]:not(.button-submit):not(.button-flat) {
   transform: translateY(-1px) !important;
 }
 
-/* Flat / text buttons — no background, just blue tint on hover */
+/* Flat / text buttons — transparent, inherit text color from parent.
+ *
+ * IMPORTANT: we deliberately do NOT paint these blue. Jellyfin uses
+ * `.button-flat` for a huge variety of components — section titles,
+ * "view all >" links, dialog cancel buttons, drawer items, etc.
+ * Coloring them blue globally turned every section heading
+ * ("Recently Added in T.Movies") into a hyperlink-looking blue
+ * banner, which is wrong. Components that genuinely WANT blue can
+ * opt-in via the cancel button / link rules further down. */
 .button-flat,
 button.button-flat {
   background: transparent !important;
-  color: var(--accent-blue) !important;
+  color: inherit !important;
   border: none !important;
   box-shadow: none !important;
 }
 
 .button-flat:hover:not(:disabled) {
-  background-color: var(--accent-blue-ghost) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #fff !important;
 }
 
 /* FAB / circular utility buttons */
@@ -2342,39 +2640,99 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
  * as the rest of the UI — much softer, more "panel of light" than
  * "panel of black". */
 
+/* ── Cards · Apple TV / iOS poster style ─────────────────────────── *
+ *
+ * The `.cardBox` wrapper is INVISIBLE — no background, no border, no
+ * padding, no shadow. Only the poster image carries the rounded
+ * corners and the soft drop shadow. The title text flows underneath
+ * as naked text on the page background. This kills the "bloated card
+ * with a chunky border + inner padding" look and matches the
+ * Apple-TV / App-Store / Plex aesthetic where a card is just a
+ * poster plus a title.
+ *
+ * We use `background: none !important` (longhand) plus explicit
+ * resets so this wins over the legacy `linear-gradient(... padding-box,
+ * ... border-box)` rule above as well as Jellyfin's defaults.
+ * ────────────────────────────────────────────────────────────────── */
 .cardBox {
-  background-color: var(--card-bg) !important;
-  background-image: var(--border-color) !important;
-  background-blend-mode: overlay !important;
-  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
-  backdrop-filter: blur(16px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 8px 24px rgba(0, 0, 0, 0.32) !important;
-  padding: 1em !important;
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  transition: none !important;
+}
+
+/* Hover/active no longer lift the whole card box (since it has no
+ * chrome). The lift is on the image instead — see below. */
+.itemsContainer > .card > .cardBox:hover,
+.itemsContainer > .card > .cardBox:active {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* The poster image is the visual anchor — give it the radius and
+ * the only drop shadow on the card. Hovering the card lifts the
+ * image, not the wrapper.
+ *
+ * The radius here is intentionally SHARPER than the rest of the UI
+ * (which uses the fluid `--radius-lg = 2.2em` pill family). Apple
+ * TV / Apple Music posters use a ~12-14px radius — sharp enough that
+ * the artwork still reads as a "poster" rather than a soft pebble.
+ * Hard-coding the value (instead of touching the global token) lets
+ * the rest of the UI stay fluid while cards become crisper. */
+.cardImageContainer,
+.cardImage,
+.cardPadder {
+  border-radius: 0.85em !important;
+}
+
+.cardImageContainer {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42) !important;
   overflow: hidden !important;
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease !important;
 }
 
-.itemsContainer > .card > .cardBox:hover {
+.card:hover .cardImageContainer,
+.itemsContainer > .card:hover .cardImageContainer {
   transform: translateY(-4px) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 12px 32px rgba(0, 0, 0, 0.42) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55) !important;
 }
 
-.itemsContainer > .card > .cardBox:active {
+.card:active .cardImageContainer {
   transform: translateY(-2px) scale(0.992) !important;
 }
 
-.cardImageContainer {
-  border-radius: var(--radius-lg) !important;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
+/* Title + secondary text under the image — clean, no padding bloat,
+ * proper Apple typography weight + size. Use top margin (not
+ * cardBox padding) to space them away from the image. */
+.cardText,
+.cardBox .cardText {
+  padding: 0 !important;
+  margin-top: 0.55em !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.008em !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  line-height: 1.25 !important;
+  text-align: center !important;
+}
+
+.cardText-secondary,
+.cardBox .cardText-secondary {
+  margin-top: 0.15em !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  color: rgba(235, 235, 245, 0.55) !important;
+  letter-spacing: -0.003em !important;
 }
 
 /* Library / home buttons — same recipe */
@@ -2592,15 +2950,75 @@ progress {
     0 6px 20px rgba(10, 132, 255, 0.45) !important;
 }
 
-/* ── Secondary detail buttons (favorite / mark watched / etc.) ─── */
+/* ── Secondary detail buttons (favorite / mark watched / etc.) ─── *
+ * The row next to `Play` (shuffle, mark-watched, favourite, …) was
+ * rendering as flat rounded squares — no border-radius, no gradient,
+ * no shadow, no hover — clashing hard with the glowing blue pill on
+ * its left and the circular glass buttons in the header. Promote
+ * them to circular glass pills so the entire `.mainDetailButtons`
+ * row reads as one consistent set: [blue Play pill] · [glass circle]
+ * · [glass circle] · [glass circle] · [glass circle] · [glass circle]. */
 
-.detailButton-content,
+/* Row alignment — keep every button vertically centered so the Play
+   pill and the circular icon buttons share a single baseline. */
+.mainDetailButtons {
+  align-items: center !important;
+}
+
+/* Inner wrapper Jellyfin emits for every `.detailButton` (icon + text
+   children). It used to receive its own glass fill, doubling the
+   surface on top of the outer button. Make it a passthrough so only
+   the outer button paints the glass. */
+.detailButton-content {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
 .mainDetailButtons .raised:not(.btnPlay):not(.button-submit) {
   background-color: rgba(255, 255, 255, 0.06) !important;
+  background-image: var(--border-color) !important;
+  background-blend-mode: overlay !important;
   -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
   backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  /* `--radius-pill` (999px) renders as a perfect circle on the
+     icon-only secondary buttons (which Jellyfin sizes square) and as
+     a stadium pill on any future text-bearing button — the shape
+     adapts to the content without ever showing sharp corners. */
+  border-radius: var(--radius-pill) !important;
   color: rgba(255, 255, 255, 0.92) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  transition:
+    transform 0.16s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease !important;
+}
+
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit):hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 14px rgba(0, 0, 0, 0.32) !important;
+}
+
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit):active:not(:disabled) {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* Active / "is favourited" state for the heart toggle — Apple-blue
+   filled to mirror the Play pill's accent, so the row reads as
+   "primary action + selected toggles + neutral toggles". */
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit).btnUserRating-on,
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit) .ratingbutton-icon-withrating,
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit) .ratingbutton-withrating {
+  color: var(--accent-blue) !important;
 }
 
 /* ── Shutdown button — keep it red, dampen the glow ─────────────── */
@@ -2658,12 +3076,40 @@ h2 {
   font-weight: 600 !important;
 }
 
-/* Page titles */
+/* Page titles + section headings ("Recently Added in T.Movies"). They
+ * are sometimes rendered as `<button class="sectionTitleTextButton
+ * button-flat">` for the "view all >" affordance — force them to
+ * white text so they don't read like hyperlinks. */
 .pageTitle,
-.sectionTitle {
+.sectionTitle,
+.sectionTitleTextButton,
+button.sectionTitleTextButton,
+a.sectionTitleTextButton,
+h2.sectionTitle,
+h3.sectionTitle,
+.sectionTitleContainer .sectionTitle,
+.sectionTitleContainer h2,
+.sectionTitleContainer h3 {
   font-family: var(--font-display) !important;
   font-weight: 600 !important;
   letter-spacing: -0.02em !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  background: transparent !important;
+  text-decoration: none !important;
+}
+
+.sectionTitleTextButton:hover,
+button.sectionTitleTextButton:hover,
+a.sectionTitleTextButton:hover {
+  color: #fff !important;
+  background-color: transparent !important;
+}
+
+/* The little `>` chevron next to clickable section titles — subdued */
+.sectionTitleTextButton .material-icons,
+.sectionTitleContainer .material-icons {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 1.2em !important;
 }
 
 /* Material icons should follow the parent button's color rather
@@ -2673,5 +3119,180 @@ h2 {
  * work without explicit colors being baked into icon styles. */
 .material-icons {
   color: inherit !important;
+}
+
+/* ───────────────────────────────────────────────────────────────── *
+ *  APPLE TV INSPIRATION PASS
+ *
+ *  Final coat of paint to push the home grid toward the Apple TV
+ *  app on macOS: pure-black canvas, edge-flush thin progress lines
+ *  on poster cards, hover-only overlay actions, refined section
+ *  headings with a chevron, and tighter card grid spacing.
+ * ───────────────────────────────────────────────────────────────── */
+
+/* Section headings — Apple TV's "Continue Watching ›" pattern.
+ * Slightly smaller (Apple's are ~17px display weight), tighter
+ * tracking, with the chevron sitting right next to the text rather
+ * than detached. We override the earlier rules so we land at the
+ * Apple-app sizing instead of the older heavier display look. */
+.sectionTitle,
+h2.sectionTitle,
+h3.sectionTitle,
+.sectionTitleContainer .sectionTitle,
+.sectionTitleContainer h2,
+.sectionTitleContainer h3 {
+  font-size: 1.18rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.018em !important;
+  color: #fff !important;
+  margin: 0 !important;
+}
+
+/* Section heading sits in the SAME inset gutter as the card row
+ * underneath it ("Recently Added in T.Movies" should left-align with
+ * the first poster, not with the viewport edge). The card rows below
+ * use `padding-inline: 1.5vw` — we mirror that here so they line up.
+ *
+ * Top margin gives breathing room between rows, matching the Apple
+ * TV app where there's a clear gap between the end of one row's
+ * posters and the next section's heading. */
+.sectionTitleContainer,
+.verticalSection .sectionTitleContainer,
+.homeSectionsContainer .sectionTitleContainer {
+  align-items: center !important;
+  gap: 0.18em !important;
+  margin: 1.6em 0 0.7em !important;
+  padding-inline: 1.5vw !important;
+}
+
+.sectionTitleTextButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.1em !important;
+  padding: 0 !important;
+  font-size: 1.18rem !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+.sectionTitleTextButton .material-icons,
+.sectionTitleContainer .material-icons {
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-size: 1.05em !important;
+  font-weight: 600 !important;
+  margin-left: -0.05em !important;
+  transition: color 0.16s ease, transform 0.16s ease !important;
+}
+
+.sectionTitleTextButton:hover .material-icons {
+  color: #fff !important;
+  transform: translateX(2px) !important;
+}
+
+/* Card progress bar · Apple TV uses a thin (~3px) bar flush along
+ * the bottom edge of the thumbnail, with a transparent track and a
+ * solid fill. No padding, no margin, no rounded pill chrome — it is
+ * literally just a line. We override the earlier (chunky, blurred,
+ * padded) `.innerCardFooter > .itemProgressBar` rule. */
+.innerCardFooter > .itemProgressBar,
+.innerCardFooter .itemProgressBar {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 3px !important;
+  width: 100% !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  overflow: hidden !important;
+}
+
+.innerCardFooter .itemProgressBarForeground,
+.innerCardFooter > .itemProgressBar .itemProgressBarForeground {
+  background-color: var(--accent-blue) !important;
+  border-radius: 0 !important;
+  height: 100% !important;
+  box-shadow: none !important;
+}
+
+/* The footer block itself sits at the bottom of the image and is
+ * the anchor for the thin progress line. Make sure it actually
+ * stretches edge-to-edge so the bar isn't inset. */
+.innerCardFooter {
+  background: none !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+}
+
+/* Card overlay buttons · hidden until hover, Apple TV style.
+ *
+ * The cluster of checkmark / heart / dots / play buttons that
+ * Jellyfin paints on top of each thumbnail clutters the grid. Apple
+ * TV reveals them only on hover, with a soft dark gradient fade-in
+ * over the bottom of the poster. We mimic that: invisible at rest,
+ * fade in on hover with a small upward slide. */
+.cardOverlayContainer {
+  background-color: transparent !important;
+  background-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0) 60%
+  ) !important;
+  opacity: 0 !important;
+  transition: opacity 0.22s ease !important;
+  pointer-events: none !important;
+}
+
+.card:hover .cardOverlayContainer,
+.cardBox:hover .cardOverlayContainer {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Floating play FAB — make it smaller + cleaner glass, matching
+ * the OSD pill recipe but at half the visual weight. */
+.cardOverlayFab-primary {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.30) 0%,
+    rgba(255, 255, 255, 0.08) 60%
+  ) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 4px 14px rgba(0, 0, 0, 0.45) !important;
+  color: #fff !important;
+}
+
+.cardOverlayFab-primary:hover {
+  background-color: rgba(255, 255, 255, 0.28) !important;
+  transform: scale(1.05) !important;
+}
+
+/* Card grid spacing · Apple TV uses generous horizontal padding +
+ * comfortable gutters between thumbnails. */
+.itemsContainer.vertical-wrap,
+.scrollSlider {
+  gap: 1.6vw !important;
+}
+
+/* Reduce the chunky lift on hover so the lift is barely there —
+ * Apple TV's hover is a very subtle 2-3px float, not a 5px hop. */
+.card:hover .cardImageContainer,
+.itemsContainer > .card:hover .cardImageContainer {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
 }
 
