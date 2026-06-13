@@ -211,14 +211,18 @@ option {
     contrast(102%);
   --osd-pill-border: 1px solid rgba(255, 255, 255, 0.14);
   /* Layered insets form the curved-edge rim-light. Toned WAY down so
-   * the glass reads as transparent + neutral, not chalky white. */
+   * the glass reads as transparent + neutral, not chalky white.
+   *
+   * NOTE: outer drop shadows were intentionally removed — they cast a
+   * dark halo around every circular button that read as a "weird
+   * shadow effect" against bright backdrops. Only inset rim-light
+   * remains, so each button reads as a piece of glass instead of a
+   * pill with a heavy ground shadow underneath. */
   --osd-pill-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     inset 0 -1px 0 rgba(255, 255, 255, 0.06),
     inset 1px 0 0 rgba(255, 255, 255, 0.07),
-    inset -1px 0 0 rgba(255, 255, 255, 0.04),
-    0 1px 2px rgba(0, 0, 0, 0.45),
-    0 8px 26px rgba(0, 0, 0, 0.34);
+    inset -1px 0 0 rgba(255, 255, 255, 0.04);
   --osd-icon: rgba(255, 255, 255, 0.88);
   /* Apple system blue (dark-mode variant) — used for the scrubber
    * fill, slider thumbs, and any "active / progress" affordance. */
@@ -1184,18 +1188,17 @@ video::-webkit-media-text-track-background {
     var(--border-color) border-box;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
-  box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3);
+  /* Outer drop shadow removed — the rule further down with the new
+     glass recipe handles `box-shadow` (inset rim-light only). */
   transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .homeLibraryButton:hover {
   transform: translateY(-5px);
-  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .homeLibraryButton:active {
   transform: translateY(-15px);
-  box-shadow: 12px 12px 20px rgba(0, 0, 0, 0.3);
 }
 
 .fab:focus,
@@ -1921,9 +1924,9 @@ h2 {
   backdrop-filter: blur(16px) saturate(160%) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 50% !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  /* Inset rim-light only — outer drop shadow removed so the button
+     doesn't cast a dark halo on bright backdrops. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
   width: 2.4em !important;
   height: 2.4em !important;
   padding: 0 !important;
@@ -2014,9 +2017,8 @@ h2 {
   color: rgba(255, 255, 255, 0.82) !important;
   font-weight: 600 !important;
   letter-spacing: -0.005em !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 2px 8px rgba(0, 0, 0, 0.22) !important;
+  /* Inset rim-light only — no outer halo. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
   transition:
     background-color 0.18s ease,
     color 0.18s ease,
@@ -2030,8 +2032,7 @@ h2 {
 }
 
 /* Active header tab — subtle translucent Apple blue tint with blue
- * border. Much thinner than before, in line with the new glass
- * recipe (no chunky drop shadow). */
+ * border. The blue glow is an intentional brand accent, kept. */
 .skinHeader:not(.osdHeader) .emby-tab-button.emby-tab-button-active,
 .skinHeader:not(.osdHeader) .emby-tab-button[aria-selected="true"],
 .skinHeader:not(.osdHeader) .emby-tab-button.ui-btn-active {
@@ -2406,10 +2407,11 @@ button[is="emby-button"].button-submit {
   ) !important;
   color: #fff !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  /* Inset rim-light + Apple-blue accent glow only. The dark drop
+     shadow that used to sit underneath was creating a halo, removed. */
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 4px 14px rgba(10, 132, 255, 0.32),
-    0 1px 2px rgba(0, 0, 0, 0.3) !important;
+    0 4px 14px rgba(10, 132, 255, 0.32) !important;
   font-weight: 600 !important;
   letter-spacing: -0.005em !important;
   transition:
@@ -2425,8 +2427,7 @@ button[is="emby-button"].button-submit {
   transform: translateY(-1px) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    0 6px 20px rgba(10, 132, 255, 0.45),
-    0 2px 4px rgba(0, 0, 0, 0.35) !important;
+    0 6px 20px rgba(10, 132, 255, 0.45) !important;
 }
 
 .button-submit:active:not(:disabled),
@@ -2446,9 +2447,8 @@ button[is="emby-button"]:not(.button-submit):not(.button-flat) {
   backdrop-filter: blur(14px) saturate(160%) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  /* Inset rim-light only — outer halo removed. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
   transition:
@@ -2493,9 +2493,8 @@ button.fab {
   backdrop-filter: blur(14px) saturate(160%) !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   color: #fff !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  /* Inset rim-light only — outer halo removed. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
 }
 
 /* Icon buttons app-wide — soft glass hover, blue active */
@@ -2786,9 +2785,8 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
   backdrop-filter: blur(16px) saturate(150%) !important;
   border: 1px solid rgba(255, 255, 255, 0.10) !important;
   border-radius: var(--radius-lg) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 8px 24px rgba(0, 0, 0, 0.32) !important;
+  /* Inset rim-light only — outer halo removed. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease !important;
@@ -2796,9 +2794,7 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 
 .homeLibraryButton:hover {
   transform: translateY(-4px) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 12px 32px rgba(0, 0, 0, 0.42) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
 }
 
 /* Indicators (now-playing, count, etc.) — small glass pills */
@@ -3033,9 +3029,8 @@ progress {
      adapts to the content without ever showing sharp corners. */
   border-radius: var(--radius-pill) !important;
   color: rgba(255, 255, 255, 0.92) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  /* Inset rim-light only — outer halo removed. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
   transition:
     transform 0.16s ease,
     background-color 0.2s ease,
@@ -3047,9 +3042,7 @@ progress {
   background-color: rgba(255, 255, 255, 0.12) !important;
   color: #fff !important;
   transform: translateY(-1px) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 4px 14px rgba(0, 0, 0, 0.32) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
 }
 
 .mainDetailButtons .raised:not(.btnPlay):not(.button-submit):active:not(:disabled) {
@@ -3314,9 +3307,8 @@ h3.sectionTitle,
   -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
   backdrop-filter: blur(18px) saturate(160%) !important;
   border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 4px 14px rgba(0, 0, 0, 0.45) !important;
+  /* Inset rim-light only — outer halo removed. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
   color: #fff !important;
 }
 
