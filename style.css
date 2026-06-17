@@ -1806,7 +1806,7 @@ h2 {
   border-radius: 0;
 }
 
-/* Header — hide music, search, profile, syncplay, remote
+/* Header — hide music, profile, syncplay, remote
  * (must beat .osdHeader .headerButton glass rule).
  *
  * SyncPlay is the three-people icon Jellyfin renders in the OSD header
@@ -1821,13 +1821,17 @@ h2 {
  * Remote-control / screen-share helpers (`.btnRemoteControl`,
  * `.btnScreenShare`) some Jellyfin builds add are still suppressed
  * since they duplicate the cast button visually. */
+/* NOTE on `.headerSearchButton`: deliberately omitted from this hide
+ * list. Search is a primary navigation affordance in the GLOBAL
+ * header (home / library / etc.), so it stays visible there. It IS
+ * still hidden in the `.osdHeader` (player view) block further down —
+ * you don't search while watching, and the OSD top-right needs to
+ * stay reserved for Cast. */
 .skinHeader .headerButton.headerAudioPlayerButton,
-.skinHeader .headerButton.headerSearchButton,
 .skinHeader .headerButton.headerUserButton,
 .skinHeader .headerButton.headerSyncButton,
 .skinHeader .headerButton.btnSyncPlay,
 .skinHeader .headerAudioPlayerButton,
-.skinHeader .headerSearchButton,
 .skinHeader .headerUserButton,
 .skinHeader .headerSyncButton,
 .skinHeader .btnSyncPlay,
@@ -1984,7 +1988,7 @@ h2 {
  * floating buttons). */
 /* IMPORTANT: every selector in this rule MUST exclude the buttons we
  * intentionally hide further up (line ~1840 — SyncPlay, AudioPlayer,
- * Search, User, RemoteControl, ScreenShare). Without these `:not()`
+ * User, RemoteControl, ScreenShare). Without these `:not()`
  * exclusions, this glass-pill rule (specificity 0,3,0) BEATS the hide
  * rule (specificity 0,2,0), forcing those buttons back to
  * `display: inline-flex` with a `1px solid` border. The hidden buttons
@@ -1992,12 +1996,13 @@ h2 {
  * layout space, pushing the Cast button away from the top-right
  * corner and creating uneven gaps in the right-side cluster. The
  * `:not()` chain keeps the glass treatment scoped to genuinely visible
- * header buttons only (Home, Menu, Back, Cast). */
-.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
-.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
+ * header buttons only (Home, Menu, Search, Cast). */
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
 .skinHeader:not(.osdHeader) .headerHomeButton,
 .skinHeader:not(.osdHeader) .headerCastButton,
-.skinHeader:not(.osdHeader) a.headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound) {
+.skinHeader:not(.osdHeader) .headerSearchButton,
+.skinHeader:not(.osdHeader) a.headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound) {
   background-color: rgba(255, 255, 255, 0.05) !important;
   background-image: linear-gradient(
     140deg,
@@ -2024,8 +2029,9 @@ h2 {
     transform 0.18s ease !important;
 }
 
-.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
-.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled) {
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
+.skinHeader:not(.osdHeader) .headerSearchButton:hover:not(:disabled) {
   background-color: rgba(255, 255, 255, 0.10) !important;
   transform: scale(1.05) !important;
   color: #fff !important;
