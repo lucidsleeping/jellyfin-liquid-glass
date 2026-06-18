@@ -148,9 +148,13 @@ option {
   border-width: 1px;
 }
 
-/* Hidden elements */
-.selectVideoContainer {
-  display: none !important;
+/* Hidden elements — poster card in the side column is intentionally
+ * suppressed (backdrop is the hero). Original title duplicate hidden
+ * when a localized title is shown. Media tags, track selectors, cast,
+ * and misc info are restored + styled in the detail-page block below. */
+.layout-desktop .detailImageContainer .card,
+.layout-desktop .itemName.originalTitle {
+  display: none;
 }
 
 /* ── VIDEO PLAYER · LIQUID GLASS ───────────────────────────────────
@@ -1311,6 +1315,12 @@ video::-webkit-media-text-track-background {
   padding-inline: 1.5vw;
 }
 
+/* Horizontal carousels (cast row, library shelves) must not wrap. */
+.itemsContainer.scrollSlider {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+}
+
 .itemsContainer:not(.scrollSlider) {
   display: flex;
   flex-wrap: wrap;
@@ -1492,13 +1502,6 @@ html.preload.layout-desktop {
   100% {
     transform: scale(1.3) translateX(0);
   }
-}
-
-/* Hide unnecessary elements */
-.layout-desktop .detailImageContainer .card,
-.layout-desktop .itemTags,
-.layout-desktop .itemName.originalTitle {
-  display: none;
 }
 
 .layout-desktop .itemName,
@@ -3149,6 +3152,274 @@ progress {
   color: var(--accent-blue) !important;
 }
 
+/* ── Detail page · metadata, media stats, cast & crew ──────────── *
+ * Restores the hero metadata Jellyfin paints under the title:
+ * year/runtime/rating chips, video+audio track info (4K · HEVC · 5.1 ·
+ * Atmos), genre/director/writer rows, user tags, and the cast carousel.
+ * All surfaces use the same translucent glass pills as the header. */
+
+.itemDetailPage .detailPageSecondaryContainer,
+.itemDetailPage .detailPagePrimaryContainer,
+.itemDetailPage .detailPageWrapperContainer {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Primary + secondary misc-info rows (year, runtime, rating, etc.) */
+.itemDetailPage .itemMiscInfo {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.45em !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  margin-bottom: 0.65em !important;
+}
+
+/* Resolution / codec / channel badges and rating pills */
+.itemDetailPage .itemMiscInfo .mediaInfoItem,
+.itemDetailPage .itemMiscInfo .mediaInfoText,
+.itemDetailPage .itemMiscInfo .mediaInfoItem.mediainfo,
+.itemDetailPage .itemMiscInfo .mediaInfoItem.added {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  padding: 0.28em 0.72em !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+
+.itemDetailPage .itemMiscInfo .mediaInfoOfficialRating {
+  text-transform: uppercase !important;
+}
+
+.itemDetailPage .itemMiscInfo .starRatingContainer {
+  gap: 0.15em !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.itemDetailPage .itemMiscInfo .starIcon {
+  color: #f2b01e !important;
+}
+
+/* Jellyfin's VERSION / VIDEO / AUDIO / SUBTITLE dropdowns carry full
+ * encode-credit strings that truncate badly in pills. Hide them
+ * visually (kept in DOM for the marker script below) and render a
+ * compact `.detailMediaMarkers` chip row instead: 4K · 1080p · HDR ·
+ * 5.1 · Atmos · HEVC … */
+.itemDetailPage .trackSelections {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.itemDetailPage .detailMediaMarkers {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.45em !important;
+  overflow: visible !important;
+  margin: 0.55em 0 0.85em !important;
+}
+
+.itemDetailPage .detailMediaMarkers:empty {
+  display: none !important;
+  margin: 0 !important;
+}
+
+.itemDetailPage .detailMediaMarkers .mediaInfoItem {
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* If the marker script cannot run, fall back to the raw track row
+ * but without truncation or the VERSION label column. */
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  clip: auto !important;
+  clip-path: none !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.5em !important;
+  margin: 0.65em 0 1em !important;
+  pointer-events: auto !important;
+}
+
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .selectSourceContainer,
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .selectSubtitlesContainer {
+  display: none !important;
+}
+
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .selectContainer {
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  max-width: none !important;
+}
+
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .selectLabel {
+  display: none !important;
+}
+
+.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .emby-select {
+  width: max-content !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Genre line + tagline */
+.itemDetailPage .itemGenres,
+.itemDetailPage .tagline {
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.45 !important;
+}
+
+.itemDetailPage .itemGenres a,
+.itemDetailPage .tagline a {
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-decoration: none !important;
+}
+
+.itemDetailPage .itemGenres a:hover {
+  color: #fff !important;
+}
+
+/* User tags + external links */
+.itemDetailPage .itemTags,
+.itemDetailPage .itemExternalLinks {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.4em !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 0.9rem !important;
+  margin: 0.7em 0 !important;
+}
+
+.itemDetailPage .itemTags a,
+.itemDetailPage .itemExternalLinks a {
+  color: var(--accent-blue) !important;
+}
+
+/* Director / writer / studio / genre detail rows */
+.itemDetailPage .itemDetailsGroup {
+  margin-top: 1.1em !important;
+}
+
+.itemDetailPage .detailsGroupItem {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  gap: 0.35em 0.65em !important;
+  margin: 0 0 0.55em !important;
+  max-width: none !important;
+}
+
+.itemDetailPage .detailsGroupItem .label {
+  flex: 0 0 auto !important;
+  min-width: 5.25em !important;
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.48) !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+.itemDetailPage .detailsGroupItem .content,
+.itemDetailPage .detailsGroupItem .focuscontainer-x {
+  flex: 1 1 auto !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.95rem !important;
+}
+
+.itemDetailPage .detailsGroupItem .button-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.itemDetailPage .detailsGroupItem .button-link:hover {
+  color: #fff !important;
+}
+
+/* Cast & crew carousel */
+.itemDetailPage #castCollapsible,
+.itemDetailPage .detailVerticalSection {
+  position: relative !important;
+  z-index: 2 !important;
+  margin-top: 1.4em !important;
+}
+
+.itemDetailPage #castCollapsible .sectionTitle,
+.itemDetailPage .detailVerticalSection > .sectionTitle {
+  padding-inline: 1.5vw !important;
+  margin-bottom: 0.55em !important;
+}
+
+.itemDetailPage #castContent.itemsContainer {
+  padding-inline: 1.5vw !important;
+  padding-bottom: 0.35em !important;
+}
+
+/* Person tiles — portrait + name, no heavy card chrome */
+.itemDetailPage #castContent .personCard .cardBox {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.itemDetailPage #castContent .personCard .cardImageContainer,
+.itemDetailPage #castContent .personCard .cardContent {
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 6px 18px rgba(0, 0, 0, 0.28) !important;
+}
+
+.itemDetailPage #castContent .personCard .cardText {
+  padding: 0.45em 0 0 !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-align: center !important;
+}
+
+.itemDetailPage #castContent .personCard .cardText-secondary {
+  color: rgba(255, 255, 255, 0.52) !important;
+  font-size: 0.78rem !important;
+}
+
 /* ── Shutdown button — keep it red, dampen the glow ─────────────── */
 
 #btnShutdown {
@@ -3556,3 +3827,207 @@ h3.sectionTitle,
   transform: translateY(-2px) !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
 }
+
+/* ── Detail page media-marker chips (companion script) ─────────────
+ * Jellyfin's track dropdowns hold the real stream labels but read
+ * terribly as pills ("Encoded By …", truncated filenames). The
+ * script below parses those hidden selects and paints short badges
+ * (4K · 1080p · HDR · 5.1 · Atmos · HEVC …) into `.detailMediaMarkers`.
+ * Uses the standard Custom CSS style-tag breakout so it ships in one
+ * paste with the rest of this file. */
+</style><script>
+(function () {
+  'use strict';
+
+  var MARKER_ORDER = [
+    '4K', '2160P', 'UHD', 'DOLBY VISION', 'HDR10+', 'HDR10', 'HDR', 'SDR',
+    '1080P', '1440P', '720P', '480P',
+    'HEVC', 'H.265', 'AV1', 'H.264', 'VP9', 'MPEG-4',
+    '7.1', '6.1', '5.1', '2.0',
+    'ATMOS', 'TRUEHD', 'DTS-X', 'DTS-HD MA', 'DTS-HD', 'DTS',
+    'DD+', 'DDP', 'EAC3', 'AAC', 'FLAC', 'OPUS'
+  ];
+
+  var RULES = [
+    { key: 'DOLBY VISION', re: /\bdolby\s*vision\b/i },
+    { key: 'HDR10+', re: /\bhdr10\+\b/i },
+    { key: 'HDR10', re: /\bhdr10\b/i },
+    { key: 'HDR', re: /\bhdr\b/i },
+    { key: 'SDR', re: /\bsdr\b/i },
+    { key: '2160P', re: /\b2160p?\b/i },
+    { key: '4K', re: /\b4k\b/i },
+    { key: 'UHD', re: /\buhd\b/i },
+    { key: '1440P', re: /\b1440p?\b/i },
+    { key: '1080P', re: /\b1080p?\b/i },
+    { key: '720P', re: /\b720p?\b/i },
+    { key: '480P', re: /\b480p?\b/i },
+    { key: 'HEVC', re: /\bhevc\b/i },
+    { key: 'H.265', re: /\bh\.?265\b/i },
+    { key: 'AV1', re: /\bav1\b/i },
+    { key: 'H.264', re: /\bh\.?264\b/i },
+    { key: 'VP9', re: /\bvp9\b/i },
+    { key: 'MPEG-4', re: /\bmpeg-?4\b/i },
+    { key: '7.1', re: /\b7\.1\b/i },
+    { key: '6.1', re: /\b6\.1\b/i },
+    { key: '5.1', re: /\b5\.1\b/i },
+    { key: '2.0', re: /\b2\.0\b/i },
+    { key: 'ATMOS', re: /\batmos\b/i },
+    { key: 'TRUEHD', re: /\btruehd\b/i },
+    { key: 'DTS-X', re: /\bdts-?x\b/i },
+    { key: 'DTS-HD MA', re: /\bdts-?hd\s*ma\b/i },
+    { key: 'DTS-HD', re: /\bdts-?hd\b/i },
+    { key: 'DTS', re: /\bdts\b/i },
+    { key: 'DDP', re: /\bddp\b/i },
+    { key: 'DD+', re: /\bdd\+|e-?ac-?3\b/i },
+    { key: 'EAC3', re: /\beac3\b/i },
+    { key: 'AAC', re: /\baac\b/i },
+    { key: 'FLAC', re: /\bflac\b/i },
+    { key: 'OPUS', re: /\bopus\b/i }
+  ];
+
+  var scheduled = false;
+
+  function collectTrackText(page) {
+    var chunks = [];
+    page.querySelectorAll('.trackSelections select').forEach(function (sel) {
+      var opt = sel.options[sel.selectedIndex];
+      if (opt && opt.textContent) {
+        chunks.push(opt.textContent);
+      }
+    });
+    return chunks.join(' ');
+  }
+
+  function resolutionFromDimensions(text) {
+    var found = {};
+    var m = text.match(/\b(\d{3,4})\s*[x×]\s*(\d{3,4})\b/i);
+    if (!m) {
+      return found;
+    }
+    var w = parseInt(m[1], 10);
+    var h = parseInt(m[2], 10);
+    if (w >= 3800 || h >= 2000) {
+      found['4K'] = true;
+    } else if (w >= 2500 || h >= 1400) {
+      found['1440P'] = true;
+    } else if (w >= 1800 || h >= 1000) {
+      found['1080P'] = true;
+    } else if (w >= 1200 || h >= 700) {
+      found['720P'] = true;
+    } else if (w >= 700 || h >= 400) {
+      found['480P'] = true;
+    }
+    return found;
+  }
+
+  function extractMarkers(text) {
+    var found = resolutionFromDimensions(text);
+    RULES.forEach(function (rule) {
+      if (rule.re.test(text)) {
+        found[rule.key] = true;
+      }
+    });
+    if (found['HDR10+'] || found['HDR10']) {
+      delete found['HDR'];
+    }
+    if (found['DTS-HD MA'] || found['DTS-HD']) {
+      delete found['DTS'];
+    }
+    if (found['4K']) {
+      delete found['2160P'];
+      delete found['UHD'];
+    }
+    if (found['DDP']) {
+      delete found['DD+'];
+    }
+    return MARKER_ORDER.filter(function (key) {
+      return found[key];
+    });
+  }
+
+  function displayLabel(key) {
+    if (key === 'DDP') {
+      return 'DD+';
+    }
+    if (key === '2160P') {
+      return '2160p';
+    }
+    if (/^\d{3,4}P$/.test(key)) {
+      return key.toLowerCase();
+    }
+    if (key === 'ATMOS') {
+      return 'Atmos';
+    }
+    if (key === 'TRUEHD') {
+      return 'TrueHD';
+    }
+    if (key === 'DOLBY VISION') {
+      return 'Dolby Vision';
+    }
+    return key;
+  }
+
+  function renderMarkers(page, markers) {
+    var row = page.querySelector('.detailMediaMarkers');
+    if (!markers.length) {
+      if (row) {
+        row.remove();
+      }
+      return;
+    }
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'itemMiscInfo itemMiscInfo-secondary detailMediaMarkers';
+      var anchor = page.querySelector('.itemMiscInfo-primary');
+      if (anchor) {
+        anchor.insertAdjacentElement('afterend', row);
+      } else {
+        var ribbon = page.querySelector('.infoWrapper');
+        (ribbon || page.querySelector('.detailRibbon') || page).appendChild(row);
+      }
+    }
+    row.innerHTML = markers.map(function (m) {
+      return '<div class="mediaInfoItem mediaInfoText mediainfo">' + displayLabel(m) + '</div>';
+    }).join('');
+    row.classList.remove('hide');
+  }
+
+  function updateDetailMarkers() {
+    var page = document.querySelector('#itemDetailPage');
+    if (!page || page.classList.contains('hide')) {
+      return;
+    }
+    var markers = extractMarkers(collectTrackText(page));
+    renderMarkers(page, markers);
+  }
+
+  function scheduleUpdate() {
+    if (scheduled) {
+      return;
+    }
+    scheduled = true;
+    requestAnimationFrame(function () {
+      scheduled = false;
+      updateDetailMarkers();
+    });
+  }
+
+  document.addEventListener('viewshow', function () {
+    setTimeout(scheduleUpdate, 60);
+  });
+
+  document.addEventListener('pageshow', scheduleUpdate);
+
+  new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      var t = mutations[i].target;
+      if (t.closest && (t.closest('.trackSelections') || t.closest('#itemDetailPage'))) {
+        scheduleUpdate();
+        return;
+      }
+    }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  scheduleUpdate();
+})();
+</script>
