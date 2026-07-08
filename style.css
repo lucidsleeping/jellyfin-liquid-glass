@@ -1780,24 +1780,8 @@ html.preload.layout-desktop {
   background-color: var(--hover-bg);
 }
 
-/* Floating action button (FAB) for cards */
-.cardOverlayFab-primary {
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: var(--blur);
-  background:
-    linear-gradient(rgba(32, 32, 32, 0.1), rgba(32, 32, 32, 0.1)) padding-box,
-    var(--border-color) border-box;
-  background-color: rgba(255, 255, 255, 0.14);
-  border: 2px solid transparent;
-}
-
-.cardOverlayFab-primary:hover {
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.08)) padding-box,
-    var(--border-color) border-box;
-  background-color: rgba(255, 255, 255, 0.22);
-}
-
+/* Floating action button (FAB) for cards — full styling lives in the
+ * Apple TV inspiration pass further down (uses --osd-pill-* tokens). */
 /* Progress bars and inner card styles */
 .itemProgressBarForeground {
   background-color: var(--progress);
@@ -4017,13 +4001,36 @@ h3.sectionTitle,
 
 /* Card overlay buttons · hidden until hover, Apple TV style.
  *
- * The cluster of checkmark / heart / dots / play buttons that
- * Jellyfin paints on top of each thumbnail clutters the grid. Apple
- * TV reveals them only on hover, with a soft dark gradient fade-in
- * over the bottom of the poster. We mimic that: invisible at rest,
- * fade in on hover with a small upward slide. */
+ * Jellyfin fades BOTH `.cardOverlayContainer` and `.cardOverlayButton-hover`
+ * from `opacity: 0` with `background: transparent` — on hover the icons
+ * flash invisible-then-opaque before the glass paints. Hide the overlay
+ * with `visibility` instead and animate only the bottom gradient on
+ * `::before`. Buttons use the same `--osd-pill-*` glass as the player. */
 .cardOverlayContainer {
+  position: absolute !important;
+  inset: 0 !important;
+  background: none !important;
   background-color: transparent !important;
+  background-image: none !important;
+  opacity: 1 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: visibility 0s linear 0.18s !important;
+}
+
+.card:hover .cardOverlayContainer,
+.cardBox:hover .cardOverlayContainer,
+.card-hoverable:hover .cardOverlayContainer {
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transition: visibility 0s !important;
+}
+
+.cardOverlayContainer::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
   background-image: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.65) 0%,
@@ -4032,72 +4039,67 @@ h3.sectionTitle,
   opacity: 0 !important;
   transition: opacity 0.22s ease !important;
   pointer-events: none !important;
+  z-index: 0 !important;
 }
 
-.card:hover .cardOverlayContainer,
-.cardBox:hover .cardOverlayContainer {
+.card:hover .cardOverlayContainer::before,
+.cardBox:hover .cardOverlayContainer::before,
+.card-hoverable:hover .cardOverlayContainer::before {
   opacity: 1 !important;
-  pointer-events: auto !important;
 }
 
-/* ── Floating play FAB · Liquid Glass v2 ─────────────────────────────
- * Same recipe as the OSD pills (refraction filter + multi-stop
- * specular highlight + bezel rim-light) but tuned for the larger
- * surface area of the FAB:
- *   - 28px scale displacement is enough to be visible across a
- *     ~3em-wide circle without distorting the underlying poster
- *     into mush.
- *   - The specular peak is a touch brighter (44% vs 38%) because
- *     the FAB sits over the full poster instead of a darkened OSD
- *     bar — it needs more rim-light to cut through.
- *   - Stronger backdrop saturate (200%) + brightness (110%) mimic
- *     the way Apple's Liquid Glass over photography is more vivid
- *     than the same glass over a UI background. */
-.cardOverlayFab-primary {
-  background-color: rgba(255, 255, 255, 0.10) !important;
-  background-image: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.44) 0%,
-    rgba(255, 255, 255, 0.10) 16%,
-    rgba(255, 255, 255, 0.02) 50%,
-    rgba(255, 255, 255, 0.06) 80%,
-    rgba(255, 255, 255, 0.24) 100%
-  ) !important;
-  -webkit-backdrop-filter:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-30%25' y='-30%25' width='160%25' height='160%25'><feTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='1' seed='3' result='t'/><feGaussianBlur in='t' stdDeviation='1.2' result='tb'/><feDisplacementMap in='SourceGraphic' in2='tb' scale='28'/><feGaussianBlur stdDeviation='0.4'/></filter></svg>#g")
-    blur(20px)
-    saturate(200%)
-    brightness(110%)
-    contrast(106%) !important;
-  backdrop-filter:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='g' x='-30%25' y='-30%25' width='160%25' height='160%25'><feTurbulence type='fractalNoise' baseFrequency='0.008' numOctaves='1' seed='3' result='t'/><feGaussianBlur in='t' stdDeviation='1.2' result='tb'/><feDisplacementMap in='SourceGraphic' in2='tb' scale='28'/><feGaussianBlur stdDeviation='0.4'/></filter></svg>#g")
-    blur(20px)
-    saturate(200%)
-    brightness(110%)
-    contrast(106%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.24) !important;
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.50),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    inset 1px 0 0 rgba(255, 255, 255, 0.14),
-    inset -1px 0 0 rgba(255, 255, 255, 0.06),
-    inset 0 0 16px rgba(255, 255, 255, 0.06) !important;
-  color: #fff !important;
+/* Override Jellyfin's transparent-button fade — never touch layout
+ * (Jellyfin positions the FAB and action row with `position:absolute`). */
+.cardOverlayContainer .cardOverlayButton-hover:not(.cardOverlayFab-primary),
+.cardOverlayContainer .cardOverlayButton:not(.cardOverlayFab-primary),
+.card-hoverable:hover .cardOverlayButton-hover:not(.cardOverlayFab-primary) {
+  opacity: 1 !important;
+  padding: 0 !important;
   transition:
     background-color 0.2s ease,
     transform 0.18s ease,
-    box-shadow 0.2s ease !important;
+    box-shadow 0.2s ease,
+    color 0.18s ease !important;
+}
+
+.cardOverlayContainer .cardOverlayButtonIcon-hover,
+.cardOverlayContainer .cardOverlayButtonIcon {
+  background: transparent !important;
+  opacity: 1 !important;
+}
+
+/* Jellyfin centres the play FAB on the poster — keep that geometry. */
+.cardOverlayContainer > .cardOverlayFab-primary {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 3em !important;
+  height: 3em !important;
+  margin: -1.5em 0 0 -1.5em !important;
+  padding: 0 !important;
+  z-index: 2 !important;
+}
+
+/* ── Floating play FAB · same glass as player OSD pills ─────────── */
+.cardOverlayFab-primary {
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  color: var(--osd-icon) !important;
+  transition:
+    background-color 0.2s ease,
+    transform 0.18s ease,
+    box-shadow 0.2s ease,
+    color 0.18s ease !important;
 }
 
 .cardOverlayFab-primary:hover {
-  background-color: rgba(255, 255, 255, 0.18) !important;
+  background-color: var(--osd-pill-bg) !important;
+  color: var(--osd-icon-accent-strong) !important;
   transform: scale(1.06) !important;
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.58),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.10),
-    inset 1px 0 0 rgba(255, 255, 255, 0.18),
-    inset -1px 0 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 18px rgba(255, 255, 255, 0.08) !important;
 }
 
 .cardOverlayFab-primary:active {
@@ -4124,12 +4126,14 @@ h3.sectionTitle,
  * row off the very edge so the inset rim-light on each glass disc
  * isn't clipped by the card's border-radius. */
 .cardOverlayContainer .cardOverlayButton-br {
+  position: absolute !important;
   left: 0 !important;
   right: 0 !important;
   bottom: 0.5em !important;
   justify-content: center !important;
   gap: 0.45em !important;
   padding: 0 0.6em !important;
+  z-index: 2 !important;
 }
 
 /* ── Card overlay action icons (✓ ❤ ⋮) · Liquid Glass v2 ─────────────
@@ -4151,16 +4155,13 @@ h3.sectionTitle,
   height: 2.2em !important;
   min-width: 2.2em !important;
   border-radius: 50% !important;
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--osd-pill-bg) !important;
   background-image: var(--osd-pill-highlight) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(106%) !important;
-  backdrop-filter: blur(16px) saturate(180%) brightness(106%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 0 10px rgba(255, 255, 255, 0.04) !important;
-  color: rgba(255, 255, 255, 0.94) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+  color: var(--osd-icon) !important;
   /* `margin: 0` because `.cardOverlayButton-br` above now controls
      spacing via `gap`. Per-button margin would compound. */
   margin: 0 !important;
@@ -4168,8 +4169,10 @@ h3.sectionTitle,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
   transition:
-    background-color 0.18s ease,
+    background-color 0.2s ease,
     transform 0.18s ease,
     color 0.18s ease,
     box-shadow 0.2s ease !important;
@@ -4177,13 +4180,9 @@ h3.sectionTitle,
 
 .cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary):hover:not(:disabled),
 .cardOverlayContainer button.paper-icon-button-light:not(.cardOverlayFab-primary):hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.16) !important;
-  color: #fff !important;
+  background-color: var(--osd-pill-bg) !important;
+  color: var(--osd-icon-accent-strong) !important;
   transform: scale(1.08) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.46),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 12px rgba(255, 255, 255, 0.06) !important;
 }
 
 .cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary):active:not(:disabled) {
