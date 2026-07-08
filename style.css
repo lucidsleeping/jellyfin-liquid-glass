@@ -760,6 +760,58 @@ option {
   font-size: 2.2em !important;
 }
 
+/* ── Transport · WebGL liquid-glass lens (tools/osd-lens-glass.js) ── *
+ * Canvas samples the live <video> through the rounded-squircle shader.
+ * When WebGL/CORS fails, `.osd-lens-fallback` restores CSS backdrop glass. */
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-btn {
+  position: relative !important;
+  isolation: isolate !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04) !important;
+  overflow: hidden !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-btn.osd-lens-fallback {
+  background-color: var(--osd-pill-bg) !important;
+  background-image: var(--osd-pill-highlight) !important;
+  -webkit-backdrop-filter: var(--osd-pill-blur) !important;
+  backdrop-filter: var(--osd-pill-blur) !important;
+  border: var(--osd-pill-border) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-fallback .osd-lens-canvas {
+  display: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  pointer-events: auto !important;
+  z-index: 0 !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-btn .material-icons {
+  position: relative !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-btn > *:not(.osd-lens-canvas):not(.material-icons) {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
 /* ── Top-right cluster: cast button (alone) ─────────────────────
  * AirPlay / PiP / Fullscreen are no-ops on this build (the buttons
  * fire but nothing happens — Jellyfin can't reach them through the
@@ -1301,32 +1353,16 @@ video::-webkit-media-text-track-background {
   font-size: small;
 }
 
-/* Margin adjustments for overflow elements */
-.itemsContainer.vertical-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--card-gap);
-  padding-inline: 1.5vw;
-}
-
-.itemsContainer {
-  display: flex;
-  gap: var(--card-gap);
-  padding-inline: 1.5vw;
-}
-
-/* Horizontal carousels (cast row, library shelves) must not wrap. */
-.itemsContainer.scrollSlider {
-  flex-wrap: nowrap !important;
-  overflow-x: auto !important;
-}
-
-.itemsContainer:not(.scrollSlider) {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--card-gap);
-  padding-inline: 1.5vw;
-}
+/* ── Card containers: DO NOT restyle the layout engine ──────────
+ * Jellyfin's horizontal shelves (`.scrollSlider`) scroll by
+ * translating the slider and compute paging from native card
+ * margins. Forcing `display: flex` + `gap` + `overflow-x` here
+ * doubles the spacing (gap stacks on `.cardBox` margins), breaks
+ * the scroll math, and pushes cards off the viewport edge. Grids
+ * (`.vertical-wrap`) are already flex-wrap natively with
+ * percent-width cards; an added `gap` overflows rows and makes
+ * them wrap raggedly. Spacing stays native — only card visuals
+ * (image radius, shadow, text) are themed further down.          */
 
 /* Primary content styling */
 .detailPagePrimaryContainer {
@@ -3215,25 +3251,116 @@ progress {
   color: #f2b01e !important;
 }
 
-/* Jellyfin's VERSION / VIDEO / AUDIO / SUBTITLE dropdowns carry full
- * encode-credit strings that truncate badly in pills. Hide them
- * visually (kept in DOM for the marker script below) and render a
- * compact `.detailMediaMarkers` chip row instead: 4K · 1080p · HDR ·
- * 5.1 · Atmos · HEVC … */
+/* Track row → compact glass chips (no dropdown chevrons).
+ * Hides the VERSION filename + SUBTITLES rows; keeps VIDEO and AUDIO
+ * selects as read-only-looking pills. Jellyfin still opens the action
+ * sheet when a track is actually choosable — we just drop the arrow. */
 .itemDetailPage .trackSelections {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  clip-path: inset(50%) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
+  position: static !important;
+  right: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.45em !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  clip: auto !important;
+  clip-path: none !important;
+  margin: 0.55em 0 0.85em !important;
+  max-width: none !important;
+  pointer-events: auto !important;
+}
+
+.itemDetailPage .trackSelections .selectSourceContainer,
+.itemDetailPage .trackSelections .selectSubtitlesContainer {
+  display: none !important;
+}
+
+/* `:not()` guards keep this from resurrecting the VERSION/SUBTITLES
+ * rows above or anything Jellyfin itself hides with `.hide`. */
+.itemDetailPage .trackSelections .selectContainer:not(.selectSourceContainer):not(.selectSubtitlesContainer):not(.hide) {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  position: static !important;
+}
+
+.itemDetailPage .trackSelections .selectLabel,
+.itemDetailPage .trackSelections .selectArrowContainer,
+.itemDetailPage .trackSelections .selectArrow {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+  overflow: hidden !important;
   pointer-events: none !important;
 }
 
+.itemDetailPage .trackSelections .emby-select,
+.itemDetailPage .trackSelections .detailTrackSelect {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  display: inline-block !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0.28em 0.72em !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  line-height: 1.35 !important;
+  cursor: default !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-pill) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease !important;
+}
+
+.itemDetailPage .trackSelections .emby-select:not([disabled]) {
+  cursor: pointer !important;
+}
+
+.itemDetailPage .trackSelections .emby-select:not([disabled]):hover {
+  background-color: rgba(255, 255, 255, 0.10) !important;
+  color: #fff !important;
+}
+
+.itemDetailPage .trackSelections .emby-select:focus,
+.itemDetailPage .trackSelections .emby-select:focus-visible,
+.itemDetailPage .trackSelections .emby-select-focusscale:focus {
+  outline: none !important;
+  transform: none !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
+.itemDetailPage .trackSelections .emby-select[disabled] {
+  opacity: 1 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Optional marker row injected by tools/detail-markers.js */
 .itemDetailPage .detailMediaMarkers {
   display: flex !important;
   flex-wrap: wrap !important;
@@ -3253,43 +3380,18 @@ progress {
   letter-spacing: 0.04em !important;
 }
 
-/* If the marker script cannot run, fall back to the raw track row
- * but without truncation or the VERSION label column. */
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections {
-  position: static !important;
-  width: auto !important;
-  height: auto !important;
-  overflow: visible !important;
-  clip: auto !important;
-  clip-path: none !important;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 0.5em !important;
-  margin: 0.65em 0 1em !important;
-  pointer-events: auto !important;
-}
-
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .selectSourceContainer,
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .selectSubtitlesContainer {
-  display: none !important;
-}
-
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .selectContainer {
-  display: flex !important;
-  align-items: center !important;
+/* When the optional marker script runs, hide the raw track chips
+ * so you don't get duplicate 1080p / AAC labels. */
+.itemDetailPage:has(.detailMediaMarkers:not(:empty)) .trackSelections {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
   margin: 0 !important;
-  max-width: none !important;
-}
-
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .selectLabel {
-  display: none !important;
-}
-
-.itemDetailPage .detailPagePrimaryContent:not(:has(.detailMediaMarkers)) .trackSelections .emby-select {
-  width: max-content !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  white-space: nowrap !important;
+  padding: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Genre line + tagline */
@@ -3813,12 +3915,10 @@ h3.sectionTitle,
   line-height: 1 !important;
 }
 
-/* Card grid spacing · Apple TV uses generous horizontal padding +
- * comfortable gutters between thumbnails. */
-.itemsContainer.vertical-wrap,
-.scrollSlider {
-  gap: 1.6vw !important;
-}
+/* Card grid spacing stays native — Jellyfin computes shelf paging
+ * and grid wrapping from `.cardBox` margins, so we don't inject
+ * flex `gap` on `.itemsContainer` / `.scrollSlider` (doing so
+ * double-spaces cards and breaks the horizontal scroll math). */
 
 /* Reduce the chunky lift on hover so the lift is barely there —
  * Apple TV's hover is a very subtle 2-3px float, not a 5px hop. */
@@ -3828,206 +3928,409 @@ h3.sectionTitle,
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
 }
 
-/* ── Detail page media-marker chips (companion script) ─────────────
- * Jellyfin's track dropdowns hold the real stream labels but read
- * terribly as pills ("Encoded By …", truncated filenames). The
- * script below parses those hidden selects and paints short badges
- * (4K · 1080p · HDR · 5.1 · Atmos · HEVC …) into `.detailMediaMarkers`.
- * Uses the standard Custom CSS style-tag breakout so it ships in one
- * paste with the rest of this file. */
+
+/* WebGL transport lens — ships with style.css via Custom CSS breakout */
 </style><script>
+/**
+ * Liquid-glass lens for Jellyfin OSD transport buttons.
+ * Mirrors the reference WebGL setup (position attrib, iMouse, iChannel0)
+ * and samples the live <video> instead of a static image.
+ */
 (function () {
   'use strict';
 
-  var MARKER_ORDER = [
-    '4K', '2160P', 'UHD', 'DOLBY VISION', 'HDR10+', 'HDR10', 'HDR', 'SDR',
-    '1080P', '1440P', '720P', '480P',
-    'HEVC', 'H.265', 'AV1', 'H.264', 'VP9', 'MPEG-4',
-    '7.1', '6.1', '5.1', '2.0',
-    'ATMOS', 'TRUEHD', 'DTS-X', 'DTS-HD MA', 'DTS-HD', 'DTS',
-    'DD+', 'DDP', 'EAC3', 'AAC', 'FLAC', 'OPUS'
-  ];
+  var TRANSPORT_SELECTORS =
+    '.btnRewind, .btnFastForward, .btnPlayPause, .btnPause, .btnPlay';
 
-  var RULES = [
-    { key: 'DOLBY VISION', re: /\bdolby\s*vision\b/i },
-    { key: 'HDR10+', re: /\bhdr10\+\b/i },
-    { key: 'HDR10', re: /\bhdr10\b/i },
-    { key: 'HDR', re: /\bhdr\b/i },
-    { key: 'SDR', re: /\bsdr\b/i },
-    { key: '2160P', re: /\b2160p?\b/i },
-    { key: '4K', re: /\b4k\b/i },
-    { key: 'UHD', re: /\buhd\b/i },
-    { key: '1440P', re: /\b1440p?\b/i },
-    { key: '1080P', re: /\b1080p?\b/i },
-    { key: '720P', re: /\b720p?\b/i },
-    { key: '480P', re: /\b480p?\b/i },
-    { key: 'HEVC', re: /\bhevc\b/i },
-    { key: 'H.265', re: /\bh\.?265\b/i },
-    { key: 'AV1', re: /\bav1\b/i },
-    { key: 'H.264', re: /\bh\.?264\b/i },
-    { key: 'VP9', re: /\bvp9\b/i },
-    { key: 'MPEG-4', re: /\bmpeg-?4\b/i },
-    { key: '7.1', re: /\b7\.1\b/i },
-    { key: '6.1', re: /\b6\.1\b/i },
-    { key: '5.1', re: /\b5\.1\b/i },
-    { key: '2.0', re: /\b2\.0\b/i },
-    { key: 'ATMOS', re: /\batmos\b/i },
-    { key: 'TRUEHD', re: /\btruehd\b/i },
-    { key: 'DTS-X', re: /\bdts-?x\b/i },
-    { key: 'DTS-HD MA', re: /\bdts-?hd\s*ma\b/i },
-    { key: 'DTS-HD', re: /\bdts-?hd\b/i },
-    { key: 'DTS', re: /\bdts\b/i },
-    { key: 'DDP', re: /\bddp\b/i },
-    { key: 'DD+', re: /\bdd\+|e-?ac-?3\b/i },
-    { key: 'EAC3', re: /\beac3\b/i },
-    { key: 'AAC', re: /\baac\b/i },
-    { key: 'FLAC', re: /\bflac\b/i },
-    { key: 'OPUS', re: /\bopus\b/i }
-  ];
+  var FRAGMENT_SHADER = [
+    'precision mediump float;',
+    '',
+    'uniform vec3 iResolution;',
+    'uniform float iTime;',
+    'uniform vec4 iMouse;',
+    'uniform sampler2D iChannel0;',
+    'uniform vec4 iVideoRect;',
+    'uniform vec2 uCanvasOrigin;',
+    '',
+    'vec2 mapUV(vec2 canvasUV) {',
+    '  vec2 screen = uCanvasOrigin + canvasUV * iResolution.xy;',
+    '  return (screen - iVideoRect.xy) / iVideoRect.zw;',
+    '}',
+    '',
+    'void mainImage(out vec4 fragColor, in vec2 fragCoord) {',
+    '  const float NUM_ZERO = 0.0;',
+    '  const float NUM_ONE = 1.0;',
+    '  const float NUM_HALF = 0.5;',
+    '  const float NUM_TWO = 2.0;',
+    '  const float POWER_EXPONENT = 6.0;',
+    '  const float MASK_MULTIPLIER_1 = 10000.0;',
+    '  const float MASK_MULTIPLIER_2 = 9500.0;',
+    '  const float MASK_MULTIPLIER_3 = 11000.0;',
+    '  const float LENS_MULTIPLIER = 5000.0;',
+    '  const float MASK_STRENGTH_1 = 8.0;',
+    '  const float MASK_STRENGTH_2 = 16.0;',
+    '  const float MASK_STRENGTH_3 = 2.0;',
+    '  const float MASK_THRESHOLD_1 = 0.95;',
+    '  const float MASK_THRESHOLD_2 = 0.9;',
+    '  const float MASK_THRESHOLD_3 = 1.5;',
+    '  const float SAMPLE_RANGE = 4.0;',
+    '  const float SAMPLE_OFFSET = 0.5;',
+    '  const float GRADIENT_RANGE = 0.2;',
+    '  const float GRADIENT_OFFSET = 0.1;',
+    '  const float GRADIENT_EXTREME = -1000.0;',
+    '  const float LIGHTING_INTENSITY = 0.3;',
+    '',
+    '  vec2 uv = fragCoord / iResolution.xy;',
+    '  vec2 mouse = iMouse.xy;',
+    '  if (length(mouse) < NUM_ONE) {',
+    '    mouse = iResolution.xy / NUM_TWO;',
+    '  }',
+    '  vec2 m2 = (uv - mouse / iResolution.xy);',
+    '',
+    '  float roundedBox = pow(abs(m2.x * iResolution.x / iResolution.y), POWER_EXPONENT) + pow(abs(m2.y), POWER_EXPONENT);',
+    '  float rb1 = clamp((NUM_ONE - roundedBox * MASK_MULTIPLIER_1) * MASK_STRENGTH_1, NUM_ZERO, NUM_ONE);',
+    '  float rb2 = clamp((MASK_THRESHOLD_1 - roundedBox * MASK_MULTIPLIER_2) * MASK_STRENGTH_2, NUM_ZERO, NUM_ONE) -',
+    '    clamp(pow(MASK_THRESHOLD_2 - roundedBox * MASK_MULTIPLIER_2, NUM_ONE) * MASK_STRENGTH_2, NUM_ZERO, NUM_ONE);',
+    '  float rb3 = clamp((MASK_THRESHOLD_3 - roundedBox * MASK_MULTIPLIER_3) * MASK_STRENGTH_3, NUM_ZERO, NUM_ONE) -',
+    '    clamp(pow(NUM_ONE - roundedBox * MASK_MULTIPLIER_3, NUM_ONE) * MASK_STRENGTH_3, NUM_ZERO, NUM_ONE);',
+    '',
+    '  fragColor = vec4(NUM_ZERO);',
+    '  float transition = smoothstep(NUM_ZERO, NUM_ONE, rb1 + rb2);',
+    '',
+    '  if (transition > NUM_ZERO) {',
+    '    vec2 lens = ((uv - NUM_HALF) * NUM_ONE * (NUM_ONE - roundedBox * LENS_MULTIPLIER) + NUM_HALF);',
+    '    float total = NUM_ZERO;',
+    '    for (float x = -SAMPLE_RANGE; x <= SAMPLE_RANGE; x++) {',
+    '      for (float y = -SAMPLE_RANGE; y <= SAMPLE_RANGE; y++) {',
+    '        vec2 offset = vec2(x, y) * SAMPLE_OFFSET / iResolution.xy;',
+    '        fragColor += texture2D(iChannel0, mapUV(offset + lens));',
+    '        total += NUM_ONE;',
+    '      }',
+    '    }',
+    '    fragColor /= total;',
+    '',
+    '    float gradient = clamp((clamp(m2.y, NUM_ZERO, GRADIENT_RANGE) + GRADIENT_OFFSET) / NUM_TWO, NUM_ZERO, NUM_ONE) +',
+    '      clamp((clamp(-m2.y, GRADIENT_EXTREME, GRADIENT_RANGE) * rb3 + GRADIENT_OFFSET) / NUM_TWO, NUM_ZERO, NUM_ONE);',
+    '    vec4 lighting = clamp(fragColor + vec4(rb1) * gradient + vec4(rb2) * LIGHTING_INTENSITY, NUM_ZERO, NUM_ONE);',
+    '',
+    '    fragColor = mix(texture2D(iChannel0, mapUV(uv)), lighting, transition);',
+    '  } else {',
+    '    fragColor = texture2D(iChannel0, mapUV(uv));',
+    '  }',
+    '}',
+    '',
+    'void main() {',
+    '  mainImage(gl_FragColor, gl_FragCoord.xy);',
+    '}'
+  ].join('\n');
 
-  var scheduled = false;
+  var VERTEX_SHADER = [
+    'attribute vec2 position;',
+    'void main() {',
+    '  gl_Position = vec4(position, 0.0, 1.0);',
+    '}'
+  ].join('\n');
 
-  function collectTrackText(page) {
-    var chunks = [];
-    page.querySelectorAll('.trackSelections select').forEach(function (sel) {
-      var opt = sel.options[sel.selectedIndex];
-      if (opt && opt.textContent) {
-        chunks.push(opt.textContent);
+  var lenses = [];
+  var rafId = 0;
+  var startTime = performance.now();
+  var observer = null;
+
+  function createShader(gl, type, source) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('[osd-lens-glass] Shader error:', gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  function findVideo() {
+    var player = document.querySelector('.htmlvideoplayer');
+    if (player) {
+      var v = player.querySelector('video');
+      if (v) {
+        return v;
       }
-    });
-    return chunks.join(' ');
+    }
+    return document.querySelector('video');
   }
 
-  function resolutionFromDimensions(text) {
-    var found = {};
-    var m = text.match(/\b(\d{3,4})\s*[x×]\s*(\d{3,4})\b/i);
-    if (!m) {
-      return found;
-    }
-    var w = parseInt(m[1], 10);
-    var h = parseInt(m[2], 10);
-    if (w >= 3800 || h >= 2000) {
-      found['4K'] = true;
-    } else if (w >= 2500 || h >= 1400) {
-      found['1440P'] = true;
-    } else if (w >= 1800 || h >= 1000) {
-      found['1080P'] = true;
-    } else if (w >= 1200 || h >= 700) {
-      found['720P'] = true;
-    } else if (w >= 700 || h >= 400) {
-      found['480P'] = true;
-    }
-    return found;
-  }
-
-  function extractMarkers(text) {
-    var found = resolutionFromDimensions(text);
-    RULES.forEach(function (rule) {
-      if (rule.re.test(text)) {
-        found[rule.key] = true;
-      }
-    });
-    if (found['HDR10+'] || found['HDR10']) {
-      delete found['HDR'];
-    }
-    if (found['DTS-HD MA'] || found['DTS-HD']) {
-      delete found['DTS'];
-    }
-    if (found['4K']) {
-      delete found['2160P'];
-      delete found['UHD'];
-    }
-    if (found['DDP']) {
-      delete found['DD+'];
-    }
-    return MARKER_ORDER.filter(function (key) {
-      return found[key];
-    });
-  }
-
-  function displayLabel(key) {
-    if (key === 'DDP') {
-      return 'DD+';
-    }
-    if (key === '2160P') {
-      return '2160p';
-    }
-    if (/^\d{3,4}P$/.test(key)) {
-      return key.toLowerCase();
-    }
-    if (key === 'ATMOS') {
-      return 'Atmos';
-    }
-    if (key === 'TRUEHD') {
-      return 'TrueHD';
-    }
-    if (key === 'DOLBY VISION') {
-      return 'Dolby Vision';
-    }
-    return key;
-  }
-
-  function renderMarkers(page, markers) {
-    var row = page.querySelector('.detailMediaMarkers');
-    if (!markers.length) {
-      if (row) {
-        row.remove();
-      }
-      return;
-    }
+  function getTransportButtons() {
+    var row = document.querySelector('.videoOsdBottom .buttons > div:first-child');
     if (!row) {
-      row = document.createElement('div');
-      row.className = 'itemMiscInfo itemMiscInfo-secondary detailMediaMarkers';
-      var anchor = page.querySelector('.itemMiscInfo-primary');
-      if (anchor) {
-        anchor.insertAdjacentElement('afterend', row);
-      } else {
-        var ribbon = page.querySelector('.infoWrapper');
-        (ribbon || page.querySelector('.detailRibbon') || page).appendChild(row);
+      return [];
+    }
+    return Array.prototype.filter.call(
+      row.querySelectorAll(TRANSPORT_SELECTORS),
+      function (btn) {
+        return btn.offsetParent !== null && getComputedStyle(btn).display !== 'none';
+      }
+    );
+  }
+
+  function LensButton(button) {
+    var self = this;
+    this.button = button;
+    this.mouse = [0, 0];
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'osd-lens-canvas';
+    this.canvas.setAttribute('aria-hidden', 'true');
+    button.classList.add('osd-lens-btn');
+
+    if (button.querySelector('.osd-lens-canvas')) {
+      this.canvas = button.querySelector('.osd-lens-canvas');
+    } else {
+      button.insertBefore(this.canvas, button.firstChild);
+    }
+
+    this.gl = this.canvas.getContext('webgl', {
+      alpha: true,
+      antialias: true,
+      premultipliedAlpha: false
+    });
+
+    if (!this.gl) {
+      button.classList.add('osd-lens-fallback');
+      return;
+    }
+
+    var gl = this.gl;
+    var vs = createShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
+    var fs = createShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
+    if (!vs || !fs) {
+      button.classList.add('osd-lens-fallback');
+      return;
+    }
+
+    this.program = gl.createProgram();
+    gl.attachShader(this.program, vs);
+    gl.attachShader(this.program, fs);
+    gl.linkProgram(this.program);
+
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      console.error('[osd-lens-glass] Program error:', gl.getProgramInfoLog(this.program));
+      button.classList.add('osd-lens-fallback');
+      return;
+    }
+
+    gl.useProgram(this.program);
+
+    this.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+      gl.STATIC_DRAW
+    );
+
+    var position = gl.getAttribLocation(this.program, 'position');
+    gl.enableVertexAttribArray(position);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+    this.uniforms = {
+      resolution: gl.getUniformLocation(this.program, 'iResolution'),
+      time: gl.getUniformLocation(this.program, 'iTime'),
+      mouse: gl.getUniformLocation(this.program, 'iMouse'),
+      texture: gl.getUniformLocation(this.program, 'iChannel0'),
+      videoRect: gl.getUniformLocation(this.program, 'iVideoRect'),
+      canvasOrigin: gl.getUniformLocation(this.program, 'uCanvasOrigin')
+    };
+
+    this.texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+    this.canvas.addEventListener('mousemove', function (e) {
+      var rect = self.canvas.getBoundingClientRect();
+      var scaleX = self.canvas.width / rect.width;
+      var scaleY = self.canvas.height / rect.height;
+      self.mouse = [
+        (e.clientX - rect.left) * scaleX,
+        self.canvas.height - (e.clientY - rect.top) * scaleY
+      ];
+    });
+
+    this.canvas.addEventListener('mouseleave', function () {
+      self.mouse = [0, 0];
+    });
+
+    this.setCanvasSize();
+  }
+
+  LensButton.prototype.setCanvasSize = function () {
+    if (!this.gl) {
+      return;
+    }
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = this.button.getBoundingClientRect();
+    this.canvas.width = Math.max(1, Math.round(rect.width * dpr));
+    this.canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    this.canvas.style.width = rect.width + 'px';
+    this.canvas.style.height = rect.height + 'px';
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+  };
+
+  LensButton.prototype.setupTexture = function (video) {
+    if (!this.gl || !video || video.readyState < 2) {
+      return false;
+    }
+    var gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+      return true;
+    } catch (err) {
+      this.button.classList.add('osd-lens-fallback');
+      return false;
+    }
+  };
+
+  LensButton.prototype.render = function (video, currentTime) {
+    if (!this.gl || !this.program || !this.setupTexture(video)) {
+      return;
+    }
+
+    this.setCanvasSize();
+
+    var gl = this.gl;
+    var rect = this.button.getBoundingClientRect();
+    var videoRect = video.getBoundingClientRect();
+
+    gl.useProgram(this.program);
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.uniform3f(this.uniforms.resolution, this.canvas.width, this.canvas.height, 1.0);
+    gl.uniform1f(this.uniforms.time, currentTime);
+    gl.uniform4f(this.uniforms.mouse, this.mouse[0], this.mouse[1], 0, 0);
+    gl.uniform4f(
+      this.uniforms.videoRect,
+      videoRect.left,
+      videoRect.top,
+      videoRect.width,
+      videoRect.height
+    );
+    gl.uniform2f(this.uniforms.canvasOrigin, rect.left, rect.top);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture);
+    gl.uniform1i(this.uniforms.texture, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  };
+
+  LensButton.prototype.destroy = function () {
+    if (this.gl) {
+      var ext = this.gl.getExtension('WEBGL_lose_context');
+      if (ext) {
+        ext.loseContext();
       }
     }
-    row.innerHTML = markers.map(function (m) {
-      return '<div class="mediaInfoItem mediaInfoText mediainfo">' + displayLabel(m) + '</div>';
-    }).join('');
-    row.classList.remove('hide');
-  }
-
-  function updateDetailMarkers() {
-    var page = document.querySelector('#itemDetailPage');
-    if (!page || page.classList.contains('hide')) {
-      return;
+    if (this.canvas && this.canvas.parentNode === this.button) {
+      this.canvas.parentNode.removeChild(this.canvas);
     }
-    var markers = extractMarkers(collectTrackText(page));
-    renderMarkers(page, markers);
-  }
+    this.button.classList.remove('osd-lens-btn', 'osd-lens-fallback');
+  };
 
-  function scheduleUpdate() {
-    if (scheduled) {
-      return;
+  function teardown() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
     }
-    scheduled = true;
-    requestAnimationFrame(function () {
-      scheduled = false;
-      updateDetailMarkers();
+    lenses.forEach(function (l) {
+      l.destroy();
     });
+    lenses = [];
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+
+  function syncButtons() {
+    var buttons = getTransportButtons();
+    if (!buttons.length) {
+      teardown();
+      return;
+    }
+
+    var known = new Set(lenses.map(function (l) {
+      return l.button;
+    }));
+
+    buttons.forEach(function (btn) {
+      if (!known.has(btn)) {
+        lenses.push(new LensButton(btn));
+      }
+    });
+
+    lenses = lenses.filter(function (lens) {
+      if (buttons.indexOf(lens.button) === -1) {
+        lens.destroy();
+        return false;
+      }
+      return true;
+    });
+
+    if (!rafId) {
+      render();
+    }
+  }
+
+  function render() {
+    var osd = document.querySelector('.videoOsdBottom');
+    var video = findVideo();
+
+    if (!osd || osd.classList.contains('hide') || !lenses.length || !video) {
+      rafId = 0;
+      return;
+    }
+
+    var currentTime = (performance.now() - startTime) / 1000;
+    lenses.forEach(function (lens) {
+      lens.render(video, currentTime);
+    });
+
+    rafId = requestAnimationFrame(render);
+  }
+
+  function init() {
+    if (!document.querySelector('.videoOsdBottom')) {
+      return;
+    }
+    syncButtons();
+    if (!observer) {
+      observer = new MutationObserver(syncButtons);
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   document.addEventListener('viewshow', function () {
-    setTimeout(scheduleUpdate, 60);
+    setTimeout(init, 80);
   });
 
-  document.addEventListener('pageshow', scheduleUpdate);
+  window.addEventListener('resize', function () {
+    lenses.forEach(function (l) {
+      l.setCanvasSize();
+    });
+  });
 
-  new MutationObserver(function (mutations) {
-    for (var i = 0; i < mutations.length; i++) {
-      var t = mutations[i].target;
-      if (t.closest && (t.closest('.trackSelections') || t.closest('#itemDetailPage'))) {
-        scheduleUpdate();
-        return;
-      }
-    }
-  }).observe(document.body, { childList: true, subtree: true, characterData: true });
-
-  scheduleUpdate();
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(init, 200);
+  } else {
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(init, 200);
+    });
+  }
 })();
+
 </script>
