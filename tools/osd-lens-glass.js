@@ -7,7 +7,13 @@
 (function () {
   'use strict';
 
-  if (window.__osdLensGlassLoaded) {
+  if (typeof window.__osdLensGlassDispose === 'function') {
+    try {
+      window.__osdLensGlassDispose();
+    } catch (err) {
+      /* ignore previous dispose errors */
+    }
+  } else if (window.__osdLensGlassLoaded) {
     return;
   }
   window.__osdLensGlassLoaded = true;
@@ -249,8 +255,6 @@
 
     this.gl = this.canvas.getContext('webgl', {
       alpha: true,
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: true,
       antialias: true,
       premultipliedAlpha: false,
       preserveDrawingBuffer: true
@@ -415,10 +419,43 @@
     this.button.classList.remove('osd-lens-btn', 'osd-lens-fallback', 'osd-lens-ready');
   };
 
+  function stopPoll() {
+    if (pollId) {
+      clearInterval(pollId);
+      pollId = 0;
+    }
+  }
+
+  function startPoll() {
+    if (pollId) {
+      return;
+    }
+    pollId = setInterval(function () {
+      var onPlayer =
+        !!document.querySelector('.videoOsdBottom') ||
+        !!document.querySelector('#videoOsdPage, .videoPlayerContainer, video');
+      if (!onPlayer) {
+        teardown();
+        return;
+      }
+      if (document.querySelector('.videoOsdBottom')) {
+        init();
+      }
+      if (lenses.length && isOsdVisible() && !rafId) {
+        render();
+      }
+    }, 500);
+  }
+
   function teardown() {
     if (rafId) {
       cancelAnimationFrame(rafId);
       rafId = 0;
+    }
+    stopPoll();
+    if (observer) {
+      observer.disconnect();
+      observer = null;
     }
     lenses.forEach(function (l) {
       l.destroy();
@@ -440,6 +477,8 @@
       }
       return;
     }
+
+    startPoll();
 
     var known = new Set(
       lenses.map(function (l) {
@@ -507,41 +546,47 @@
     }
   }
 
-  document.addEventListener('viewshow', function () {
+  function onViewShow() {
     setTimeout(init, 80);
-  });
-  document.addEventListener(
-    'click',
-    function () {
-      setTimeout(init, 80);
-    },
-    true
-  );
-  document.addEventListener(
-    'pointermove',
-    function () {
-      if (document.querySelector('.videoOsdBottom') && !lenses.length) {
-        init();
-      }
-    },
-    true
-  );
-  window.addEventListener('resize', function () {
+  }
+
+  function onClick() {
+    setTimeout(init, 80);
+  }
+
+  function onPointerMove() {
+    if (document.querySelector('.videoOsdBottom') && !lenses.length) {
+      init();
+    }
+  }
+
+  function onResize() {
     lenses.forEach(function (l) {
       l.setCanvasSize();
     });
-  });
-
-  if (!pollId) {
-    pollId = setInterval(function () {
-      if (document.querySelector('.videoOsdBottom')) {
-        init();
-      }
-      if (lenses.length && isOsdVisible() && !rafId) {
-        render();
-      }
-    }, 500);
   }
+
+  function onPageHide() {
+    teardown();
+  }
+
+  function dispose() {
+    teardown();
+    document.removeEventListener('viewshow', onViewShow);
+    document.removeEventListener('click', onClick, true);
+    document.removeEventListener('pointermove', onPointerMove, true);
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('pagehide', onPageHide);
+    window.__osdLensGlassLoaded = false;
+    window.__osdLensGlassDispose = null;
+  }
+
+  document.addEventListener('viewshow', onViewShow);
+  document.addEventListener('click', onClick, true);
+  document.addEventListener('pointermove', onPointerMove, true);
+  window.addEventListener('resize', onResize);
+  window.addEventListener('pagehide', onPageHide);
+  window.__osdLensGlassDispose = dispose;
 
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(init, 200);
@@ -551,5 +596,5 @@
     });
   }
 
-  console.info('[osd-lens-glass] loaded (refraction-v13)');
+  console.info('[osd-lens-glass] loaded (refraction-v14)');
 })();
