@@ -14,11 +14,34 @@ A full-app CSS theme for [Jellyfin](https://jellyfin.org) modeled on Apple's Vis
 
 ## Installation
 
+### CSS (required)
+
 1. Open **Dashboard → General → Custom CSS** (server-wide),  
    **or** **User → Settings → Display → Custom CSS** (per user).
-2. Copy the entire contents of [`jellyfin-liquid-glass.css`](./jellyfin-liquid-glass.css).
+2. Copy the entire contents of [`style.css`](./style.css).
 3. Paste into the Custom CSS field and **Save**.
 4. Hard-refresh Jellyfin (`Ctrl+Shift+R` / `Cmd+Shift+R`).
+
+### Player liquid-glass refraction (required for live video lenses)
+
+Jellyfin injects Custom CSS as text inside a `<style>` tag, so JavaScript
+cannot be shipped via Custom CSS. The WebGL lens must load as a real script:
+
+**Docker (linuxserver/jellyfin):**
+
+```bash
+./tools/install-into-docker.sh
+```
+
+That copies `tools/osd-lens-glass.js` into the container web UI, links it from
+`index.html` as `ui/osd-lens-glass.js?v=refraction-<hash>` (so menu / SPA
+navigations always get a cache-busted lens on first paint), updates
+`branding.xml` Custom CSS, and installs a
+`custom-cont-init.d` hook so it survives image updates.
+
+**Manual:** copy `tools/osd-lens-glass.js` to your Jellyfin web `ui/` folder and
+add `<script src="ui/osd-lens-glass.js" defer></script>` before `</body>` in
+`index.html`.
 
 ## Requirements
 
