@@ -1589,12 +1589,12 @@ video::-webkit-media-text-track-background {
 /* Layout adjustments for desktop */
 .layout-desktop .detailPageContent,
 .layout-desktop .infoWrapper,
-.layout-desktop .mainDetailButtons {
+.layout-desktop .mainDetailButtons,
+.layout-desktop .detailPagePrimaryContent {
   padding-left: 5%;
 }
 
 .layout-desktop .detailPagePrimaryContent {
-  padding-left: 0;
   width: 45%;
 }
 
@@ -3625,52 +3625,120 @@ progress {
   color: #fff !important;
 }
 
-/* User tags + external links */
-.itemDetailPage .itemTags,
-.itemDetailPage .itemExternalLinks {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 0.4em !important;
+/* User tags + external links.
+ * Inline flow (not flex) keeps ", " with the previous tag. Hanging indent
+ * so wrapped tag lines align under the first tag, not under "Tags:". */
+.itemDetailPage .itemTags {
+  display: block !important;
   color: rgba(255, 255, 255, 0.78) !important;
   font-size: 0.9rem !important;
+  line-height: 1.55 !important;
   margin: 0.7em 0 !important;
+  max-width: 42em !important;
+  padding-left: 2.75em !important;
+  text-indent: -2.75em !important;
+}
+
+.itemDetailPage .itemExternalLinks {
+  display: block !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 0.9rem !important;
+  line-height: 1.55 !important;
+  margin: 0.7em 0 !important;
+  max-width: 42em !important;
 }
 
 .itemDetailPage .itemTags a,
 .itemDetailPage .itemExternalLinks a {
   color: var(--accent-blue) !important;
+  white-space: nowrap !important;
+  text-indent: 0 !important;
 }
 
-/* Director / writer / studio / genre detail rows */
-.itemDetailPage .itemDetailsGroup {
+/* Director / writer / studio / genre detail rows.
+ * Shared 2-column grid so Genres/Studio values share one left edge, with a
+ * short label track (Jellyfin's 6.25em flex-basis left a huge empty gutter). */
+.itemDetailPage .itemDetailsGroup,
+.layout-desktop .itemDetailPage .itemDetailsGroup,
+.layout-desktop .itemDetailsGroup {
   margin-top: 1.1em !important;
-}
-
-.itemDetailPage .detailsGroupItem {
-  display: flex !important;
-  flex-wrap: wrap !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  display: grid !important;
+  grid-template-columns: max-content minmax(0, 1fr) !important;
+  column-gap: 0.65em !important;
+  row-gap: 0.4em !important;
   align-items: baseline !important;
-  gap: 0.35em 0.65em !important;
-  margin: 0 0 0.55em !important;
-  max-width: none !important;
+  max-width: 36em !important;
 }
 
-.itemDetailPage .detailsGroupItem .label {
-  flex: 0 0 auto !important;
-  min-width: 5.25em !important;
+.itemDetailPage .detailsGroupItem,
+.layout-desktop .itemDetailPage .detailsGroupItem,
+.layout-desktop .detailsGroupItem {
+  display: contents !important;
   margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Hide blank director / writer rows (empty values still leave awkward gaps) */
+.itemDetailPage .detailsGroupItem.directorsGroup.hide,
+.itemDetailPage .detailsGroupItem.writersGroup.hide,
+.itemDetailPage .detailsGroupItem:has(> .content:empty),
+.itemDetailPage .detailsGroupItem.directorsGroup:has(.content:empty),
+.itemDetailPage .detailsGroupItem.writersGroup:has(.content:empty) {
+  display: none !important;
+}
+
+.itemDetailPage .detailsGroupItem > .label,
+.itemDetailPage .detailsGroupItem > .genresLabel,
+.itemDetailPage .detailsGroupItem > .directorsLabel,
+.itemDetailPage .detailsGroupItem > .writersLabel,
+.itemDetailPage .detailsGroupItem > .studiosLabel,
+.itemDetailPage .detailsGroupItem .label.genresLabel,
+.itemDetailPage .detailsGroupItem .label.studiosLabel,
+.itemDetailPage .detailsGroupItem .label.directorsLabel,
+.itemDetailPage .detailsGroupItem .label.writersLabel,
+.layout-desktop .detailsGroupItem > .label,
+.layout-desktop .itemDetailPage .detailsGroupItem > .label {
+  flex: none !important;
+  flex-basis: auto !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
   color: rgba(255, 255, 255, 0.48) !important;
   font-size: 0.84rem !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+  overflow: visible !important;
 }
 
-.itemDetailPage .detailsGroupItem .content,
-.itemDetailPage .detailsGroupItem .focuscontainer-x {
+.itemDetailPage .detailsGroupItem > .content,
+.itemDetailPage .detailsGroupItem > .focuscontainer-x,
+.itemDetailPage .detailsGroupItem > .genres,
+.itemDetailPage .detailsGroupItem > .studios,
+.itemDetailPage .detailsGroupItem > .directors,
+.itemDetailPage .detailsGroupItem > .writers,
+.itemDetailPage .detailsGroupItem .content.genres,
+.itemDetailPage .detailsGroupItem .content.studios,
+.itemDetailPage .detailsGroupItem .content.directors,
+.itemDetailPage .detailsGroupItem .content.writers {
   flex: 1 1 auto !important;
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
   color: rgba(255, 255, 255, 0.9) !important;
   font-size: 0.95rem !important;
+  min-width: 0 !important;
+  text-align: left !important;
 }
 
 .itemDetailPage .detailsGroupItem .button-link {
