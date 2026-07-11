@@ -168,14 +168,14 @@ option {
  *           │ ⟲15 │     │  ▮▮ │     │ 15⟳ │     ← CENTER of screen
  *           ╰─────╯     ╰─────╯     ╰─────╯
  *
- *   ┌─ volume ──┐  ┌─ scrubber pill ─────────────────────┐  ┌─ a/cc/⚙ ─┐
- *   │  🔊 ════  │  │ start │━━━━●━━━━│ end │ Ends at     │  │ ♪  💬  ⚙ │
- *   └───────────┘  └─────────────────────────────────────┘  └──────────┘
+ *   ┌─ volume ──┐  ┌─ scrubber pill ─────────────────────┐  ┌─ a/cc/⚙/⛶ ─┐
+ *   │  🔊 ════  │  │ start │━━━━●━━━━│ end │ Ends at     │  │ ♪ 💬 ⚙  ⛶ │
+ *   └───────────┘  └─────────────────────────────────────┘  └────────────┘
  *
  * Every control is its own floating glass circle:
  *   · top-left:  back / home / menu       · top-right: cast
  *   · center:    rewind / play-pause / forward  (MUST stay viewport-centered)
- *   · bottom-right: audio · subtitles · settings
+ *   · bottom-right: audio · subtitles · settings · fullscreen
  *   · bottom-left: volume
  *   · bottom:    scrubber pill (lifted above bottom row)
  *
@@ -291,6 +291,11 @@ option {
     inset 1px 0 0 rgba(255, 255, 255, 0.05),
     inset -1px 0 0 rgba(255, 255, 255, 0.02),
     inset 0 0 14px rgba(255, 255, 255, 0);
+  /* Scrubber / volume: even ambient blue light (not directional rim strips). */
+  --osd-bar-lit-shadow:
+    var(--osd-pill-shadow),
+    inset 0 0 12px rgba(10, 132, 255, 0.08),
+    0 0 10px rgba(10, 132, 255, 0.10);
   --osd-icon: rgba(255, 255, 255, 0.88);
   /* Apple system blue (dark-mode variant) — used for the scrubber
    * fill, slider thumbs, and any "active / progress" affordance. */
@@ -866,13 +871,18 @@ option {
   backdrop-filter: none !important;
 }
 
+#videoOsdPage .videoOsdBottom .btnRewind .material-icons,
+#videoOsdPage .videoOsdBottom .btnFastForward .material-icons,
 #videoOsdPage .videoOsdBottom .btnPause .material-icons,
 #videoOsdPage .videoOsdBottom .btnPlayPause .material-icons,
 #videoOsdPage .videoOsdBottom .btnPlay .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnRewind .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnFastForward .material-icons,
 .videoOsdBottom .buttons > div:first-child .btnPause .material-icons,
 .videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons,
 .videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
   color: #fff !important;
+  filter: none !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
 }
 
@@ -977,37 +987,45 @@ option {
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn .material-icons,
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn .xlargePaperIconButton {
   position: relative !important;
-  z-index: 1 !important;
+  z-index: 3 !important;
   pointer-events: none !important;
+  color: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45) !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn {
   position: relative !important;
-  z-index: 1 !important;
+  z-index: 2 !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn > *:not(.osd-lens-canvas):not(.material-icons):not(.xlargePaperIconButton) {
   position: relative !important;
-  z-index: 1 !important;
+  z-index: 3 !important;
+}
+
+/* Lens canvas must stay UNDER the icons (never cover play/rewind glyphs). */
+#videoOsdPage .videoOsdBottom .osd-lens-layer,
+.videoOsdBottom .buttons > div:first-child .osd-lens-layer,
+.videoOsdBottom .osd-lens-layer,
+body > .osd-lens-layer,
+.osd-lens-layer {
+  z-index: 0 !important;
 }
 
 /* ── Top-right cluster: cast button (alone) ─────────────────────
- * AirPlay / PiP / Fullscreen are no-ops on this build (the buttons
- * fire but nothing happens — Jellyfin can't reach them through the
- * webview / browser policy). Hide them entirely and surface ONLY
- * the cast button, sitting alone at the top-right corner so the
- * pair of header rows reads:
+ * AirPlay / PiP stay hidden (no-ops in this webview). Fullscreen
+ * lives in the bottom-right cluster with audio / CC / settings.
+ * Cast sits alone at the top-right corner:
  *
  *   [back · home · menu]                                  [cast]
- *
- * The cast button gets its glass surface from the shared
- * `.osdHeader .headerButton` rule above; we only need the
- * positioning + dimensions here. */
+ */
 
-/* Hard-hide the broken trio so they don't take up layout slots. */
+/* Hard-hide AirPlay / PiP so they don't take up layout slots. */
 .videoOsdBottom .btnAirPlay,
-.videoOsdBottom .btnPip,
-.videoOsdBottom .btnFullscreen {
+.videoOsdBottom .btnPip {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -1070,7 +1088,7 @@ option {
   background-color: var(--osd-pill-bg) !important;
   background-image: var(--osd-pill-highlight) !important;
   border: var(--osd-pill-border) !important;
-  box-shadow: var(--osd-pill-shadow) !important;
+  box-shadow: var(--osd-bar-lit-shadow) !important;
   -webkit-backdrop-filter: var(--osd-pill-blur) !important;
   backdrop-filter: var(--osd-pill-blur) !important;
   pointer-events: all !important;
@@ -1144,16 +1162,19 @@ option {
   align-self: center !important;
 }
 
-/* ── Bottom-right cluster: audio · subtitles · settings ─────────
- * Same baseline as the transport row (bottom = --osd-edge), so the
- * full bottom row reads:  [volume]  …  [rewind  play  forward]  …  [a · cc · ⚙] */
+/* ── Bottom-right cluster: audio · subtitles · settings · fullscreen ─
+ * Same baseline as volume (bottom = --osd-edge). Order left→right:
+ *   [volume]  …  [a · cc · ⚙ · fullscreen]
+ */
 
 .videoOsdBottom .btnAudio,
 .videoOsdBottom .btnSubtitles,
-.videoOsdBottom .btnVideoOsdSettings {
+.videoOsdBottom .btnVideoOsdSettings,
+.videoOsdBottom .btnFullscreen {
   position: fixed !important;
   top: auto !important;
   bottom: var(--osd-edge) !important;
+  left: auto !important;
   width: var(--osd-btn-size) !important;
   height: var(--osd-btn-size) !important;
   min-width: var(--osd-btn-size) !important;
@@ -1178,26 +1199,33 @@ option {
   box-sizing: border-box !important;
   pointer-events: all !important;
   z-index: 4 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
   /* Same transition triplet as the top-right and shared glass-surface
      rules — keeps hover behaviour identical across every OSD button. */
   transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
 }
 
-.videoOsdBottom .btnVideoOsdSettings {
+.videoOsdBottom .btnFullscreen {
   right: var(--osd-right-edge) !important;
 }
 
-.videoOsdBottom .btnSubtitles {
+.videoOsdBottom .btnVideoOsdSettings {
   right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
 }
 
-.videoOsdBottom .btnAudio {
+.videoOsdBottom .btnSubtitles {
   right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
+}
+
+.videoOsdBottom .btnAudio {
+  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 3) !important;
 }
 
 .videoOsdBottom .btnAudio .material-icons,
 .videoOsdBottom .btnSubtitles .material-icons,
-.videoOsdBottom .btnVideoOsdSettings .material-icons {
+.videoOsdBottom .btnVideoOsdSettings .material-icons,
+.videoOsdBottom .btnFullscreen .material-icons {
   font-size: 1.2em !important;
   line-height: 1 !important;
 }
@@ -1293,7 +1321,12 @@ video::-webkit-media-text-track-background {
 .osdControls .mdl-slider-background-lower {
   background: var(--osd-scrub-fill) !important;
   border-radius: inherit !important;
-  box-shadow: 0 0 10px rgba(10, 132, 255, 0.45) !important;
+  box-shadow: none !important;
+}
+
+/* Volume track keeps a soft even bloom; scrubber stays clean. */
+.videoOsdBottom .volumeButtons .mdl-slider-background-lower {
+  box-shadow: 0 0 8px 1px rgba(10, 132, 255, 0.35) !important;
 }
 
 .videoOsdBottom .mdl-slider-background-upper,
@@ -1352,14 +1385,13 @@ video::-webkit-media-text-track-background {
 @media (hover: hover) and (pointer: fine) {
   /* `.osdHeader .headerButton`/`.paper-icon-button-light` covers the
      back/home/menu trio AND the lone cast button (which is also a
-     `.headerButton` — just absolutely positioned at top-right). The
-     old `.btnAirPlay/.btnPip/.btnFullscreen` hover entries were
-     dropped along with those buttons. */
+     `.headerButton` — just absolutely positioned at top-right). */
   .osdHeader .headerButton:hover:not(:disabled),
   .osdHeader .paper-icon-button-light:hover:not(:disabled),
   .videoOsdBottom .btnVideoOsdSettings:hover,
   .videoOsdBottom .btnAudio:hover,
   .videoOsdBottom .btnSubtitles:hover,
+  .videoOsdBottom .btnFullscreen:hover,
   .videoOsdBottom .volumeButtons .buttonMute:hover,
   .videoOsdBottom .buttons > div:first-child .paper-icon-button-light:hover:not(:disabled) {
     background-color: transparent !important;

@@ -19,9 +19,9 @@ Five independent floating pieces. Nothing shares one big chrome bar except the s
                     │   ⟳ forward                 │
                     └─────────────────────────────┘
 
-┌─ bottom-left ──┐   ┌─ scrubber pill (lifted) ──────────────┐   ┌─ bottom-right ─┐
-│ mute + volume  │   │ start │━━━━━━●━━━━━━│ end │ Ends at   │   │ ♪ · CC · ⚙     │
-└────────────────┘   └───────────────────────────────────────┘   └────────────────┘
+┌─ bottom-left ──┐   ┌─ scrubber pill (lifted) ──────────────┐   ┌─ bottom-right ──────────┐
+│ mute + volume  │   │ start │━━━━━━●━━━━━━│ end │ Ends at   │   │ ♪ · CC · ⚙ · fullscreen │
+└────────────────┘   └───────────────────────────────────────┘   └─────────────────────────┘
 ```
 
 ### Exact placements
@@ -30,7 +30,7 @@ Five independent floating pieces. Nothing shares one big chrome bar except the s
 |--------|----------|------------|
 | Transport (rewind / play / forward) | **Middle of the screen** | `position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%)` on `.videoOsdBottom .buttons > div:first-child` |
 | Volume pill | Bottom-left | `bottom: var(--osd-edge); left: var(--osd-left-edge)` |
-| Audio / subs / settings | Bottom-right | `bottom: var(--osd-edge); right: …` |
+| Audio / subs / settings / fullscreen | Bottom-right | `bottom: var(--osd-edge); right: …` (fullscreen furthest right) |
 | Scrubber (`.osdControls`) | Above the bottom row | `bottom: var(--osd-scrub-lift)` where `--osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.85em)` |
 | Cast | Top-right | `top: var(--osd-top-edge); right: var(--osd-right-edge)` |
 | Back / home / menu | Top-left header | OSD header cluster |
