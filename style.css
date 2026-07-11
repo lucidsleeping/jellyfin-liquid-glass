@@ -3968,19 +3968,46 @@ h3.sectionTitle,
 
 /* Section heading sits in the SAME inset gutter as the card row
  * underneath it ("Recently Added in T.Movies" should left-align with
- * the first poster, not with the viewport edge). The card rows below
- * use `padding-inline: 1.5vw` — we mirror that here so they line up.
+ * the first poster, not with the viewport edge).
  *
- * Top margin gives breathing room between rows, matching the Apple
- * TV app where there's a clear gap between the end of one row's
- * posters and the next section's heading. */
+ * Jellyfin's home scrollers use ~3.3% horizontal padding. Our titles
+ * used to use 1.5vw, so "My Media" (which inherited the scroller %)
+ * lined up with cards while "Recently Added" titles sat further left.
+ * One gutter for every home shelf. */
+:root {
+  --home-section-gutter: max(1rem, 3.3%);
+}
+
 .sectionTitleContainer,
 .verticalSection .sectionTitleContainer,
 .homeSectionsContainer .sectionTitleContainer {
   align-items: center !important;
   gap: 0.18em !important;
   margin: 1.6em 0 0.7em !important;
-  padding-inline: 1.5vw !important;
+  padding-left: var(--home-section-gutter) !important;
+  padding-right: var(--home-section-gutter) !important;
+  padding-inline: var(--home-section-gutter) !important;
+}
+
+/* Force every home shelf scroller onto the same gutter as the titles. */
+.homeSectionsContainer .emby-scroller,
+.homeSectionsContainer .padded-left,
+.homeSectionsContainer .padded-right,
+.homeSectionsContainer .padded-top-focusscale,
+.homeSectionsContainer .padded-bottom-focusscale,
+.libraryPage:not(.itemDetailPage) .emby-scroller,
+.libraryPage:not(.itemDetailPage) .verticalSection .emby-scroller {
+  padding-left: var(--home-section-gutter) !important;
+  padding-right: var(--home-section-gutter) !important;
+}
+
+/* Bare section titles (no container) — same gutter. */
+.homeSectionsContainer > .verticalSection > .sectionTitle,
+.homeSectionsContainer .verticalSection > h2.sectionTitle,
+.libraryPage:not(.itemDetailPage) .verticalSection > .sectionTitle {
+  padding-left: var(--home-section-gutter) !important;
+  padding-right: var(--home-section-gutter) !important;
+  box-sizing: border-box !important;
 }
 
 .sectionTitleTextButton {
