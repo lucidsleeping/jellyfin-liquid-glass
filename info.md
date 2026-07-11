@@ -66,7 +66,7 @@ Play/pause uses `--osd-transport-large`; rewind/forward use `--osd-transport-siz
    Jellyfin keeps a `.mainAnimatedPage.hide` copy of the player. Lens code must only attach to **visible** transport buttons (skip pages with `.hide`).
 
 8. **Lens look**  
-   Clear thick-lens refraction of the live video only — no specular highlights, no frost blur kernel, no chromatic rainbow fringing. Shared WebGL layer, one video upload per display frame, `requestAnimationFrame` (not video-FPS-only).
+   Edge-clear glass discs: center samples video nearly 1:1 (no warp / no rainbow). **Refraction + chromatic aberration** live in the outer rim only (inspired by [ybouane LiquidGlass](https://liquid-glass.ybouane.com)). Soft fresnel rim light — no frost blur, no center specular. Shared WebGL layer, one video upload per display frame, `requestAnimationFrame`.
 
 ---
 

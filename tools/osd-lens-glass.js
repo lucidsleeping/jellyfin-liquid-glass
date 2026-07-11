@@ -4,7 +4,8 @@
  * One shared WebGL layer covers the transport row:
  *  - single video texture upload per display frame (no triple-upload lag)
  *  - requestAnimationFrame at screen refresh (smooth, not video-FPS choppy)
- *  - clear thick-lens refraction only (no specular / frost / chroma)
+ *  - high dome refraction + chromatic aberration (inspired by
+ *    https://liquid-glass.ybouane.com — implemented here, not that lib)
  *
  * MUST be loaded as a real <script> (e.g. /web/ui/osd-lens-glass.js).
  */
@@ -30,6 +31,11 @@
    * uDisc = (centerX, centerY, radius, unused) in layer pixel space,
    * origin top-left matching CSS getBoundingClientRect mapping.
    */
+  /*
+   * Edge-glass look (clear center, light bends at the rim) — subtle:
+   *   REFRACTION / CHROMA kept modest so the rim whispers, not screams.
+   * Center of each disc samples the video almost 1:1 (no rainbow, no warp).
+   */
   var FRAGMENT_SHADER = [
     'precision highp float;',
     'uniform vec3 iResolution;',
@@ -37,6 +43,12 @@
     'uniform vec4 iVideoRect;',
     'uniform vec2 uLayerOrigin;',
     'uniform vec4 uDisc;',
+    '',
+    'const float REFRACTION = 1.15;',
+    'const float CHROMA = 0.09;',
+    'const float CHROMA_SAT = 0.48;',
+    'const float EDGE_HL = 0.0;',
+    'const float FRESNEL = 0.0;',
     '',
     'vec2 mapVideoUV(vec2 screenCss) {',
     '  vec2 css = (screenCss - iVideoRect.xy) / iVideoRect.zw;',
@@ -48,16 +60,25 @@
     '  return texture2D(iChannel0, tuv);',
     '}',
     '',
+    '/* Clear flat center; soft bend only in the outer ring. */',
+    'vec2 refractOffset(vec2 delta, float edge, float radius, vec2 dir) {',
+    '  vec2 refracted = delta;',
+    '  float rim = smoothstep(0.58, 0.94, edge);',
+    '  rim = rim * rim;',
+    '  refracted += dir * (0.16 * REFRACTION * rim * radius);',
+    '  float ring = smoothstep(0.78, 0.92, edge) * (1.0 - smoothstep(0.92, 0.998, edge));',
+    '  refracted += dir * (0.06 * REFRACTION * ring * radius);',
+    '  return refracted;',
+    '}',
+    '',
     'void main() {',
-    '  /* gl_FragCoord is bottom-left origin; convert to top-left layer px */',
     '  vec2 layerPx = vec2(gl_FragCoord.x, iResolution.y - gl_FragCoord.y);',
     '  vec2 center = uDisc.xy;',
     '  float radius = max(uDisc.z, 1.0);',
     '  vec2 delta = layerPx - center;',
     '  float r = length(delta) / radius;',
     '',
-    '  /* Smooth AA edge — no hard binary cut (avoids shimmer / jag) */',
-    '  float alpha = 1.0 - smoothstep(0.978, 1.0, r);',
+    '  float alpha = 1.0 - smoothstep(0.968, 1.0, r);',
     '  if (alpha < 0.004) {',
     '    gl_FragColor = vec4(0.0);',
     '    return;',
@@ -65,23 +86,25 @@
     '',
     '  vec2 dir = r > 1e-5 ? delta / (r * radius) : vec2(0.0);',
     '  float edge = clamp(r, 0.0, 1.0);',
+    '  vec2 bent = refractOffset(delta, edge, radius, dir);',
     '',
-    '  /* Clear lens: mild center magnification + rim compression so the',
-    '   * video behind still lines up with the surrounding frame. */',
-    '  float zoom = mix(0.78, 1.0, pow(edge, 0.65));',
-    '  vec2 refracted = center + delta * zoom;',
-    '',
-    '  float rim = smoothstep(0.55, 0.98, edge);',
-    '  refracted += dir * (0.10 * rim * rim * radius);',
-    '',
-    '  float ring = smoothstep(0.78, 0.94, edge) * (1.0 - smoothstep(0.94, 0.995, edge));',
-    '  refracted += dir * (0.025 * ring * radius);',
-    '',
-    '  /* Layer px → CSS screen px (divide by dpr baked into iResolution vs origin) */',
     '  float dpr = iResolution.z;',
-    '  vec2 screenCss = uLayerOrigin + refracted / dpr;',
-    '  vec4 col = sampleVideo(screenCss);',
-    '  gl_FragColor = vec4(col.rgb, alpha);',
+    '  float chromaMask = smoothstep(0.62, 0.95, edge);',
+    '  chromaMask *= chromaMask;',
+    '  float chromaAmt = CHROMA * REFRACTION * chromaMask;',
+    '  vec2 split = dir * (chromaAmt * radius);',
+    '',
+    '  vec2 baseCss = uLayerOrigin + (center + bent) / dpr;',
+    '  vec2 splitCss = split / dpr;',
+    '  vec3 base = sampleVideo(baseCss).rgb;',
+    '  float red = sampleVideo(baseCss + splitCss).r;',
+    '  float green = base.g;',
+    '  float blue = sampleVideo(baseCss - splitCss).b;',
+    '  vec3 chroma = vec3(red, green, blue);',
+    '  /* Keep the split, but mute how colorful the fringe is. */',
+    '  vec3 col = mix(base, chroma, CHROMA_SAT);',
+    '',
+    '  gl_FragColor = vec4(clamp(col, 0.0, 1.0), alpha);',
     '}'
   ].join('\n');
 
