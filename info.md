@@ -57,15 +57,19 @@ Play/pause uses `--osd-transport-large`; rewind/forward use `--osd-transport-siz
 5. **Custom CSS is text-only**  
    Jellyfin injects branding CustomCss into a `<style>` node. JS cannot run from CSS. The WebGL lens must be a real `<script src="ui/osd-lens-glass.js?v=…">` in `index.html`.
 
-6. **Deploy path**  
+6. **Graceful degrade (CSS off / skip JS)**  
+   - Theme sets `--liquid-glass-theme: on` on `:root`. Lens JS **only** runs when that var is present, so disabling Custom CSS in the client leaves stock buttons/menus alone.  
+   - To keep theme CSS but skip the lens: `localStorage.jellyfin-liquid-glass-lens = 'off'`, URL `?nolens=1`, or console `liquidGlassLens.disable()` / `.enable()`.
+
+7. **Deploy path**  
    - Theme CSS → `branding.xml` `<CustomCss>` (and Jellyfin often needs a **container restart** to serve the new branding).  
    - Lens JS → `/usr/share/jellyfin/web/ui/osd-lens-glass.js` + persist under `/config/liquid-glass/` via `./tools/install-into-docker.sh`.  
    - Always cache-bust: `?v=refraction-<hash>`.
 
-7. **Hidden player page clones**  
+8. **Hidden player page clones**  
    Jellyfin keeps a `.mainAnimatedPage.hide` copy of the player. Lens code must only attach to **visible** transport buttons (skip pages with `.hide`).
 
-8. **Lens look**  
+9. **Lens look**  
    Edge-clear glass discs: center samples video nearly 1:1 (no warp / no rainbow). **Refraction + chromatic aberration** live in the outer rim only (inspired by [ybouane LiquidGlass](https://liquid-glass.ybouane.com)). Soft fresnel rim light — no frost blur, no center specular. Shared WebGL layer, one video upload per display frame, `requestAnimationFrame`.
 
 ---

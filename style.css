@@ -7,6 +7,12 @@
  *   User → Settings → Display → Custom CSS
  *
  * Compatible with Jellyfin 10.9+
+ *
+ * Graceful degrade:
+ *   · Turn off Custom CSS in the client → stock Jellyfin chrome returns.
+ *     The WebGL lens script only runs when --liquid-glass-theme is present.
+ *   · Keep CSS but skip the lens: localStorage jellyfin-liquid-glass-lens=off
+ *     or open with ?nolens=1 / console: liquidGlassLens.disable()
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
@@ -25,6 +31,11 @@
  * cards, indicators, etc.) follows the new look automatically.
  * ────────────────────────────────────────────────────────────────── */
 :root {
+  /* Sentinel for tools/osd-lens-glass.js — if Custom CSS is disabled in
+   * the client, this var is absent and the lens stays fully off so stock
+   * transport / menus work untouched. */
+  --liquid-glass-theme: on;
+
   /* Surfaces */
   --bg-color: #000;
   --w-color: rgba(20, 20, 24, 0.42);
@@ -291,11 +302,6 @@ option {
     inset 1px 0 0 rgba(255, 255, 255, 0.05),
     inset -1px 0 0 rgba(255, 255, 255, 0.02),
     inset 0 0 14px rgba(255, 255, 255, 0);
-  /* Scrubber / volume: even ambient blue light (not directional rim strips). */
-  --osd-bar-lit-shadow:
-    var(--osd-pill-shadow),
-    inset 0 0 12px rgba(10, 132, 255, 0.08),
-    0 0 10px rgba(10, 132, 255, 0.10);
   --osd-icon: rgba(255, 255, 255, 0.88);
   /* Apple system blue (dark-mode variant) — used for the scrubber
    * fill, slider thumbs, and any "active / progress" affordance. */
@@ -330,10 +336,12 @@ option {
 /* ── Reusable glass surface ────────────────────────────────────── */
 
 /* Shared glass pills — exclude transport (WebGL lens) and mute (lives
- * inside the volume pill; a second glass ring looks broken). */
-.videoOsdBottom .paper-icon-button-light:not(.btnRewind):not(.btnFastForward):not(.btnPlayPause):not(.btnPause):not(.btnPlay):not(.buttonMute):not(.btnUserRating),
-.osdHeader .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay),
-.osdHeader .headerButton:not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) {
+ * inside the volume pill; a second glass ring looks broken).
+ * Also skip .hide — a high-specificity :not() chain here used to beat
+ * Jellyfin's .hide { display:none }, leaving a ghost glass disc. */
+.videoOsdBottom .paper-icon-button-light:not(.hide):not(.btnRewind):not(.btnFastForward):not(.btnPlayPause):not(.btnPause):not(.btnPlay):not(.buttonMute):not(.btnUserRating),
+.osdHeader .paper-icon-button-light:not(.hide):not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay),
+.osdHeader .headerButton:not(.hide):not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) {
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 50% !important;
@@ -1088,7 +1096,7 @@ body > .osd-lens-layer,
   background-color: var(--osd-pill-bg) !important;
   background-image: var(--osd-pill-highlight) !important;
   border: var(--osd-pill-border) !important;
-  box-shadow: var(--osd-bar-lit-shadow) !important;
+  box-shadow: var(--osd-pill-shadow) !important;
   -webkit-backdrop-filter: var(--osd-pill-blur) !important;
   backdrop-filter: var(--osd-pill-blur) !important;
   pointer-events: all !important;
@@ -1167,10 +1175,10 @@ body > .osd-lens-layer,
  *   [volume]  …  [a · cc · ⚙ · fullscreen]
  */
 
-.videoOsdBottom .btnAudio,
-.videoOsdBottom .btnSubtitles,
-.videoOsdBottom .btnVideoOsdSettings,
-.videoOsdBottom .btnFullscreen {
+.videoOsdBottom .btnAudio:not(.hide),
+.videoOsdBottom .btnSubtitles:not(.hide),
+.videoOsdBottom .btnVideoOsdSettings:not(.hide),
+.videoOsdBottom .btnFullscreen:not(.hide) {
   position: fixed !important;
   top: auto !important;
   bottom: var(--osd-edge) !important;
@@ -1199,26 +1207,54 @@ body > .osd-lens-layer,
   box-sizing: border-box !important;
   pointer-events: all !important;
   z-index: 4 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
   /* Same transition triplet as the top-right and shared glass-surface
      rules — keeps hover behaviour identical across every OSD button. */
   transition: background-color 0.2s ease, transform 0.18s ease, color 0.2s ease !important;
 }
 
-.videoOsdBottom .btnFullscreen {
+/* Respect Jellyfin's .hide (e.g. single audio track). Specificity must
+ * beat the shared :not() glass chain or a ghost disc remains. */
+.videoOsdBottom .btnAudio.hide,
+.videoOsdBottom .btnSubtitles.hide,
+.videoOsdBottom .btnVideoOsdSettings.hide,
+.videoOsdBottom .btnFullscreen.hide,
+.videoOsdBottom .paper-icon-button-light.btnAudio.hide,
+.videoOsdBottom .paper-icon-button-light.btnSubtitles.hide,
+.videoOsdBottom .paper-icon-button-light.btnVideoOsdSettings.hide,
+.videoOsdBottom .paper-icon-button-light.btnFullscreen.hide {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Slot order from the right edge: fullscreen · settings · CC · audio.
+ * Audio is optional — when .hide, display:none removes it; the other
+ * three keep their fixed slots and stay packed to the right. */
+.videoOsdBottom .btnFullscreen:not(.hide) {
   right: var(--osd-right-edge) !important;
 }
 
-.videoOsdBottom .btnVideoOsdSettings {
+.videoOsdBottom .btnVideoOsdSettings:not(.hide) {
   right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
 }
 
-.videoOsdBottom .btnSubtitles {
+.videoOsdBottom .btnSubtitles:not(.hide) {
   right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
 }
 
-.videoOsdBottom .btnAudio {
+.videoOsdBottom .btnAudio:not(.hide) {
   right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 3) !important;
 }
 
@@ -1322,11 +1358,6 @@ video::-webkit-media-text-track-background {
   background: var(--osd-scrub-fill) !important;
   border-radius: inherit !important;
   box-shadow: none !important;
-}
-
-/* Volume track keeps a soft even bloom; scrubber stays clean. */
-.videoOsdBottom .volumeButtons .mdl-slider-background-lower {
-  box-shadow: 0 0 8px 1px rgba(10, 132, 255, 0.35) !important;
 }
 
 .videoOsdBottom .mdl-slider-background-upper,

@@ -8,6 +8,11 @@
  *    https://liquid-glass.ybouane.com — implemented here, not that lib)
  *
  * MUST be loaded as a real <script> (e.g. /web/ui/osd-lens-glass.js).
+ *
+ * Safe with Custom CSS off / lens opted out:
+ *  - Activates only when :root --liquid-glass-theme is set by theme CSS.
+ *  - Client opt-out: localStorage jellyfin-liquid-glass-lens=off,
+ *    URL ?nolens=1, or liquidGlassLens.disable() — stock OSD left alone.
  */
 (function () {
   'use strict';
@@ -25,6 +30,51 @@
 
   var TRANSPORT_SELECTORS =
     '.btnRewind, .btnFastForward, .btnPlayPause, .btnPause, .btnPlay';
+  var STORAGE_KEY = 'jellyfin-liquid-glass-lens';
+  var THEME_VAR = '--liquid-glass-theme';
+  var idleLogged = false;
+
+  function userOptedOut() {
+    try {
+      if (localStorage.getItem(STORAGE_KEY) === 'off') {
+        return true;
+      }
+    } catch (err) {
+      /* private mode / blocked storage */
+    }
+    try {
+      var q = String(location.search || '') + String(location.hash || '');
+      if (/(?:^|[?&#])nolens=1(?:&|$)/.test(q)) {
+        return true;
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function themeCssPresent() {
+    try {
+      var value = getComputedStyle(document.documentElement)
+        .getPropertyValue(THEME_VAR)
+        .trim();
+      return value === 'on' || value === '1';
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function lensAllowed() {
+    return !userOptedOut() && themeCssPresent();
+  }
+
+  function noteIdle(reason) {
+    if (idleLogged) {
+      return;
+    }
+    idleLogged = true;
+    console.info('[osd-lens-glass] idle (' + reason + ') — stock OSD untouched');
+  }
 
   /**
    * Disc drawn inside a larger layer canvas.
@@ -500,6 +550,13 @@
   }
 
   function paint() {
+    if (!lensAllowed()) {
+      if (buttons.length || layer) {
+        teardown();
+      }
+      return;
+    }
+
     var host = getTransportHost();
     var video = findVideo();
     lastVideo = video;
@@ -603,19 +660,36 @@
       return;
     }
     pollId = setInterval(function () {
+      if (!lensAllowed()) {
+        /* Strip lens DOM/classes but keep this poll so enable() / CSS
+         * coming back can wake without a full reload. */
+        stopLoop();
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        markButtons('off');
+        buttons = [];
+        destroyLayer();
+        noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
+        return;
+      }
+      idleLogged = false;
       var onPlayer =
         !!document.querySelector('.videoOsdBottom') ||
         !!document.querySelector('#videoOsdPage, .videoPlayerContainer, video');
       if (!onPlayer) {
-        teardown();
+        stopLoop();
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+        markButtons('off');
+        buttons = [];
+        destroyLayer();
         return;
       }
-      if (document.querySelector('.videoOsdBottom')) {
-        syncButtons();
-      }
-      if (buttons.length && isOsdVisible() && !rafId) {
-        startLoop();
-      }
+      init();
     }, 500);
   }
 
@@ -632,6 +706,15 @@
   }
 
   function syncButtons() {
+    if (!lensAllowed()) {
+      if (buttons.length || layer) {
+        teardown();
+      }
+      noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
+      return;
+    }
+    idleLogged = false;
+
     if (!document.querySelector('.videoOsdBottom')) {
       teardown();
       return;
@@ -669,6 +752,15 @@
   }
 
   function init() {
+    if (!lensAllowed()) {
+      if (buttons.length || layer) {
+        teardown();
+      }
+      noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
+      /* Keep a light poll so re-enabling CSS / clearing opt-out can wake us. */
+      startPoll();
+      return;
+    }
     if (!document.querySelector('.videoOsdBottom') && !document.querySelector('video')) {
       return;
     }
@@ -718,7 +810,40 @@
     window.removeEventListener('pagehide', onPageHide);
     window.__osdLensGlassLoaded = false;
     window.__osdLensGlassDispose = null;
+    try {
+      delete window.liquidGlassLens;
+    } catch (err) {
+      window.liquidGlassLens = undefined;
+    }
   }
+
+  window.liquidGlassLens = {
+    disable: function () {
+      try {
+        localStorage.setItem(STORAGE_KEY, 'off');
+      } catch (err) {
+        /* ignore */
+      }
+      idleLogged = false;
+      teardown();
+      startPoll();
+      noteIdle('client opted out of lens');
+      return true;
+    },
+    enable: function () {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (err) {
+        /* ignore */
+      }
+      idleLogged = false;
+      init();
+      return lensAllowed();
+    },
+    isAllowed: lensAllowed,
+    isOptedOut: userOptedOut,
+    themeActive: themeCssPresent
+  };
 
   document.addEventListener('viewshow', onViewShow);
   document.addEventListener('click', onClick, true);
