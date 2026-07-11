@@ -164,19 +164,20 @@ option {
  *   │ back · cast · settings  │         │  ▭▭▭▭───   🔊            │
  *   └─────────────────────────┘         └──────────────────────────┘
  *
- *           ╭─────╮     ╭─────╮     ╭─────╮         ┌─ a/cc pill ─┐
- *           │ ⟲15 │     │  ▮▮ │     │ 15⟳ │         │  🎵   💬    │
- *           ╰─────╯     ╰─────╯     ╰─────╯         └─────────────┘
+ *           ╭─────╮     ╭─────╮     ╭─────╮
+ *           │ ⟲15 │     │  ▮▮ │     │ 15⟳ │     ← CENTER of screen
+ *           ╰─────╯     ╰─────╯     ╰─────╯
  *
- *   ┌─ bottom scrubber pill ─────────────────────────────────────────┐
- *   │ 16:50  ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱  -42:10 │
- *   └────────────────────────────────────────────────────────────────┘
+ *   ┌─ volume ──┐  ┌─ scrubber pill ─────────────────────┐  ┌─ a/cc/⚙ ─┐
+ *   │  🔊 ════  │  │ start │━━━━●━━━━│ end │ Ends at     │  │ ♪  💬  ⚙ │
+ *   └───────────┘  └─────────────────────────────────────┘  └──────────┘
  *
  * Every control is its own floating glass circle:
- *   · top-left:  back / home / menu       · top-right: volume + cast + pip + fullscreen
- *   · center:    rewind / play-pause / forward  (3 buttons; play-pause largest)
+ *   · top-left:  back / home / menu       · top-right: cast
+ *   · center:    rewind / play-pause / forward  (MUST stay viewport-centered)
  *   · bottom-right: audio · subtitles · settings
- *   · bottom:    scrubber pill (lifted) with start | bar | end | "ends at" inline
+ *   · bottom-left: volume
+ *   · bottom:    scrubber pill (lifted above bottom row)
  *
  * Every icon is brand-neutral white — no tint.
  * ─────────────────────────────────────────────────────────────────── */
@@ -316,6 +317,8 @@ option {
      transport row without ever colliding with it. */
   --osd-transport-size: 5.6em;
   --osd-transport-large: 7.6em;
+  /* Scrubber only needs to clear the bottom row (volume / a·cc·⚙).
+   * Transport lives in the SCREEN CENTER, not under the scrubber. */
   --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.85em);
 }
 
@@ -687,16 +690,16 @@ option {
   display: inline !important;
 }
 
-/* ── Bottom-center transport: rewind / play-pause / forward ────── *
- * Bottom-anchored so it lives in the same row as the volume pill
- * (left) and audio/subs/settings (right). `align-items: flex-end`
- * keeps every button on a shared baseline so the larger play/pause
- * "pops" upward without throwing the row off-center.              */
+/* ── Center transport: rewind / play-pause / forward ───────────── *
+ * Dead-center of the viewport (Apple TV style). MUST stay
+ * `position: fixed` — never `relative` or the cluster falls into
+ * the scrubber flex row and looks broken. */
 
 .videoOsdBottom .buttons > div:first-child {
   position: fixed !important;
   left: 50% !important;
   top: 50% !important;
+  right: auto !important;
   bottom: auto !important;
   transform: translate(-50%, -50%) !important;
   display: inline-flex !important;
@@ -705,6 +708,7 @@ option {
   justify-content: center !important;
   gap: 1.8em !important;
   width: auto !important;
+  height: auto !important;
   flex: none !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -716,7 +720,7 @@ option {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   pointer-events: all !important;
-  z-index: 3 !important;
+  z-index: 4 !important;
 }
 
 /* Hide every child that isn't one of: rewind, play/pause, forward */
@@ -771,6 +775,12 @@ option {
 #videoOsdPage .videoOsdBottom .buttons > div[dir="ltr"],
 #videoOsdPage .videoOsdBottom .buttons > div:first-child,
 .videoOsdBottom .buttons > div:first-child {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
   background: none !important;
   background-image: none !important;
   background-color: transparent !important;
@@ -927,36 +937,41 @@ option {
   border-radius: 0 !important;
 }
 
-#videoOsdPage .videoOsdBottom .osd-lens-canvas,
-.videoOsdBottom .buttons > div:first-child .osd-lens-canvas {
+/* Shared WebGL layer covering the transport row (one upload / frame).
+ * Transport host stays `position: fixed` at SCREEN CENTER.
+ * The lens layer is `position: absolute` inside that fixed box —
+ * never force the host to `relative` (it collapses into the scrubber). */
+
+#videoOsdPage .videoOsdBottom .osd-lens-layer,
+.videoOsdBottom .buttons > div:first-child .osd-lens-layer,
+.videoOsdBottom .osd-lens-layer {
   position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
+  inset: auto !important;
   border: 0 !important;
   border-radius: 0 !important;
   pointer-events: none !important;
   z-index: 0 !important;
   display: block !important;
-  opacity: 0 !important;
-  object-fit: cover !important;
-  /* Shader owns the circle. CSS radius/clip on the canvas also AA-rings. */
+  max-width: none !important;
+  max-height: none !important;
   -webkit-clip-path: none !important;
   clip-path: none !important;
+  /* Visibility is toggled by JS via .osd-lens-layer-on (must beat this). */
+  opacity: 0;
 }
 
-#videoOsdPage .videoOsdBottom .buttons > div:first-child .osd-lens-btn.osd-lens-ready .osd-lens-canvas,
-#videoOsdPage .videoOsdBottom .osd-lens-btn.osd-lens-ready .osd-lens-canvas,
-.videoOsdBottom .buttons > div:first-child .osd-lens-btn.osd-lens-ready .osd-lens-canvas {
+#videoOsdPage .videoOsdBottom .osd-lens-layer.osd-lens-layer-on,
+.videoOsdBottom .buttons > div:first-child .osd-lens-layer.osd-lens-layer-on,
+.videoOsdBottom .osd-lens-layer.osd-lens-layer-on {
   opacity: 1 !important;
 }
 
-#videoOsdPage .videoOsdBottom .osd-lens-fallback .osd-lens-canvas,
-.videoOsdBottom .buttons > div:first-child .osd-lens-fallback .osd-lens-canvas {
+/* Legacy per-button canvases from older builds — hide if present. */
+#videoOsdPage .videoOsdBottom .osd-lens-canvas,
+.videoOsdBottom .buttons > div:first-child .osd-lens-canvas {
   display: none !important;
   opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn .material-icons,
@@ -964,6 +979,11 @@ option {
   position: relative !important;
   z-index: 1 !important;
   pointer-events: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .osd-lens-btn {
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .osd-lens-btn > *:not(.osd-lens-canvas):not(.material-icons):not(.xlargePaperIconButton) {
