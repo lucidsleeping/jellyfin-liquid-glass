@@ -83,7 +83,7 @@
    */
   /*
    * Edge-glass look (clear center, light bends at the rim) — subtle:
-   *   REFRACTION / CHROMA kept modest so the rim whispers, not screams.
+   *   REFRACTION stays moderate; CHROMA is stronger so the rim fringe reads.
    * Center of each disc samples the video almost 1:1 (no rainbow, no warp).
    */
   var FRAGMENT_SHADER = [
@@ -95,8 +95,10 @@
     'uniform vec4 uDisc;',
     '',
     'const float REFRACTION = 1.15;',
-    'const float CHROMA = 0.09;',
-    'const float CHROMA_SAT = 0.48;',
+    'const float CHROMA = 0.18;',
+    'const float CHROMA_SAT = 0.68;',
+    '/* Green fringe only — pull toward luma so G is a touch less vivid. */',
+    'const float CHROMA_GREEN_SAT = 0.84;',
     'const float EDGE_HL = 0.0;',
     'const float FRESNEL = 0.0;',
     '',
@@ -151,6 +153,8 @@
     '  float green = base.g;',
     '  float blue = sampleVideo(baseCss - splitCss).b;',
     '  vec3 chroma = vec3(red, green, blue);',
+    '  float chromaLuma = dot(chroma, vec3(0.2126, 0.7152, 0.0722));',
+    '  chroma.g = mix(chromaLuma, chroma.g, CHROMA_GREEN_SAT);',
     '  /* Keep the split, but mute how colorful the fringe is. */',
     '  vec3 col = mix(base, chroma, CHROMA_SAT);',
     '',
