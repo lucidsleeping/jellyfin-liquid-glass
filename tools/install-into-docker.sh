@@ -22,6 +22,7 @@ CONTAINER="${CONTAINER:-jellyfin}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CSS_SRC="${ROOT}/style.css"
 JS_SRC="${ROOT}/tools/osd-lens-glass.js"
+ACCENT_SRC="${ROOT}/tools/poster-accent.js"
 HOOK_SRC="${ROOT}/tools/99-liquid-glass-lens.sh"
 LENS_CACHE_BUST="${LENS_CACHE_BUST:-refraction}"
 
@@ -67,12 +68,9 @@ print(f"Wrote CustomCss ({len(css)} bytes) → {branding_path}")
 PY
 }
 
-upsert_lens_script_tag() {
-  local bust="$1"
-  # Prefer host-side rewrite (python available on host); fall back to sed in-container.
-  local index_host=""
-  # linuxserver jellyfin keeps web UI in the container image, not a bind mount —
-  # copy out, edit, copy back.
+upsert_ui_script_tags() {
+  local lens_bust="$1"
+  local accent_bust="$2"
   local tmp
   tmp="$(mktemp)"
   docker cp "${CONTAINER}:/usr/share/jellyfin/web/index.html" "$tmp"
@@ -80,27 +78,33 @@ upsert_lens_script_tag() {
     INDEX=/usr/share/jellyfin/web/index.html
     [ -f "${INDEX}.bak.liquid-glass" ] || cp -f "$INDEX" "${INDEX}.bak.liquid-glass"
   ' || true
-  python3 - "$tmp" "$bust" <<'PY'
+  python3 - "$tmp" "$lens_bust" "$accent_bust" <<'PY'
 import re
 import sys
 from pathlib import Path
 
 index = Path(sys.argv[1])
-bust = sys.argv[2]
-tag = f'<script src="ui/osd-lens-glass.js?v={bust}" defer></script>'
+scripts = [
+    ("osd-lens-glass.js", sys.argv[2]),
+    ("poster-accent.js", sys.argv[3]),
+]
 text = index.read_text(encoding="utf-8", errors="replace")
-pat = re.compile(
-    r'[ \t]*<script[^>]*src=["\'][^"\']*osd-lens-glass\.js[^"\']*["\'][^>]*>\s*</script>\s*',
-    re.I,
-)
-if pat.search(text):
-    text = pat.sub(tag + "\n", text, count=1)
-elif re.search(r"(?i)</body>", text):
-    text = re.sub(r"(?i)</body>", tag + "\n</body>", text, count=1)
-else:
-    text = text.rstrip() + "\n" + tag + "\n"
+tags = []
+for name, bust in scripts:
+    tag = f'<script src="ui/{name}?v={bust}" defer></script>'
+    tags.append(tag)
+    pat = re.compile(
+        rf'[ \t]*<script[^>]*src=["\'][^"\']*{re.escape(name)}[^"\']*["\'][^>]*>\s*</script>\s*',
+        re.I,
+    )
+    if pat.search(text):
+        text = pat.sub(tag + "\n", text, count=1)
+    elif re.search(r"(?i)</body>", text):
+        text = re.sub(r"(?i)</body>", tag + "\n</body>", text, count=1)
+    else:
+        text = text.rstrip() + "\n" + tag + "\n"
 index.write_text(text, encoding="utf-8")
-print(tag)
+print("\n".join(tags))
 PY
   docker cp "$tmp" "${CONTAINER}:/usr/share/jellyfin/web/index.html"
   rm -f "$tmp"
@@ -119,11 +123,13 @@ if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
 fi
 
 [[ -f "$JS_SRC" ]] || { log "ERROR: missing $JS_SRC"; exit 1; }
+[[ -f "$ACCENT_SRC" ]] || { log "ERROR: missing $ACCENT_SRC"; exit 1; }
 [[ -f "$CSS_SRC" ]] || { log "ERROR: missing $CSS_SRC"; exit 1; }
 [[ -f "$HOOK_SRC" ]] || { log "ERROR: missing $HOOK_SRC"; exit 1; }
 
 BUST="$(lens_cache_bust)"
-log "Installing into Docker container: ${CONTAINER} (cache-bust=${BUST})"
+ACCENT_BUST="accent-$(sha256sum "$ACCENT_SRC" | awk '{print substr($1,1,8)}')"
+log "Installing into Docker container: ${CONTAINER} (cache-bust=${BUST}, accent=${ACCENT_BUST})"
 
 CONFIG_SRC="$(docker inspect "$CONTAINER" --format '{{range .Mounts}}{{if eq .Destination "/config"}}{{.Source}}{{end}}{{end}}')"
 INIT_SRC="$(docker inspect "$CONTAINER" --format '{{range .Mounts}}{{if eq .Destination "/custom-cont-init.d"}}{{.Source}}{{end}}{{end}}')"
@@ -136,15 +142,19 @@ fi
 
 docker exec "$CONTAINER" mkdir -p /usr/share/jellyfin/web/ui
 docker cp "$JS_SRC" "${CONTAINER}:/usr/share/jellyfin/web/ui/osd-lens-glass.js"
+docker cp "$ACCENT_SRC" "${CONTAINER}:/usr/share/jellyfin/web/ui/poster-accent.js"
 
 if [[ -n "$CONFIG_SRC" ]]; then
   mkdir -p "${CONFIG_SRC}/liquid-glass"
   cp -f "$JS_SRC" "${CONFIG_SRC}/liquid-glass/osd-lens-glass.js"
+  cp -f "$ACCENT_SRC" "${CONFIG_SRC}/liquid-glass/poster-accent.js"
   printf '%s\n' "$BUST" > "${CONFIG_SRC}/liquid-glass/cache-bust.txt"
+  printf '%s\n' "$ACCENT_BUST" > "${CONFIG_SRC}/liquid-glass/accent-bust.txt"
 fi
 
-upsert_lens_script_tag "$BUST"
+upsert_ui_script_tags "$BUST" "$ACCENT_BUST"
 log "Installed + linked /web/ui/osd-lens-glass.js?v=${BUST}"
+log "Installed + linked /web/ui/poster-accent.js?v=${ACCENT_BUST}"
 
 if [[ -n "$CONFIG_SRC" ]]; then
   if [[ -d "${CONFIG_SRC}/custom-cont-init.d" ]]; then
@@ -165,12 +175,19 @@ fi
 
 code="$(curl -sS -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8096/web/ui/osd-lens-glass.js' || true)"
 log "HTTP /web/ui/osd-lens-glass.js → ${code}"
+accent_code="$(curl -sS -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8096/web/ui/poster-accent.js' || true)"
+log "HTTP /web/ui/poster-accent.js → ${accent_code}"
 if curl -sS 'http://127.0.0.1:8096/web/index.html' | grep -q "osd-lens-glass.js?v=${BUST}"; then
   log "index.html references osd-lens-glass.js?v=${BUST}"
 elif curl -sS 'http://127.0.0.1:8096/web/index.html' | grep -q 'osd-lens-glass.js'; then
   log "WARNING: index.html has osd-lens-glass.js but wrong/missing ?v= cache-bust"
 else
   log "WARNING: index.html does not reference osd-lens-glass.js"
+fi
+if curl -sS 'http://127.0.0.1:8096/web/index.html' | grep -q "poster-accent.js?v=${ACCENT_BUST}"; then
+  log "index.html references poster-accent.js?v=${ACCENT_BUST}"
+else
+  log "WARNING: index.html does not reference poster-accent.js?v=${ACCENT_BUST}"
 fi
 
 log "Done. Hard-refresh Jellyfin (Ctrl+Shift+R) and play a video."

@@ -36,16 +36,73 @@
    * transport / menus work untouched. */
   --liquid-glass-theme: on;
 
-  /* Surfaces */
-  --bg-color: #000;
-  --w-color: rgba(20, 20, 24, 0.42);
-  --card-bg: rgba(20, 20, 24, 0.46);
-  --indicator-bg: rgba(20, 20, 24, 0.72);
-  --transparent-bg: rgba(0, 0, 0, 0);
+  /* ── Apple system colors · dark appearance ──────────────────────
+   * Verbatim from Apple's Human Interface Guidelines colour spec.
+   * These are the ONLY chromatic values allowed in the theme; any
+   * rule needing an accent references one of them. The palette is
+   * intentionally complete even where a hue is not currently used,
+   * so future rules pick an Apple value instead of inventing one. */
+  --sys-blue: #0a84ff;
+  --sys-blue-pressed: #1c8eff;
+  --sys-green: #30d158;
+  --sys-red: #ff453a;
+  --sys-red-pressed: #ff6961;
+  --sys-orange: #ff9f0a;
+  --sys-yellow: #ffd60a;
+  --sys-indigo: #5e5ce6;
 
-  /* The blur stack used app-wide. Same flavour as `--osd-pill-blur`
-   * but a touch lighter so non-player panels aren't excessive. */
-  --blur: blur(22px) saturate(170%) brightness(102%);
+  /* ── Apple label colors · dark ──────────────────────────────────
+   * Apple TINTS its label greys slightly blue (235, 235, 245) — they
+   * are deliberately not pure white. Using pure white at low alpha
+   * (the old approach) reads colder and flatter against glass.    */
+  --label: #fff;
+  --label-2: rgba(235, 235, 245, 0.60);
+  --label-3: rgba(235, 235, 245, 0.30);
+  --label-4: rgba(235, 235, 245, 0.18);
+
+  /* ── Apple fill colors · dark ───────────────────────────────────
+   * For neutral control backgrounds that sit ON a glass surface.  */
+  --fill-1: rgba(120, 120, 128, 0.36);
+  --fill-2: rgba(120, 120, 128, 0.32);
+  --fill-3: rgba(118, 118, 128, 0.24);
+  --fill-4: rgba(118, 118, 128, 0.18);
+  --separator: rgba(84, 84, 88, 0.65);
+  /* Dark-mode UISegmentedControl selected thumb — a solid lift,
+   * not a glass fill. */
+  --seg-thumb: rgba(255, 255, 255, 0.18);
+
+  /* ── Materials ──────────────────────────────────────────────────
+   * Three blur recipes replace the twelve ad-hoc stacks this theme
+   * used to carry. Pick by how much the surface should occlude:
+   *   thin     inline chrome — chips, indicators, inputs, tooltips
+   *   regular  floating controls — header buttons, tabs, cards
+   *   thick    full panels — drawer, dialogs, action sheets
+   * The player transport does NOT use these; it keeps its own
+   * `--osd-pill-blur` displacement recipe (second :root block).   */
+  --mat-thin: blur(14px) saturate(170%);
+  --mat-regular: blur(22px) saturate(170%) brightness(102%);
+  --mat-thick: blur(40px) saturate(150%);
+  /* Not chrome — this one dims the full-bleed backdrop artwork so
+   * page content stays legible on top of it. */
+  --mat-scrim: blur(30px) saturate(80%) brightness(60%);
+
+  /* Glass tints paired with the materials above */
+  --glass-thin: rgba(120, 120, 128, 0.18);
+  --glass-regular: rgba(28, 28, 30, 0.52);
+  --glass-thick: rgba(18, 18, 20, 0.62);
+
+  /* Rim light — the specular top edge that makes glass read as
+   * curved. Two alphas only, replacing the previous thirteen.     */
+  --rim: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --rim-strong: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  --hairline-color: rgba(255, 255, 255, 0.12);
+  --hairline: 1px solid var(--hairline-color);
+
+  /* Tint behind full-bleed backdrop artwork. Kept at the theme's
+   * original #18181849 value so the hero imagery reads unchanged. */
+  --scrim-fill: rgba(24, 24, 24, 0.29);
+
+  /* Diagonal specular sweep across a glass surface */
   --border-color: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0.22) 0%,
@@ -54,22 +111,51 @@
     rgba(255, 255, 255, 0.14) 100%
   );
 
-  /* Interactions */
-  --hover-bg: rgba(255, 255, 255, 0.06);
-  --hover-text: rgba(255, 255, 255, 0.96);
-  --active-bg: rgba(10, 132, 255, 0.18);
+  /* ── Shape · capsule-first ──────────────────────────────────────
+   * Every interactive control is a stadium or a circle. Containers
+   * get a large continuous radius; artwork stays crisp.           */
+  --radius-capsule: 999px;
+  --radius-circle: 50%;
+  --radius-container: 1.6em;
+  --radius-field: 1.1em;
+  --radius-poster: 0.6em;
+  /* Checkbox stays a rounded SQUARE. Apple deliberately keeps
+   * checkbox and radio visually distinguishable (square = multi
+   * select, circle = single select), so this is the one control that
+   * does not become a capsule. 0.32em on a 1.15em box is ~28%, which
+   * is Apple's own corner ratio. */
+  --radius-checkbox: 0.32em;
 
-  /* Apple system blue — single source of truth for every accent in
-   * the whole theme. Mirrors `--osd-accent-blue` used by the player
-   * scrubber so the language stays consistent. */
-  --accent-blue: #0a84ff;
-  --accent-blue-soft: rgba(10, 132, 255, 0.85);
+  /* ── Motion ─────────────────────────────────────────────────────
+   * Apple eases out of a spring rather than using a symmetric
+   * ease. Two durations cover the whole UI.                       */
+  --dur-fast: 0.2s;
+  --dur: 0.3s;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ── Interactions ───────────────────────────────────────────────
+   * Apple does not lift controls on hover; it brightens the fill
+   * and scales down on press. See the motion pass below.          */
+  --hover-bg: var(--fill-3);
+  --hover-text: var(--label);
+  --press-scale: 0.96;
+
+  /* ── Surfaces ───────────────────────────────────────────────────*/
+  --bg-color: #000;
+  --w-color: var(--glass-regular);
+  --card-bg: var(--glass-regular);
+  --indicator-bg: var(--glass-thick);
+  --transparent-bg: rgba(0, 0, 0, 0);
+
+  /* Accent aliases — every accent in the theme resolves to system
+   * blue so there is a single source of truth. */
+  --accent-blue: var(--sys-blue);
   --accent-blue-ghost: rgba(10, 132, 255, 0.16);
-  --accent: var(--accent-blue);
+  --accent-blue-glow: rgba(10, 132, 255, 0.34);
 
   /* Progress / scrubber colors */
-  --progress: var(--accent-blue);
-  --progress-track: rgba(255, 255, 255, 0.16);
+  --progress: var(--sys-blue);
+  --progress-track: var(--fill-3);
 
   /* Typography */
   --font-sans:
@@ -78,25 +164,6 @@
   --font-display:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
     system-ui, sans-serif;
-
-  /* Misc */
-  --card-gap: 1vw;
-  /* Radii — all surfaces are heavily rounded ("fluid"); small, mid and
-   * large interactives become full pills via `--radius-pill`. */
-  --radius-sm: 0.9em;
-  --radius-md: 1.5em;
-  --radius-lg: 2.2em;
-  --radius-xl: 2.8em;
-  --radius-pill: 999px;
-
-  /* Legacy player aliases kept for any old rules that referenced them */
-  --player-panel: rgba(12, 12, 14, 0.38);
-  --player-btn: rgba(255, 255, 255, 0.06);
-  --player-btn-hover: rgba(255, 255, 255, 0.12);
-  --player-glass: rgba(255, 255, 255, 0.05);
-  --player-glass-strong: rgba(255, 255, 255, 0.10);
-  --player-glass-blur: var(--blur);
-  --player-border: rgba(255, 255, 255, 0.10);
 }
 
 /* Global Styles */
@@ -123,20 +190,23 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
 }
 
-/* Elements with transparency and blur effects */
-.skinHeader.semiTransparent:not(.osdHeader),
-.skinHeader:not(.osdHeader),
-.mainDrawer,
-.actionSheet,
+/* Native select popups are the one surface Jellyfin renders that we
+ * cannot restyle structurally, so they get the glass here. The header,
+ * drawer and action sheet used to be in this selector too, but all
+ * three are defined authoritatively further down — and disagreed with
+ * this rule on both the blur recipe and the -webkit- prefix value. */
 select:enabled,
 option {
-  background-color: var(--w-color);
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  background-color: var(--glass-thick);
+  backdrop-filter: var(--mat-thick) !important;
+  -webkit-backdrop-filter: var(--mat-thick) !important;
 }
 
-/* Border styling for certain elements */
-.skinHeader:not(.osdHeader),
+/* Border styling for certain elements.
+ * `.skinHeader` used to be in this list — the gradient `border-image`
+ * painted a 1px specular line across the top of the page even after
+ * the later "transparent header" block zeroed `border`. Keep the
+ * gradient on sheets/drawer only. */
 .actionSheet,
 .mainDrawer {
   border: 1px solid transparent;
@@ -144,12 +214,13 @@ option {
   border-image-source: var(--border-color);
 }
 
-/* Specific styles for .skinHeader */
+/* The header bar itself is fully transparent (see the floating-header
+ * block below) — only the buttons inside it carry glass, so the bar
+ * has no corners left to round. */
 .skinHeader:not(.osdHeader) {
-  border-left: 0;
-  border-right: 0;
-  border-top: 0;
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: none !important;
 }
 
 /* Form elements */
@@ -316,12 +387,10 @@ option {
   --osd-right-edge: max(1.2em, env(safe-area-inset-right));
   --osd-left-edge: max(1.2em, env(safe-area-inset-left));
   --osd-btn-size: 2.6em;
-  /* Visual gap between adjacent floating glass buttons. 0.85em reads
-     as evenly-spaced when the icons inside are mixed weights (chevron
-     vs. solid house vs. hamburger lines) — the previous 0.7em looked
-     uneven because the chevron's left-leaning optical centre pulled
-     the back-button toward its neighbour. */
-  --osd-btn-gap: 0.85em;
+  /* Shared gap for every circular chrome cluster: player top-left,
+     player top-right, page header, detail actions. 0.4em (~6px)
+     keeps 2.6em discs as a tight row without fusing. */
+  --osd-btn-gap: 0.4em;
   /* Transport sizes are separate from --osd-btn-size so play/pause
      can stay visually dominant. Scrub-lift is DERIVED from the
      play/pause height so the scrubber pill always clears the
@@ -369,13 +438,21 @@ option {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   color: #fff !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
   height: auto !important;
   min-height: 0 !important;
   padding: var(--osd-top-edge) var(--osd-right-edge) 0 var(--osd-left-edge) !important;
   pointer-events: none !important;
   position: relative !important;
   z-index: 4 !important;
-  transition: opacity 0.3s ease-out !important;
+  /* Jellyfin's `contain: content` makes `position: fixed` Cast /
+   * headerLeft resolve against the header box (often wider than the
+   * viewport), so Cast clips off the right edge. */
+  contain: none !important;
+  transition: none !important;
   /* Anchor the em context so every `--osd-*` token (button size,
      gaps, edges) computes IDENTICALLY here and inside `.videoOsdBottom`.
      Without this, `.skinHeader` inherits Jellyfin's smaller base
@@ -383,6 +460,37 @@ option {
      pixels smaller and offset from the right cluster (airplay/pip/
      fullscreen) which lives in the body-rooted em context. */
   font-size: 1rem !important;
+}
+
+/* Idle — follow Jellyfin's hide. The left cluster and Cast are
+ * `position: fixed`, so they must be hidden explicitly or they
+ * stay on screen after the rest of the OSD fades. */
+.skinHeader.osdHeader.hide,
+.skinHeader.osdHeader.osdHeader-hidden,
+html.mouseIdle .skinHeader.osdHeader,
+body.mouseIdle .skinHeader.osdHeader {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.osdHeader.hide .headerLeft,
+.osdHeader.osdHeader-hidden .headerLeft,
+.osdHeader.hide .headerCastButton,
+.osdHeader.osdHeader-hidden .headerCastButton,
+.osdHeader.hide .btnCast,
+.osdHeader.osdHeader-hidden .btnCast,
+html.mouseIdle .osdHeader .headerLeft,
+html.mouseIdle .osdHeader .headerCastButton,
+html.mouseIdle .osdHeader .btnCast,
+body.mouseIdle .osdHeader .headerLeft,
+body.mouseIdle .osdHeader .headerCastButton,
+body.mouseIdle .osdHeader .btnCast {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* No top vignette — the header buttons stand on their own glass. */
@@ -408,6 +516,35 @@ option {
   border-radius: 0 !important;
   box-shadow: none !important;
   pointer-events: all !important;
+}
+
+.osdHeader .headerLeft {
+  /* Same viewport pin as Cast on the right — in-flow placement
+   * drifted with header chrome and sat the trio off the corner. */
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
+  left: var(--osd-left-edge) !important;
+  right: auto !important;
+  bottom: auto !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  /* Spacing comes from sibling margins below — they beat the
+   * glass-surface `margin: 0 !important` on each button. Flex
+   * `gap` alone was losing that fight, so the trio sat ~4px apart. */
+  gap: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  pointer-events: all !important;
+  z-index: 5 !important;
+}
+
+.osdHeader .headerLeft > .headerButton:not(.hide):not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) + .headerButton:not(.hide),
+.osdHeader .headerLeft > .paper-icon-button-light:not(.hide):not(.headerAudioPlayerButton):not(.headerSearchButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay) + .paper-icon-button-light:not(.hide) {
+  margin-left: var(--osd-btn-gap) !important;
 }
 
 /* Kill every page-title variant Jellyfin might render inside the OSD
@@ -449,12 +586,21 @@ option {
   max-width: var(--osd-btn-size) !important;
   min-height: var(--osd-btn-size) !important;
   max-height: var(--osd-btn-size) !important;
+  line-height: 0 !important;
 }
 
 .osdHeader .headerButton .material-icons,
 .osdHeader .paper-icon-button-light .material-icons {
-  font-size: 1.2em !important;
+  /* Tight box — filling the disc lets Material's extra descender
+   * sit the glyph low (more air at the top of the bubble). */
+  display: block !important;
+  font-size: 1.15em !important;
   line-height: 1 !important;
+  width: 1.15em !important;
+  height: 1.15em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translateY(-0.06em) !important;
 }
 
 /* ── Main OSD container: invisible — pieces float independently ── */
@@ -1061,9 +1207,9 @@ body > .osd-lens-layer,
 .osdHeader .paper-icon-button-light.btnCast {
   position: fixed !important;
   top: var(--osd-top-edge) !important;
-  right: var(--osd-right-edge) !important;
+  right: auto !important;
   bottom: auto !important;
-  left: auto !important;
+  left: calc(100vw - var(--osd-right-edge) - var(--osd-btn-size)) !important;
   margin: 0 !important;
   z-index: 5 !important;
   pointer-events: all !important;
@@ -1071,8 +1217,16 @@ body > .osd-lens-layer,
 
 .osdHeader .headerCastButton .material-icons,
 .osdHeader .btnCast .material-icons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   font-size: 1.2em !important;
   line-height: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
 }
 
 /* ── Volume pill: bottom-LEFT, aligned with the button row ─────── *
@@ -1443,7 +1597,7 @@ video::-webkit-media-text-track-background {
 @media all and (max-width: 60em) {
   :root {
     --osd-btn-size: 2.4em;
-    --osd-btn-gap: 0.7em;
+    --osd-btn-gap: 0.35em;
     --osd-transport-size: 4.6em;
     --osd-transport-large: 6.2em;
   }
@@ -1458,7 +1612,7 @@ video::-webkit-media-text-track-background {
 @media all and (max-width: 42em) {
   :root {
     --osd-btn-size: 2.3em;
-    --osd-btn-gap: 0.55em;
+    --osd-btn-gap: 0.3em;
     --osd-transport-size: 3.8em;
     --osd-transport-large: 5em;
   }
@@ -1557,7 +1711,7 @@ video::-webkit-media-text-track-background {
   background-image: var(--osd-pill-highlight) !important;
   backdrop-filter: var(--osd-pill-blur) !important;
   -webkit-backdrop-filter: var(--osd-pill-blur) !important;
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-container) !important;
   border: var(--osd-pill-border) !important;
   box-shadow: var(--osd-pill-shadow) !important;
 }
@@ -1580,73 +1734,19 @@ video::-webkit-media-text-track-background {
  * normally already live inside a blurred container and double-blur
  * tanks scrolling performance. */
 .listItem {
-  transition: background-color 0.18s ease, color 0.18s ease;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
 
-/* Card styles */
-.cardBox {
-  background:
-    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
-    var(--border-color) border-box;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.3);
-  padding: 25px;
-  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
-.itemsContainer > .card > .cardBox:hover {
-  transform: translateY(-5px);
-  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
-}
-
-.itemsContainer > .card > .cardBox:active {
-  transform: translateY(-9px);
-  box-shadow: 12px 12px 20px rgba(0, 0, 0, 0.3);
-}
-
-.homeLibraryButton {
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  border-image-source: var(--border-color);
-  background:
-    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
-    var(--border-color) border-box;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  /* Outer drop shadow removed — the rule further down with the new
-     glass recipe handles `box-shadow` (inset rim-light only). */
-  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out;
-}
-
-.homeLibraryButton:hover {
-  transform: translateY(-5px);
-}
-
-.homeLibraryButton:active {
-  transform: translateY(-15px);
-}
-
-.fab:focus,
-.raised:focus {
-  background:
-    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
-    var(--border-color) border-box;
-}
+/* NOTE — the legacy `.cardBox` / `.homeLibraryButton` / `.cardText`
+ * definitions that used to live here were deleted. Every one of them
+ * was redefined later in the file by the Apple-TV card treatment, so
+ * the early copies were dead weight that only made the cascade hard
+ * to reason about. Card visuals now have exactly one definition, in
+ * the "Cards · Apple TV / iOS poster style" block below. */
 
 .cardBox:not(.visualCardBox) .cardPadder,
 .cardContent-shadow {
   box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-}
-
-/* Text styles */
-.cardText {
-  font-size: large;
-  padding: 2%;
-}
-
-.cardText-secondary {
-  font-size: small;
 }
 
 /* ── Card containers: DO NOT restyle the layout engine ──────────
@@ -1692,7 +1792,7 @@ video::-webkit-media-text-track-background {
 
 /* Desktop background settings */
 html.preload.layout-desktop {
-  background-color: #181818;
+  background-color: var(--bg-color);
 }
 
 .layout-desktop .detailLogo {
@@ -1723,8 +1823,8 @@ html.preload.layout-desktop {
 #reactRoot > .skinHeader.semiTransparent + .backgroundContainer.withBackdrop {
   background-color: transparent;
   background:
-    linear-gradient(90deg, var(--bg-color), rgba(24, 24, 24, 0) 60%),
-    linear-gradient(360deg, var(--bg-color), rgba(24, 24, 24, 0) 60%);
+    linear-gradient(90deg, var(--bg-color), transparent 60%),
+    linear-gradient(360deg, var(--bg-color), transparent 60%);
   background-size: cover;
   height: 100vh;
   margin-left: 20%;
@@ -1734,8 +1834,8 @@ html.preload.layout-desktop {
 
 .layout-desktop .backgroundContainer {
   background:
-    linear-gradient(90deg, var(--bg-color), rgba(24, 24, 24, 0) 60%),
-    linear-gradient(360deg, var(--bg-color), rgba(24, 24, 24, 0) 60%);
+    linear-gradient(90deg, var(--bg-color), transparent 60%),
+    linear-gradient(360deg, var(--bg-color), transparent 60%);
   background-size: cover;
   height: 100vh;
   margin-left: 20%;
@@ -1748,9 +1848,9 @@ html.preload.layout-desktop {
 }
 
 .skinHeader:has(.noHomeButtonHeader) .backdropContainer {
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: #18181849;
+  backdrop-filter: var(--mat-regular);
+  -webkit-backdrop-filter: var(--mat-regular);
+  background-color: var(--scrim-fill);
   width: 100vw;
   left: 0;
 }
@@ -1760,9 +1860,9 @@ html.preload.layout-desktop {
 }
 
 .skinHeader.noHomeButtonHeader .backdropContainer {
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background-color: #18181849;
+  backdrop-filter: var(--mat-regular);
+  -webkit-backdrop-filter: var(--mat-regular);
+  background-color: var(--scrim-fill);
   width: 100vw;
   left: 0;
 }
@@ -1775,7 +1875,7 @@ html.preload.layout-desktop {
   position: fixed !important;
   overflow: visible !important;
   background: none;
-  background-color: #18181849;
+  background-color: var(--scrim-fill);
   margin-left: 0;
   background-size: cover;
   width: 100vw;
@@ -1793,10 +1893,10 @@ html.preload.layout-desktop {
   bottom: -40px;
   left: -40px;
   pointer-events: none;
-  backdrop-filter: blur(30px) saturate(80%) brightness(60%);
-  -webkit-backdrop-filter: blur(30px) saturate(80%) brightness(60%);
+  backdrop-filter: var(--mat-scrim);
+  -webkit-backdrop-filter: var(--mat-scrim);
   background: none;
-  background-color: #18181849;
+  background-color: var(--scrim-fill);
   z-index: -1;
 }
 
@@ -1846,16 +1946,9 @@ html.preload.layout-desktop {
   padding: 0;
 }
 
-/* Status indicators */
-.countIndicator,
-.fullSyncIndicator,
-.mediaSourceIndicator,
-.playedIndicator {
-  backdrop-filter: var(--blur) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-  background-color: var(--indicator-bg) !important;
-  box-shadow: none;
-}
+/* Status indicators are defined once, in the glass-pill block further
+ * down (which also covers `.unplayedIndicator`). The duplicate that
+ * used to sit here disagreed with it on both blur and prefix. */
 
 /* Hover effects for menu options */
 .actionSheetMenuItem:hover,
@@ -1868,40 +1961,24 @@ html.preload.layout-desktop {
 /* Progress bars and inner card styles */
 .itemProgressBarForeground {
   background-color: var(--progress);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-capsule);
   z-index: 1;
 }
 
-.innerCardFooter > .itemProgressBar {
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: var(--blur);
-  background-color: #18181849;
-  border-radius: var(--radius-pill);
-  margin-bottom: 10px;
-  margin-left: 20px;
-  overflow: hidden;
-  padding: 5px;
-  position: relative;
-  right: 10px;
-}
+/* `.innerCardFooter > .itemProgressBar` is defined once, in the
+ * Apple-TV card progress block near the end of the file (a flush 3px
+ * line). The chunky blurred pill that used to be declared here was
+ * already dead — that block overrode every one of its properties. */
 
 /* Headings */
 h2 {
   font-weight: 700;
 }
 
-/* Desktop play button styles */
-.layout-desktop .btnPlay {
-  color: #000;
-  background-color: var(--accent);
-  border-radius: var(--radius-pill);
-}
-
-.layout-desktop .btnPlay:hover {
-  background-color: #fff;
-  transform: translateX(5px);
-}
-
+/* Desktop play button — only the bits NOT redefined by the Apple
+ * treatment further down. The old base rule here painted the button
+ * with black text and a WHITE hover, both of which contradicted the
+ * Apple-blue pill it became; it has been deleted. */
 .layout-desktop .btnPlay::after {
   content: attr(title);
   margin: 0 10px 0 2px;
@@ -1911,25 +1988,16 @@ h2 {
   flex-direction: row;
 }
 
-/* Media Query for hover effects */
-@media (hover: hover) and (pointer: fine) {
-  .paper-icon-button-light:hover:not(:disabled) {
-    background-color: var(--hover-bg);
-    color: var(--hover-text);
-  }
-}
-
-/* Other styles */
-.raised {
-  border-radius: var(--radius-pill);
-}
-
-#btnShutdown {
-  background-color: #bb4a4a;
-}
+/* Deleted from this block, all superseded later in the file:
+ *   · the duplicate `.paper-icon-button-light` hover media query
+ *   · `.raised { border-radius }`  → the capsule pass gives every
+ *     button family an explicit shape
+ *   · `#btnShutdown { #bb4a4a }`   → now Apple system red
+ *   · `.cardImageContainer` top-only radii → the poster radius rule
+ *     sets all four corners                                        */
 
 .paperList {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-container);
 }
 
 .sliderContainer:not(.osdVolumeSliderContainer) {
@@ -1937,12 +2005,7 @@ h2 {
 }
 
 .cardBox:not(.visualCardBox) .cardPadder {
-  background-color: #00000000;
-}
-
-.cardImageContainer {
-  border-top-right-radius: var(--radius-md);
-  border-top-left-radius: var(--radius-md);
+  background-color: transparent;
 }
 
 /* Now Playing Bar Styles */
@@ -1952,10 +2015,10 @@ h2 {
   left: 3vw;
   right: 3vw;
   height: 7vh;
-  border-radius: var(--radius-lg);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: var(--blur);
-  background-color: #18181849;
+  border-radius: var(--radius-container);
+  -webkit-backdrop-filter: var(--mat-regular);
+  backdrop-filter: var(--mat-regular);
+  background-color: var(--glass-regular);
   z-index: 1;
 }
 
@@ -1992,7 +2055,7 @@ h2 {
 }
 
 .nowPlayingBar .nowPlayingImage {
-  border-radius: 2em;
+  border-radius: var(--radius-circle);
   margin: 1em;
   height: 3.5em;
   width: 3.5em;
@@ -2019,7 +2082,7 @@ h2 {
 }
 
 .nowPlayingPageImage {
-  border-radius: 10em;
+  border-radius: var(--radius-circle);
   margin: 1em;
   height: 15em;
   width: 15em;
@@ -2054,7 +2117,7 @@ h2 {
   left: 60vw;
   top: -10vh;
   position: absolute;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-container);
 }
 
 :has(.backgroundContainer:not(.withBackdrop)) .detailImageContainer .card:has(.cardImageIcon.tv) {
@@ -2065,11 +2128,11 @@ h2 {
 .layout-tv [dir="ltr"] .detailRibbon {
   display: contents;
   padding-left: 0;
-  background: #00000000;
+  background: transparent;
 }
 
 .noBackdropTransparency .detailPagePrimaryContainer {
-  background-color: #00000000;
+  background-color: transparent;
 }
 
 .collectionItems {
@@ -2225,18 +2288,18 @@ h2 {
 .popupMenu,
 .menuOptions,
 .toast {
-  background-color: var(--w-color) !important;
+  background-color: var(--glass-thick) !important;
   background-image: var(--border-color) !important;
   background-blend-mode: overlay !important;
-  -webkit-backdrop-filter: var(--blur) !important;
-  backdrop-filter: var(--blur) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  -webkit-backdrop-filter: var(--mat-thick) !important;
+  backdrop-filter: var(--mat-thick) !important;
+  border: var(--hairline) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    var(--rim),
     0 16px 48px rgba(0, 0, 0, 0.45),
     0 2px 6px rgba(0, 0, 0, 0.35) !important;
-  color: rgba(255, 255, 255, 0.92) !important;
-  border-radius: var(--radius-lg) !important;
+  color: var(--label) !important;
+  border-radius: var(--radius-container) !important;
 }
 
 /* ── Top header: invisible bar, FLOATING buttons ───────────────────── *
@@ -2263,7 +2326,7 @@ h2 {
   border: 0 !important;
   border-image: none !important;
   box-shadow: none !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--label) !important;
   /* The floating buttons inside need room — without the bar to hide
    * clipping, the header's default `overflow: hidden` + tight height
    * was chopping the tops of the pills off. Give the header generous
@@ -2286,19 +2349,51 @@ h2 {
   align-items: center !important;
 }
 
+/* Jellyfin's stock `.headerTop` draws a 1px bottom rule. Combined
+ * with `overflow: visible` on the floating circular buttons, that
+ * rule cut straight through the middle of the Home/Menu discs. */
+.skinHeader:not(.osdHeader) .headerTop {
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  outline: none !important;
+}
+
+.skinHeader:not(.osdHeader) .headerTop::before,
+.skinHeader:not(.osdHeader) .headerTop::after,
+.skinHeader:not(.osdHeader)::after,
+.skinHeader:not(.osdHeader)::before {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.skinHeader:not(.osdHeader) .headerRight,
+.skinHeader:not(.osdHeader) .headerLeft {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--osd-btn-gap) !important;
+}
+
 /* Drawer · Apple TV sidebar. Very nearly transparent so it reads as
  * a thin vertical rail blended into the black backdrop, with just a
  * hairline boundary on the right edge for separation. No drop
  * shadow, no border — Apple sidebars are flat against the window
  * background. */
 .mainDrawer {
-  background-color: rgba(0, 0, 0, 0.55) !important;
+  background-color: var(--glass-thick) !important;
   background-image: none !important;
-  -webkit-backdrop-filter: blur(40px) saturate(140%) !important;
-  backdrop-filter: blur(40px) saturate(140%) !important;
+  -webkit-backdrop-filter: var(--mat-thick) !important;
+  backdrop-filter: var(--mat-thick) !important;
   border: 0 !important;
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05) !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: inset -1px 0 0 var(--separator) !important;
+  color: var(--label) !important;
   padding-top: 0.4em !important;
 }
 
@@ -2316,71 +2411,211 @@ h2 {
  * corner and creating uneven gaps in the right-side cluster. The
  * `:not()` chain keeps the glass treatment scoped to genuinely visible
  * header buttons only (Home, Menu, Search, Cast). */
-.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
-.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound),
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):not(.headerBackButton):not(.hide),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):not(.headerBackButton):not(.hide),
 .skinHeader:not(.osdHeader) .headerHomeButton,
 .skinHeader:not(.osdHeader) .headerCastButton,
 .skinHeader:not(.osdHeader) .headerSearchButton,
-.skinHeader:not(.osdHeader) a.headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  background-image: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.03) 45%,
-    rgba(255, 255, 255, 0.08) 100%
-  ) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  backdrop-filter: blur(16px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: 50% !important;
-  /* Inset rim-light only — outer drop shadow removed so the button
-     doesn't cast a dark halo on bright backdrops. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
-  width: 2.4em !important;
-  height: 2.4em !important;
+.skinHeader:not(.osdHeader) a.headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):not(.headerBackButton):not(.hide) {
+  /* Soft glass — no 1px ring, no 0-blur inset rim, no displacement
+   * map. The OSD map is a 256px bezel; scaled onto a 40px disc it
+   * reads as a pixelated white hoop. Blurred shadows + a radial
+   * specular anti-alias instead. */
+  background-color: rgba(18, 18, 20, 0.3) !important;
+  background-image:
+    radial-gradient(
+      120% 90% at 50% -20%,
+      rgba(255, 255, 255, 0.36) 0%,
+      rgba(255, 255, 255, 0.1) 28%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 42%,
+      rgba(0, 0, 0, 0.1) 100%
+    ) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(155%) brightness(108%) !important;
+  backdrop-filter: blur(44px) saturate(155%) brightness(108%) !important;
+  border: 0 !important;
+  border-radius: var(--radius-circle) !important;
+  box-shadow:
+    inset 0 3px 10px rgba(255, 255, 255, 0.18),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.22),
+    0 10px 22px rgba(0, 0, 0, 0.22) !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
   padding: 0 !important;
+  margin: 0 !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  color: var(--label) !important;
   transition:
-    background-color 0.18s ease,
-    transform 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
 }
 
-.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
-.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):hover:not(:disabled),
-.skinHeader:not(.osdHeader) .headerSearchButton:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.10) !important;
-  transform: scale(1.05) !important;
-  color: #fff !important;
+/* Soft top specular — a blurred highlight, not a 1px rim. */
+.skinHeader:not(.osdHeader) .headerButton:not(.headerBackButton):not(.hide)::before,
+.skinHeader:not(.osdHeader) .headerHomeButton::before,
+.skinHeader:not(.osdHeader) .headerCastButton::before,
+.skinHeader:not(.osdHeader) .headerSearchButton::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: radial-gradient(
+    120% 80% at 50% -15%,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 36%,
+    transparent 68%
+  ) !important;
 }
 
-/* Back button explicitly hidden — the user navigates via the drawer
- * and the floating buttons. The header back-arrow is redundant noise. */
-.skinHeader:not(.osdHeader) .headerBackButton,
-.skinHeader:not(.osdHeader) .headerButton.headerBackButton,
-.skinHeader:not(.osdHeader) .btnBack,
-.skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
+/* Tight icon box — the parent disc flex-centers this square. */
+.skinHeader:not(.osdHeader) .headerButton .material-icons,
+.skinHeader:not(.osdHeader) .paper-icon-button-light .material-icons,
+.skinHeader:not(.osdHeader) .headerSearchButton .material-icons,
+.skinHeader:not(.osdHeader) .headerCastButton .material-icons,
+.skinHeader:not(.osdHeader) .headerHomeButton .material-icons,
+.skinHeader:not(.osdHeader) .headerBackButton .material-icons {
+  display: block !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: translateY(-0.06em) !important;
+}
+
+.skinHeader:not(.osdHeader) .headerButton:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):not(.hide):hover:not(:disabled),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.headerAudioPlayerButton):not(.headerUserButton):not(.headerSyncButton):not(.btnSyncPlay):not(.btnScreenShare):not(.headerRemoteButton):not(.btnRemoteControl):not(.headerUserButtonRound):not(.hide):hover:not(:disabled),
+.skinHeader:not(.osdHeader) .headerSearchButton:hover:not(:disabled),
+.skinHeader:not(.osdHeader) .headerBackButton:hover:not(:disabled) {
+  background-color: rgba(32, 32, 36, 0.38) !important;
+  box-shadow:
+    inset 0 3px 12px rgba(255, 255, 255, 0.24),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.18),
+    0 10px 22px rgba(0, 0, 0, 0.22) !important;
+  color: var(--label) !important;
+}
+
+.skinHeader:not(.osdHeader) .headerButton:active:not(:disabled),
+.skinHeader:not(.osdHeader) .headerSearchButton:active:not(:disabled) {
+  transform: scale(var(--press-scale)) !important;
+}
+
+/* Arrows share the same tight-box centering as home/menu — the
+ * previous X-nudge pushed Back to the right of the disc. */
+
+/* Back is a dead end on Home — never show it there. Only force it
+ * on item detail pages, where the user actually needs a way out.
+ * Do NOT globally `display: inline-flex` the back control: that
+ * resurrected Jellyfin's `.hide` copy on Home after SPA navigation. */
+html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
+html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton,
+html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
+html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-/* The Jellyfin LOGO link in the header (image + "Jellyfin" wordmark)
- * shouldn't be wrapped in a circle — let it sit as a wider pill. */
-.skinHeader:not(.osdHeader) .headerHomeButton,
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(18, 18, 20, 0.3) !important;
+  background-image:
+    radial-gradient(
+      120% 90% at 50% -20%,
+      rgba(255, 255, 255, 0.36) 0%,
+      rgba(255, 255, 255, 0.1) 28%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.02) 42%,
+      rgba(0, 0, 0, 0.1) 100%
+    ) !important;
+  -webkit-backdrop-filter: blur(44px) saturate(155%) brightness(108%) !important;
+  backdrop-filter: blur(44px) saturate(155%) brightness(108%) !important;
+  border: 0 !important;
+  border-radius: var(--radius-circle) !important;
+  overflow: hidden !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  box-shadow:
+    inset 0 3px 10px rgba(255, 255, 255, 0.18),
+    inset 0 -8px 16px rgba(0, 0, 0, 0.22),
+    0 10px 22px rgba(0, 0, 0, 0.22) !important;
+}
+
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: radial-gradient(
+    120% 80% at 50% -15%,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 36%,
+    transparent 68%
+  ) !important;
+}
+
+/* The Jellyfin LOGO link (image + wordmark) shouldn't be forced into
+ * a circle. `.headerHomeButton` is the HOUSE icon on current builds,
+ * so it stays a circle — only the actual logo link gets the wider
+ * pill, otherwise the house glyph sits off-center in an oval. */
 .skinHeader:not(.osdHeader) a.headerLogoButton,
 .skinHeader:not(.osdHeader) .headerButton:has(.pageTitleWithLogo) {
   width: auto !important;
   height: 2.4em !important;
-  border-radius: var(--radius-pill) !important;
+  border-radius: var(--radius-capsule) !important;
   padding: 0 1em !important;
 }
 
@@ -2399,65 +2634,168 @@ h2 {
 
 /* Header tabs (Home / Favorites etc.) become floating glass capsules
  * sitting on top of the (now-invisible) header. */
-.skinHeader:not(.osdHeader) .emby-tabs,
-.skinHeader:not(.osdHeader) .headerTabs {
-  background: transparent !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
+/* ── Tabs · Apple segmented control ─────────────────────────────── *
+ *
+ * Jellyfin ships a Material tab bar: flat labels with a coloured
+ * underline sliding beneath the selected one. Apple has no such
+ * control — it uses a segmented control, where the whole strip is a
+ * translucent capsule TRACK and the selected segment is a lighter,
+ * lifted capsule sitting inside it:
+ *
+ *   ╭─────────────────────────────────────╮
+ *   │ ╭───────────╮                       │
+ *   │ │   Home    │  Favorites   Library  │
+ *   │ ╰───────────╯                       │
+ *   ╰─────────────────────────────────────╯
+ *
+ * These rules are deliberately NOT scoped to the header. The theme
+ * used to style `.emby-tab-button` twice — glass capsules inside
+ * `.skinHeader`, Material underline everywhere else — so the same
+ * control rendered two different ways depending on the page. One
+ * definition now covers both.
+ *
+ * Selected state is neutral, not blue: Apple reserves the accent
+ * colour for actions, and marks selection in a segmented control
+ * purely by the raised lighter capsule plus a primary-colour label.
+ * ────────────────────────────────────────────────────────────────── */
+
+/* The track — a quiet trough, not a second glass button. Apple's
+ * segmented control is a tinted capsule with the selected thumb
+ * sitting inside it; a rim + blur on the track made the selected
+ * Home pill read as a milky white blob. */
+/* The track — a quiet trough, not a second glass button. Apple's
+ * segmented control is a tinted capsule with the selected thumb
+ * sitting inside it; a rim + blur on the track made the selected
+ * Home pill read as a milky white blob.
+ *
+ * `.headerTabs` is Jellyfin's FULL-WIDTH wrapper. Painting the track
+ * on that wrapper stretched a glass capsule across the whole header
+ * (the "line" under Home/Menu on detail pages, and left-justified
+ * Home/Favorites on Home). Only the inner `.emby-tabs` is the control;
+ * the wrapper is an invisible centering row. */
+.headerTabs {
+  background: none !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  overflow: visible !important;
 }
 
-.skinHeader:not(.osdHeader) .emby-tab-button,
-.skinHeader:not(.osdHeader) button.emby-tab-button {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  background-image: linear-gradient(
-    140deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.03) 45%,
-    rgba(255, 255, 255, 0.08) 100%
-  ) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-  backdrop-filter: blur(16px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--radius-pill) !important;
-  padding: 0.45em 1.4em !important;
-  margin: 0 0.25em !important;
+.emby-tabs,
+.emby-tabs-slider {
+  background-color: var(--fill-4) !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: 0 !important;
+  border-radius: var(--radius-capsule) !important;
+  box-shadow: none !important;
+  padding: 0.18em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.12em !important;
+  width: auto !important;
+  max-width: max-content !important;
+  min-height: 0 !important;
+  margin-inline: auto !important;
+  overflow: hidden !important;
+}
+
+/* Detail pages have no Home/Favorites tabs — an empty full-width
+ * `.headerTabs` still painted the glass track and read as a hairline
+ * under the Home/Menu buttons. Hide the strip there. */
+html:has(.itemDetailPage:not(.hide)) .skinHeader .headerTabs,
+html:has(.itemDetailPage:not(.hide)) .skinHeader .emby-tabs,
+.headerTabs:not(:has(.emby-tab-button)),
+.emby-tabs:not(:has(.emby-tab-button)) {
+  display: none !important;
+  background: none !important;
+  min-height: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Jellyfin nests a slider element inside the tab strip; when it is
+   the inner element it must not paint a second track. */
+.emby-tabs .emby-tabs-slider {
+  background-color: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Unselected segment */
+.emby-tab-button,
+button.emby-tab-button {
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  border-radius: var(--radius-capsule) !important;
+  box-shadow: none !important;
+  padding: 0.35em 1.25em !important;
+  margin: 0 !important;
   min-height: 0 !important;
   height: auto !important;
-  color: rgba(255, 255, 255, 0.82) !important;
-  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  color: var(--label-2) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 590 !important;
   letter-spacing: -0.005em !important;
-  /* Inset rim-light only — no outer halo. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+  position: relative !important;
   transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease) !important;
 }
 
-.skinHeader:not(.osdHeader) .emby-tab-button:hover {
-  background-color: rgba(255, 255, 255, 0.10) !important;
-  color: #fff !important;
-  transform: translateY(-1px) !important;
+.emby-tab-button:hover:not(:disabled) {
+  background-color: var(--fill-4) !important;
+  color: var(--label) !important;
 }
 
-/* Active header tab — subtle translucent Apple blue tint with blue
- * border. The blue glow is an intentional brand accent, kept. */
-.skinHeader:not(.osdHeader) .emby-tab-button.emby-tab-button-active,
-.skinHeader:not(.osdHeader) .emby-tab-button[aria-selected="true"],
-.skinHeader:not(.osdHeader) .emby-tab-button.ui-btn-active {
-  background-color: rgba(10, 132, 255, 0.14) !important;
-  border-color: rgba(10, 132, 255, 0.48) !important;
-  color: #fff !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 2px 10px rgba(10, 132, 255, 0.22) !important;
+/* Selected segment — Apple's thumb is a solid lift, not a glass
+ * disc. White-at-18% is the dark-mode UISegmentedControl fill;
+ * a 1px dark drop is the only depth. No rim-light: that was what
+ * turned Home into a milky specular blob in the header. */
+.emby-tab-button.emby-tab-button-active,
+.emby-tab-button[aria-selected="true"],
+.emby-tab-button.ui-btn-active {
+  background-color: var(--seg-thumb) !important;
+  background-image: none !important;
+  color: var(--label) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45) !important;
 }
 
-.skinHeader:not(.osdHeader) .emby-tab-button.emby-tab-button-active::after,
-.skinHeader:not(.osdHeader) .emby-tab-button[aria-selected="true"]::after,
-.skinHeader:not(.osdHeader) .emby-tab-button.ui-btn-active::after {
+.emby-tab-button:active:not(:disabled) {
+  transform: scale(var(--press-scale)) !important;
+}
+
+/* Kill the Material underline pseudo-element in every state. */
+.emby-tab-button::after,
+.emby-tab-button.emby-tab-button-active::after,
+.emby-tab-button[aria-selected="true"]::after,
+.emby-tab-button.ui-btn-active::after {
   display: none !important;
+  content: none !important;
 }
 
 /* Action sheet titles / dialog headers */
@@ -2465,7 +2803,7 @@ h2 {
 .dialogTitle,
 .formDialogHeader,
 .formDialogHeader h3 {
-  color: #fff !important;
+  color: var(--label) !important;
   font-family: var(--font-display) !important;
   font-weight: 600 !important;
   letter-spacing: -0.015em !important;
@@ -2512,10 +2850,10 @@ h2 {
   font-size: 0.96rem !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--label) !important;
   transition:
-    background-color 0.16s ease,
-    color 0.16s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 /* Hairline divider between consecutive rows. Skipped on the first
@@ -2530,7 +2868,7 @@ h2 {
   left: 1.1em !important;
   right: 1.1em !important;
   height: 1px !important;
-  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: var(--fill-3) !important;
   pointer-events: none !important;
 }
 
@@ -2540,13 +2878,13 @@ h2 {
 .actionSheet .listItem:hover,
 .menuOptions .listItem:hover,
 .popupMenu .listItem:hover {
-  background-color: rgba(255, 255, 255, 0.07) !important;
-  color: #fff !important;
+  background-color: var(--fill-3) !important;
+  color: var(--label) !important;
 }
 
 .actionSheetMenuItem:active,
 .menuOption:active {
-  background-color: rgba(255, 255, 255, 0.11) !important;
+  background-color: var(--fill-2) !important;
 }
 
 /* "Selected" / "active" row — Apple-blue full-width fill, no inset gap */
@@ -2554,7 +2892,7 @@ h2 {
 .actionSheetMenuItem.actionSheetMenuItemSelected,
 .menuOption.selected {
   background-color: var(--accent-blue-ghost) !important;
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* Action sheet item icons — flat, no chunky square background. Sit
@@ -2571,7 +2909,7 @@ h2 {
   width: 1.6em !important;
   min-width: 1.6em !important;
   margin-right: 0.85em !important;
-  color: rgba(255, 255, 255, 0.68) !important;
+  color: var(--label-2) !important;
   font-size: 1.25rem !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -2582,7 +2920,7 @@ h2 {
 .actionSheetMenuItem:hover .listItemIcon,
 .menuOption:hover .listItemIcon,
 .actionSheetMenuItem:hover .material-icons {
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* "Cancel" / destructive row at the bottom — separates from the list
@@ -2607,7 +2945,7 @@ h2 {
   appearance: none !important;
   border: 0 !important;
   height: 1px !important;
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: var(--fill-3) !important;
   margin: 0.3em 1.1em !important;
   padding: 0 !important;
 }
@@ -2634,7 +2972,7 @@ h2 {
 .navMenuOption {
   background-color: transparent !important;
   background-image: none !important;
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--radius-field) !important;
   border: 0 !important;
   margin: 0.08em 0.5em !important;
   padding: 0.55em 0.9em !important;
@@ -2643,22 +2981,22 @@ h2 {
   font-size: 0.92rem !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: var(--label-2) !important;
   transition:
-    background-color 0.16s ease,
-    color 0.16s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .navMenuOption:hover {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  color: #fff !important;
+  background-color: var(--fill-3) !important;
+  color: var(--label) !important;
 }
 
 .navMenuOption.selected,
 .navMenuOption.navMenuOption-selected,
 .navMenuOption-selected {
-  background-color: rgba(255, 255, 255, 0.10) !important;
-  color: #fff !important;
+  background-color: var(--fill-2) !important;
+  color: var(--label) !important;
 }
 
 /* Kill the leading blue bar from the previous design — the rounded
@@ -2672,18 +3010,18 @@ h2 {
 
 .navMenuOption.selected .navMenuOptionIcon,
 .navMenuOption-selected .navMenuOptionIcon {
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* Icons in drawer rows — slightly muted by default, full white on
  * hover/selected (Apple TV pattern: monochrome icon column). */
 .navMenuOption .navMenuOptionIcon {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--label-2) !important;
   font-size: 1.15em !important;
 }
 
 .navMenuOption:hover .navMenuOptionIcon {
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* Drawer "section" labels (Media / Administration / User) — small caps
@@ -2695,7 +3033,7 @@ h2 {
   letter-spacing: 0.08em !important;
   font-size: 0.72rem !important;
   font-weight: 600 !important;
-  color: rgba(255, 255, 255, 0.42) !important;
+  color: var(--label-3) !important;
   padding: 1.2em 1.4em 0.4em !important;
 }
 
@@ -2709,7 +3047,7 @@ h2 {
   background-color: transparent !important;
   background-image: none !important;
   border-radius: 0 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid var(--separator) !important;
   margin: 0 !important;
   padding: 0.95em 1.2em !important;
 }
@@ -2724,7 +3062,7 @@ h2 {
 .paperList .listItem:hover,
 .serverList .listItem:hover,
 .userList .listItem:hover {
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  background-color: var(--fill-4) !important;
 }
 
 /* Strip ALL button chrome from anything inside a menu / action sheet
@@ -2776,12 +3114,12 @@ h2 {
   font-size: 0.96rem !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--label) !important;
   text-align: left !important;
   justify-content: flex-start !important;
   transition:
-    background-color 0.16s ease,
-    color 0.16s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .actionSheet button:not(.button-submit):not(.button-flat):hover:not(:disabled),
@@ -2790,8 +3128,8 @@ h2 {
 .actionsheetMenuOptions button:not(.button-submit):not(.button-flat):hover:not(:disabled),
 .popupMenu button:not(.button-submit):not(.button-flat):hover:not(:disabled),
 .menuOptions button:not(.button-submit):not(.button-flat):hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.07) !important;
-  color: #fff !important;
+  background-color: var(--fill-3) !important;
+  color: var(--label) !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -2809,68 +3147,136 @@ button.raised.button-submit,
 .fab.primary,
 .detailButton-primary,
 button[is="emby-button"].button-submit {
+  /* Shape was previously never declared on this family, so it fell
+     through to Jellyfin's Material rounded-rect — the single most
+     obvious "this is still Jellyfin" tell in the whole theme. */
+  border-radius: var(--radius-capsule) !important;
   background-color: var(--accent-blue) !important;
   background-image: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.14),
     rgba(255, 255, 255, 0) 60%
   ) !important;
-  color: #fff !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: var(--label) !important;
+  border: var(--hairline) !important;
   /* Inset rim-light + Apple-blue accent glow only. The dark drop
      shadow that used to sit underneath was creating a halo, removed. */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    var(--rim-strong),
     0 4px 14px rgba(10, 132, 255, 0.32) !important;
   font-weight: 600 !important;
   letter-spacing: -0.005em !important;
   transition:
-    transform 0.16s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease !important;
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
 }
 
+/* Apple does not lift a control on hover — it brightens the fill and
+ * scales down on press. The `translateY(-1px)` hop these buttons used
+ * to do is a Material idiom and read as distinctly un-Apple. */
 .button-submit:hover:not(:disabled),
 .raised.button-submit:hover:not(:disabled),
 .fab.primary:hover:not(:disabled) {
-  background-color: #1c8eff !important;
-  transform: translateY(-1px) !important;
+  background-color: var(--sys-blue-pressed) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    var(--rim-strong),
     0 6px 20px rgba(10, 132, 255, 0.45) !important;
 }
 
 .button-submit:active:not(:disabled),
 .raised.button-submit:active:not(:disabled) {
-  transform: translateY(0) scale(0.985) !important;
+  transform: scale(var(--press-scale)) !important;
 }
 
-/* Secondary / cancel buttons — glass */
+/* Secondary / cancel buttons — glass
+ *
+ * SPECIFICITY NOTE: `.emby-tab-button` must be excluded here. Jellyfin
+ * renders tabs as `<button is="emby-button">`, so this selector
+ * (0,3,1) outranks the segmented-control rules (0,1,0) even though
+ * both use `!important` — which painted every tab with the secondary
+ * button fill and made the selected segment indistinguishable from
+ * the unselected ones. */
 .button-cancel,
 .raised:not(.button-submit):not(.button-flat),
 button.raised:not(.button-submit):not(.button-flat),
-button[is="emby-button"]:not(.button-submit):not(.button-flat) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
+button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):not(.actionSheetMenuItem):not(.sectionTitleTextButton) {
+  border-radius: var(--radius-capsule) !important;
+  background-color: var(--fill-3) !important;
   background-image: var(--border-color) !important;
   background-blend-mode: overlay !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  color: var(--label) !important;
   /* Inset rim-light only — outer halo removed. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  box-shadow: var(--rim) !important;
   font-weight: 500 !important;
   letter-spacing: -0.005em !important;
   transition:
-    transform 0.16s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease !important;
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
 }
 
 .button-cancel:hover:not(:disabled),
 .raised:not(.button-submit):not(.button-flat):hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.11) !important;
-  transform: translateY(-1px) !important;
+  background-color: var(--fill-2) !important;
+  box-shadow: var(--rim-strong) !important;
+}
+
+.button-cancel:active:not(:disabled),
+.raised:not(.button-submit):not(.button-flat):active:not(:disabled) {
+  transform: scale(var(--press-scale)) !important;
+}
+
+/* Action-sheet / popup rows must beat the secondary capsule rule
+ * above. That selector is (0,4,1) and was painting every
+ * `button[is="emby-button"]` as a stadium — stacked inside a rounded
+ * panel they read as overlapping pills with scalloped side gaps.
+ * Sheets are grouped lists: the CONTAINER owns the radius. */
+.actionSheet button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button),
+.actionsheetMenuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button),
+.popupMenu button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button),
+.menuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button),
+.dialogContainer .actionSheet button[is="emby-button"]:not(.button-submit):not(.button-flat),
+.dialog .actionSheetMenuItem,
+.actionSheet .actionSheetMenuItem,
+.actionsheetMenuOptions .actionSheetMenuItem {
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  background-blend-mode: normal !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0.85em 1.1em !important;
+  height: auto !important;
+  min-height: 0 !important;
+  transform: none !important;
+}
+
+.actionSheet button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):hover:not(:disabled),
+.actionsheetMenuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):hover:not(:disabled),
+.popupMenu button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):hover:not(:disabled),
+.menuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):hover:not(:disabled),
+.actionSheet .actionSheetMenuItem:hover,
+.actionsheetMenuOptions .actionSheetMenuItem:hover {
+  background-color: var(--fill-3) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-radius: 0 !important;
+}
+
+.actionSheet button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):active:not(:disabled),
+.actionsheetMenuOptions button[is="emby-button"]:not(.button-submit):not(.button-flat):not(.emby-tab-button):active:not(:disabled) {
+  transform: none !important;
+  background-color: var(--fill-2) !important;
 }
 
 /* Flat / text buttons — transparent, inherit text color from parent.
@@ -2888,32 +3294,105 @@ button.button-flat {
   color: inherit !important;
   border: none !important;
   box-shadow: none !important;
+  /* Transparent at rest, so this radius only ever shows on the hover
+     fill below — but without it that fill was a Material rounded
+     rect, the one shape the rest of the theme no longer uses. */
+  border-radius: var(--radius-capsule) !important;
 }
 
-.button-flat:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  color: #fff !important;
+.button-flat:hover:not(:disabled):not(.sectionTitleTextButton) {
+  background-color: var(--fill-3) !important;
+  color: var(--label) !important;
+}
+
+/* Detail-page icon buttons (trailer, watched, rating, more) sit
+ * directly beside the blue Play capsule. Jellyfin marks them
+ * `.button-flat`, which excludes them from the glass button rules, so
+ * they were rendering as bare icons on a Material 3px rect while
+ * their neighbour was a full capsule. They get the same thin glass
+ * as every other secondary control. */
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide),
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide) {
+  background-color: var(--fill-3) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-circle) !important;
+  box-shadow: var(--rim) !important;
+  color: var(--label) !important;
+  width: 2.6em !important;
+  height: 2.6em !important;
+  min-width: 2.6em !important;
+  min-height: 2.6em !important;
+  max-width: 2.6em !important;
+  max-height: 2.6em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+  flex: 0 0 2.6em !important;
+  overflow: hidden !important;
+  transition:
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
+}
+
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide) .material-icons,
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide) .material-icons,
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide) .detailButton-content,
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide) .detailButton-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide) .material-icons,
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide) .material-icons {
+  font-size: 1.22em !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+}
+
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide):hover:not(:disabled),
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide):hover:not(:disabled) {
+  background-color: var(--fill-2) !important;
+  box-shadow: var(--rim-strong) !important;
+}
+
+.mainDetailButtons .button-flat.detailButton:not(.btnPlay):not(.hide):active:not(:disabled),
+.detailPagePrimaryContent .button-flat.detailButton:not(.btnPlay):not(.hide):active:not(:disabled) {
+  transform: scale(var(--press-scale)) !important;
 }
 
 /* FAB / circular utility buttons */
 .fab,
 button.fab {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  color: #fff !important;
+  border-radius: var(--radius-circle) !important;
+  background-color: var(--fill-3) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  color: var(--label) !important;
   /* Inset rim-light only — outer halo removed. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  box-shadow: var(--rim) !important;
 }
 
 /* Icon buttons app-wide — soft glass hover, blue active */
 .paper-icon-button-light {
-  border-radius: 50% !important;
+  border-radius: var(--radius-circle) !important;
   transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease) !important;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2939,37 +3418,37 @@ input[type="number"],
 input[type="url"],
 textarea,
 select {
-  background-color: rgba(255, 255, 255, 0.045) !important;
-  -webkit-backdrop-filter: blur(10px) saturate(160%) !important;
-  backdrop-filter: blur(10px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--radius-pill) !important;
-  color: rgba(255, 255, 255, 0.96) !important;
+  background-color: var(--fill-4) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-capsule) !important;
+  color: var(--label) !important;
   padding: 0.7em 1.1em !important;
   font-family: var(--font-sans) !important;
   font-size: 0.95rem !important;
   letter-spacing: -0.005em !important;
   outline: none !important;
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease !important;
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    var(--rim) !important;
 }
 
 /* Multi-line text fields shouldn't be pills (they'd look like
  * pill-shaped sausages with text in them). Override the radius only. */
 .emby-textarea,
 textarea {
-  border-radius: var(--radius-md) !important;
+  border-radius: var(--radius-field) !important;
 }
 
 .emby-input::placeholder,
 .emby-textarea::placeholder,
 input::placeholder,
 textarea::placeholder {
-  color: rgba(255, 255, 255, 0.42) !important;
+  color: var(--label-3) !important;
 }
 
 .emby-input:focus,
@@ -2980,23 +3459,23 @@ textarea:focus,
 select:focus {
   border-color: var(--accent-blue) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    var(--rim),
     0 0 0 3px var(--accent-blue-ghost) !important;
-  background-color: rgba(255, 255, 255, 0.07) !important;
+  background-color: var(--fill-3) !important;
 }
 
 /* Field labels */
 .fieldDescription,
 .inputContainer .fieldDescription,
 .fieldDescription[for] {
-  color: rgba(255, 255, 255, 0.55) !important;
+  color: var(--label-2) !important;
   font-size: 0.82rem !important;
 }
 
 .inputLabel,
 label.inputLabel,
 .checkboxLabel {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: var(--label-2) !important;
   font-weight: 500 !important;
 }
 
@@ -3009,14 +3488,14 @@ input[type="checkbox"],
   -webkit-appearance: none !important;
   width: 1.15em !important;
   height: 1.15em !important;
-  border-radius: 0.32em !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius-checkbox) !important;
+  border: 1.5px solid var(--label-3) !important;
+  background-color: var(--fill-4) !important;
   cursor: pointer !important;
   position: relative !important;
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease) !important;
   vertical-align: middle !important;
 }
 
@@ -3050,9 +3529,9 @@ input[type="radio"],
   -webkit-appearance: none !important;
   width: 1.15em !important;
   height: 1.15em !important;
-  border-radius: 50% !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius-circle) !important;
+  border: 1.5px solid var(--label-3) !important;
+  background-color: var(--fill-4) !important;
   cursor: pointer !important;
   position: relative !important;
   vertical-align: middle !important;
@@ -3071,7 +3550,7 @@ input[type="radio"]:checked::after,
   left: 50% !important;
   width: 0.55em !important;
   height: 0.55em !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-circle) !important;
   background-color: var(--accent-blue) !important;
   transform: translate(-50%, -50%) !important;
 }
@@ -3082,9 +3561,9 @@ input[type="radio"]:checked::after,
 input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
   /* Hint at how the toggle could be styled; Jellyfin's exact markup
      for switches varies by page, so this is a soft baseline. */
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  border-radius: 999px !important;
-  transition: background-color 0.25s ease !important;
+  background-color: var(--fill-2) !important;
+  border-radius: var(--radius-capsule) !important;
+  transition: background-color var(--dur) var(--ease) !important;
 }
 
 /* ── Cards & list items ─────────────────────────────────────────── *
@@ -3142,15 +3621,15 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 .cardImageContainer,
 .cardImage,
 .cardPadder {
-  border-radius: 0.6em !important;
+  border-radius: var(--radius-poster) !important;
 }
 
 .cardImageContainer {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42) !important;
   overflow: hidden !important;
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease !important;
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease) !important;
 }
 
 .card:hover .cardImageContainer,
@@ -3174,7 +3653,7 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
   font-size: 0.95rem !important;
   font-weight: 600 !important;
   letter-spacing: -0.008em !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--label) !important;
   line-height: 1.25 !important;
   text-align: center !important;
 }
@@ -3184,27 +3663,27 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
   margin-top: 0.15em !important;
   font-size: 0.82rem !important;
   font-weight: 500 !important;
-  color: rgba(235, 235, 245, 0.55) !important;
+  color: var(--label-2) !important;
   letter-spacing: -0.003em !important;
 }
 
 /* Library / home buttons — same recipe */
 .homeLibraryButton {
   background-color: var(--card-bg) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
-  backdrop-filter: blur(16px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  border-radius: var(--radius-lg) !important;
+  -webkit-backdrop-filter: var(--mat-regular) !important;
+  backdrop-filter: var(--mat-regular) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-container) !important;
   /* Inset rim-light only — outer halo removed. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+  box-shadow: var(--rim) !important;
   transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease !important;
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease) !important;
 }
 
 .homeLibraryButton:hover {
   transform: translateY(-4px) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  box-shadow: var(--rim) !important;
 }
 
 /* Indicators (now-playing, count, etc.) — small glass pills */
@@ -3214,64 +3693,22 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 .playedIndicator,
 .unplayedIndicator {
   background-color: var(--indicator-bg) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32) !important;
 }
 
 .playedIndicator {
   background-color: var(--accent-blue) !important;
-  color: #fff !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: var(--label) !important;
+  border-color: var(--hairline-color) !important;
 }
 
-/* ── Tabs & navigation ──────────────────────────────────────────── *
- * Selected tab gets an Apple-blue underline (iOS Settings style)
- * rather than the default Material Design ripple bar.                 */
-
-.emby-tab-button {
-  color: rgba(255, 255, 255, 0.55) !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  font-weight: 500 !important;
-  letter-spacing: -0.005em !important;
-  transition: color 0.18s ease !important;
-  position: relative !important;
-  border: 0 !important;
-}
-
-.emby-tab-button:hover {
-  color: rgba(255, 255, 255, 0.85) !important;
-  background-color: transparent !important;
-}
-
-/* Active tab — text goes white, underline goes blue. Jellyfin's
- * default `active` styling paints a chunky gray pill behind the
- * label; force the background back to transparent so only our
- * underline reads as the "selected" affordance. */
-.emby-tab-button.emby-tab-button-active,
-.emby-tab-button[aria-selected="true"],
-.emby-tab-button.ui-btn-active {
-  color: #fff !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-
-.emby-tab-button.emby-tab-button-active::after,
-.emby-tab-button[aria-selected="true"]::after,
-.emby-tab-button.ui-btn-active::after {
-  content: "" !important;
-  position: absolute !important;
-  left: 22% !important;
-  right: 22% !important;
-  bottom: 0 !important;
-  height: 2.5px !important;
-  border-radius: 2px !important;
-  background-color: var(--accent-blue) !important;
-  box-shadow: 0 0 8px rgba(10, 132, 255, 0.55) !important;
-}
+/* Tabs are defined once, as an Apple segmented control, in the header
+ * block above. The Material underline treatment that used to live
+ * here contradicted it — same selector, opposite design — so in-page
+ * tabs looked nothing like header tabs. */
 
 /* Links inherit from their context (drawer items, card titles, etc.
  * are all `<a>`s, so we deliberately do NOT recolor them globally —
@@ -3284,7 +3721,7 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 .fieldDescription a {
   color: var(--accent-blue) !important;
   text-decoration: none !important;
-  transition: color 0.18s ease !important;
+  transition: color var(--dur-fast) var(--ease) !important;
 }
 
 .overview a:hover,
@@ -3292,7 +3729,7 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 .detailPageContent p a:hover,
 .formDialogContent p a:hover,
 .fieldDescription a:hover {
-  color: #1c8eff !important;
+  color: var(--sys-blue-pressed) !important;
 }
 
 /* ── Non-OSD sliders & progress bars ─────────────────────────────── *
@@ -3306,20 +3743,20 @@ input[type="checkbox"].mdl-switch__input + .mdl-switch__label::before {
 progress::-webkit-progress-value,
 progress::-moz-progress-bar {
   background-color: var(--accent-blue) !important;
-  border-radius: 999px !important;
+  border-radius: var(--radius-capsule) !important;
   box-shadow: 0 0 8px rgba(10, 132, 255, 0.4) !important;
 }
 
 .itemProgressBarBackground,
 progress {
   background-color: var(--progress-track) !important;
-  border-radius: 999px !important;
+  border-radius: var(--radius-capsule) !important;
 }
 
 /* ── Toasts ─────────────────────────────────────────────────────── */
 
 .toast {
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-container) !important;
   padding: 0.9em 1.2em !important;
   font-weight: 500 !important;
 }
@@ -3329,12 +3766,12 @@ progress {
 .tooltip,
 [role="tooltip"] {
   background-color: var(--w-color) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--radius-pill) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-capsule) !important;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
-  color: #fff !important;
+  color: var(--label) !important;
   font-size: 0.82rem !important;
   padding: 0.5em 0.95em !important;
 }
@@ -3351,15 +3788,15 @@ progress {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.14);
-  border-radius: 999px;
+  background-color: var(--fill-1);
+  border-radius: var(--radius-capsule);
   border: 2px solid transparent;
   background-clip: content-box;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-fast) var(--ease);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.28);
+  background-color: var(--fill-1);
   background-clip: content-box;
 }
 
@@ -3368,7 +3805,7 @@ progress {
 :focus-visible {
   outline: none !important;
   box-shadow: 0 0 0 3px var(--accent-blue-ghost) !important;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-capsule);
 }
 
 /* ── Detail page primary play / detail buttons ──────────────────── *
@@ -3379,25 +3816,38 @@ progress {
 .detailPagePrimaryContent .btnPlay,
 .btnPlay.detailButton {
   background-color: var(--accent-blue) !important;
-  color: #fff !important;
-  border-radius: var(--radius-pill) !important;
+  color: var(--label) !important;
+  border-radius: var(--radius-capsule) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.4em !important;
+  line-height: 1 !important;
+  margin: 0 !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 4px 14px rgba(10, 132, 255, 0.34) !important;
+    var(--rim-strong),
+    0 4px 14px var(--accent-blue-glow) !important;
+  /* Do not transition `background-color` — poster-accent writes
+   * `--accent-blue` after navigation, and a 200ms lerp from Apple
+   * blue to the artwork made Play look late. */
   transition:
-    transform 0.18s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease !important;
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
 }
 
 .layout-desktop .btnPlay:hover,
 .detailPagePrimaryContent .btnPlay:hover,
 .btnPlay.detailButton:hover {
-  background-color: #1c8eff !important;
-  transform: translateX(4px) !important;
+  background-color: var(--sys-blue-pressed) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    0 6px 20px rgba(10, 132, 255, 0.45) !important;
+    var(--rim-strong),
+    0 6px 20px var(--accent-blue-glow) !important;
+}
+
+.layout-desktop .btnPlay:active,
+.detailPagePrimaryContent .btnPlay:active,
+.btnPlay.detailButton:active {
+  transform: scale(var(--press-scale)) !important;
 }
 
 /* ── Secondary detail buttons (favorite / mark watched / etc.) ─── *
@@ -3410,9 +3860,45 @@ progress {
  * · [glass circle] · [glass circle] · [glass circle] · [glass circle]. */
 
 /* Row alignment — keep every button vertically centered so the Play
-   pill and the circular icon buttons share a single baseline. */
+   pill and the circular icon buttons share a single baseline.
+   Jellyfin's default `.emby-button` margin is uneven (Play gets more
+   than the icon-only flats), which glued the circles together. */
 .mainDetailButtons {
+  display: flex !important;
+  flex-wrap: wrap !important;
   align-items: center !important;
+  gap: var(--osd-btn-gap) !important;
+}
+
+.mainDetailButtons > .emby-button,
+.mainDetailButtons > .detailButton,
+.mainDetailButtons > .raised,
+.mainDetailButtons > .button-flat,
+.mainDetailButtons > .btnPlay {
+  margin: 0 !important;
+}
+
+/* Hidden detail actions (trailer when there isn't one, etc.) must
+ * collapse completely — a `hide` class still left a 2.6em glass disc
+ * in the flex gap. */
+.mainDetailButtons .hide,
+.mainDetailButtons .detailButton.hide,
+.mainDetailButtons .button-flat.hide,
+.mainDetailButtons .raised.hide,
+.mainDetailButtons .btnReplay.hide,
+.mainDetailButtons .btnDownload.hide {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
 }
 
 /* Inner wrapper Jellyfin emits for every `.detailButton` (icon + text
@@ -3426,37 +3912,41 @@ progress {
   box-shadow: none !important;
 }
 
-.mainDetailButtons .raised:not(.btnPlay):not(.button-submit) {
-  background-color: rgba(255, 255, 255, 0.06) !important;
+.mainDetailButtons .raised:not(.btnPlay):not(.button-submit):not(.hide) {
+  background-color: var(--fill-3) !important;
   background-image: var(--border-color) !important;
   background-blend-mode: overlay !important;
-  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
-  backdrop-filter: blur(14px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  /* `--radius-pill` (999px) renders as a perfect circle on the
-     icon-only secondary buttons (which Jellyfin sizes square) and as
-     a stadium pill on any future text-bearing button — the shape
-     adapts to the content without ever showing sharp corners. */
-  border-radius: var(--radius-pill) !important;
-  color: rgba(255, 255, 255, 0.92) !important;
-  /* Inset rim-light only — outer halo removed. */
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-circle) !important;
+  color: var(--label) !important;
+  box-shadow: var(--rim) !important;
+  width: 2.6em !important;
+  height: 2.6em !important;
+  min-width: 2.6em !important;
+  min-height: 2.6em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
   transition:
-    transform 0.16s ease,
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    color 0.2s ease !important;
+    transform var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .mainDetailButtons .raised:not(.btnPlay):not(.button-submit):hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  color: #fff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
+  background-color: var(--fill-2) !important;
+  color: var(--label) !important;
+  box-shadow: var(--rim-strong) !important;
 }
 
 .mainDetailButtons .raised:not(.btnPlay):not(.button-submit):active:not(:disabled) {
-  transform: translateY(0) scale(0.97) !important;
+  transform: scale(var(--press-scale)) !important;
 }
 
 /* Active / "is favourited" state for the heart toggle — Apple-blue
@@ -3497,19 +3987,19 @@ progress {
 .itemDetailPage .itemMiscInfo .mediaInfoText,
 .itemDetailPage .itemMiscInfo .mediaInfoItem.mediainfo,
 .itemDetailPage .itemMiscInfo .mediaInfoItem.added {
-  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: var(--fill-3) !important;
   background-image: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0.14) 0%,
     rgba(255, 255, 255, 0.03) 45%,
     rgba(255, 255, 255, 0.08) 100%
   ) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--radius-pill) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-capsule) !important;
+  box-shadow: var(--rim) !important;
+  color: var(--label) !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
   letter-spacing: 0.02em !important;
@@ -3524,11 +4014,11 @@ progress {
 
 .itemDetailPage .itemMiscInfo .starRatingContainer {
   gap: 0.15em !important;
-  color: rgba(255, 255, 255, 0.92) !important;
+  color: var(--label) !important;
 }
 
 .itemDetailPage .itemMiscInfo .starIcon {
-  color: #f2b01e !important;
+  color: var(--sys-yellow) !important;
 }
 
 /* Track row → compact glass chips (no dropdown chevrons).
@@ -3599,22 +4089,22 @@ progress {
   white-space: nowrap !important;
   line-height: 1.35 !important;
   cursor: default !important;
-  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: var(--fill-3) !important;
   background-image: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0.14) 0%,
     rgba(255, 255, 255, 0.03) 45%,
     rgba(255, 255, 255, 0.08) 100%
   ) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
-  backdrop-filter: blur(12px) saturate(160%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-radius: var(--radius-pill) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  -webkit-backdrop-filter: var(--mat-thin) !important;
+  backdrop-filter: var(--mat-thin) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-capsule) !important;
+  box-shadow: var(--rim) !important;
+  color: var(--label) !important;
   transition:
-    background-color 0.16s ease,
-    color 0.16s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .itemDetailPage .trackSelections .emby-select:not([disabled]) {
@@ -3622,8 +4112,8 @@ progress {
 }
 
 .itemDetailPage .trackSelections .emby-select:not([disabled]):hover {
-  background-color: rgba(255, 255, 255, 0.10) !important;
-  color: #fff !important;
+  background-color: var(--fill-2) !important;
+  color: var(--label) !important;
 }
 
 .itemDetailPage .trackSelections .emby-select:focus,
@@ -3631,13 +4121,13 @@ progress {
 .itemDetailPage .trackSelections .emby-select-focusscale:focus {
   outline: none !important;
   transform: none !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  box-shadow: var(--rim) !important;
 }
 
 .itemDetailPage .trackSelections .emby-select[disabled] {
   opacity: 1 !important;
-  color: rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--label) !important;
+  border-color: var(--hairline-color) !important;
 }
 
 /* Optional marker row injected by tools/detail-markers.js */
@@ -3677,19 +4167,19 @@ progress {
 /* Genre line + tagline */
 .itemDetailPage .itemGenres,
 .itemDetailPage .tagline {
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: var(--label-2) !important;
   font-size: 0.95rem !important;
   line-height: 1.45 !important;
 }
 
 .itemDetailPage .itemGenres a,
 .itemDetailPage .tagline a {
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: var(--label-2) !important;
   text-decoration: none !important;
 }
 
 .itemDetailPage .itemGenres a:hover {
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* User tags + external links.
@@ -3697,7 +4187,7 @@ progress {
  * so wrapped tag lines align under the first tag, not under "Tags:". */
 .itemDetailPage .itemTags {
   display: block !important;
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: var(--label-2) !important;
   font-size: 0.9rem !important;
   line-height: 1.55 !important;
   margin: 0.7em 0 !important;
@@ -3708,7 +4198,7 @@ progress {
 
 .itemDetailPage .itemExternalLinks {
   display: block !important;
-  color: rgba(255, 255, 255, 0.78) !important;
+  color: var(--label-2) !important;
   font-size: 0.9rem !important;
   line-height: 1.55 !important;
   margin: 0.7em 0 !important;
@@ -3776,7 +4266,7 @@ progress {
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
-  color: rgba(255, 255, 255, 0.48) !important;
+  color: var(--label-3) !important;
   font-size: 0.84rem !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
@@ -3802,21 +4292,21 @@ progress {
   flex-basis: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--label) !important;
   font-size: 0.95rem !important;
   min-width: 0 !important;
   text-align: left !important;
 }
 
 .itemDetailPage .detailsGroupItem .button-link {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--label) !important;
   font-weight: 500 !important;
   padding: 0 !important;
   background: transparent !important;
 }
 
 .itemDetailPage .detailsGroupItem .button-link:hover {
-  color: #fff !important;
+  color: var(--label) !important;
 }
 
 /* Cast & crew carousel */
@@ -3850,10 +4340,10 @@ progress {
 
 .itemDetailPage #castContent .personCard .cardImageContainer,
 .itemDetailPage #castContent .personCard .cardContent {
-  border-radius: var(--radius-lg) !important;
+  border-radius: var(--radius-poster) !important;
   overflow: hidden !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--rim),
     0 6px 18px rgba(0, 0, 0, 0.28) !important;
 }
 
@@ -3861,26 +4351,64 @@ progress {
   padding: 0.45em 0 0 !important;
   font-size: 0.88rem !important;
   font-weight: 500 !important;
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: var(--label-2) !important;
   text-align: center !important;
 }
 
 .itemDetailPage #castContent .personCard .cardText-secondary {
-  color: rgba(255, 255, 255, 0.52) !important;
+  color: var(--label-2) !important;
   font-size: 0.78rem !important;
 }
 
-/* ── Shutdown button — keep it red, dampen the glow ─────────────── */
+/* ── Dashboard actions (Jellyfin 10.11 is MUI) ──────────────────── *
+ * The old `#btnShutdown` markup is gone on current servers. Restart
+ * / Shutdown render as `.MuiButton-containedError` and Scan All as
+ * a contained primary — both still arrived as Material 4px rects in
+ * Jellyfin cyan / Material red. Same capsule language as the rest
+ * of the theme, Apple system red/blue instead.                    */
 
-#btnShutdown {
-  background-color: #d04444 !important;
+#btnShutdown,
+button.MuiButton-containedError,
+.MuiButton-containedError {
+  border-radius: var(--radius-capsule) !important;
+  background-color: var(--sys-red) !important;
+  color: var(--label) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 4px 14px rgba(208, 68, 68, 0.32) !important;
+    var(--rim),
+    0 4px 14px rgba(255, 69, 58, 0.32) !important;
+  text-transform: none !important;
+  font-weight: 590 !important;
+  letter-spacing: -0.01em !important;
 }
 
-#btnShutdown:hover {
-  background-color: #db5454 !important;
+#btnShutdown:hover,
+button.MuiButton-containedError:hover,
+.MuiButton-containedError:hover {
+  background-color: var(--sys-red-pressed) !important;
+}
+
+button.MuiButton-contained:not(.MuiButton-containedError),
+.MuiButton-contained:not(.MuiButton-containedError) {
+  border-radius: var(--radius-capsule) !important;
+  background-color: var(--sys-blue) !important;
+  color: var(--label) !important;
+  box-shadow: var(--rim-strong) !important;
+  text-transform: none !important;
+  font-weight: 590 !important;
+  letter-spacing: -0.01em !important;
+}
+
+button.MuiButton-contained:not(.MuiButton-containedError):hover,
+.MuiButton-contained:not(.MuiButton-containedError):hover {
+  background-color: var(--sys-blue-pressed) !important;
+}
+
+button.MuiButton-outlined,
+button.MuiButton-text,
+.MuiButton-outlined,
+.MuiButton-text {
+  border-radius: var(--radius-capsule) !important;
+  text-transform: none !important;
 }
 
 /* ── Paper-list (settings groups) ───────────────────────────────── */
@@ -3889,9 +4417,9 @@ progress {
 .itemsContainer.paperList,
 .serverList .listItem,
 .userList .listItem {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: var(--radius-lg) !important;
+  background-color: var(--fill-4) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-container) !important;
   overflow: hidden !important;
 }
 
@@ -3899,7 +4427,7 @@ progress {
 .paperList .listItem,
 .serverList .listItem {
   background-color: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid var(--separator) !important;
   border-radius: 0 !important;
 }
 
@@ -3912,8 +4440,8 @@ progress {
 
 .searchFields input,
 .headerSearchInputContainer input {
-  background-color: rgba(255, 255, 255, 0.07) !important;
-  border-radius: 999px !important;
+  background-color: var(--fill-3) !important;
+  border-radius: var(--radius-capsule) !important;
   padding-left: 1em !important;
 }
 
@@ -3942,7 +4470,7 @@ h3.sectionTitle,
   font-family: var(--font-display) !important;
   font-weight: 600 !important;
   letter-spacing: -0.02em !important;
-  color: rgba(255, 255, 255, 0.94) !important;
+  color: var(--label) !important;
   background: transparent !important;
   text-decoration: none !important;
 }
@@ -3950,14 +4478,14 @@ h3.sectionTitle,
 .sectionTitleTextButton:hover,
 button.sectionTitleTextButton:hover,
 a.sectionTitleTextButton:hover {
-  color: #fff !important;
+  color: var(--label) !important;
   background-color: transparent !important;
 }
 
 /* The little `>` chevron next to clickable section titles — subdued */
 .sectionTitleTextButton .material-icons,
 .sectionTitleContainer .material-icons {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: var(--label-2) !important;
   font-size: 1.2em !important;
 }
 
@@ -3993,7 +4521,7 @@ h3.sectionTitle,
   font-size: 1.18rem !important;
   font-weight: 600 !important;
   letter-spacing: -0.018em !important;
-  color: #fff !important;
+  color: var(--label) !important;
   margin: 0 !important;
 }
 
@@ -4015,6 +4543,8 @@ h3.sectionTitle,
   align-items: center !important;
   gap: 0.18em !important;
   margin: 1.6em 0 0.7em !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
   padding-left: var(--home-section-gutter) !important;
   padding-right: var(--home-section-gutter) !important;
   padding-inline: var(--home-section-gutter) !important;
@@ -4041,28 +4571,67 @@ h3.sectionTitle,
   box-sizing: border-box !important;
 }
 
-.sectionTitleTextButton {
+.sectionTitleTextButton,
+button.sectionTitleTextButton,
+a.sectionTitleTextButton {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 0.1em !important;
+  gap: 0.12em !important;
   padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  height: auto !important;
+  width: auto !important;
   font-size: 1.18rem !important;
   font-weight: 600 !important;
-  color: #fff !important;
+  line-height: 1.2 !important;
+  color: var(--label) !important;
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.sectionTitleTextButton::before,
+.sectionTitleTextButton::after,
+button.sectionTitleTextButton::before,
+button.sectionTitleTextButton::after {
+  content: none !important;
+  display: none !important;
+}
+
+.sectionTitleTextButton:hover,
+button.sectionTitleTextButton:hover,
+a.sectionTitleTextButton:hover {
+  background: none !important;
+  background-color: transparent !important;
 }
 
 .sectionTitleTextButton .material-icons,
 .sectionTitleContainer .material-icons {
-  color: rgba(255, 255, 255, 0.55) !important;
-  font-size: 1.05em !important;
+  display: block !important;
+  color: var(--label-2) !important;
+  font-size: 0.92em !important;
   font-weight: 600 !important;
-  margin-left: -0.05em !important;
-  transition: color 0.16s ease, transform 0.16s ease !important;
+  line-height: 1 !important;
+  width: 0.92em !important;
+  height: 0.92em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* Material chevron sits high next to 600-weight display type. */
+  transform: translateY(0.06em) !important;
+  transition: color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease) !important;
 }
 
 .sectionTitleTextButton:hover .material-icons {
-  color: #fff !important;
-  transform: translateX(2px) !important;
+  color: var(--label) !important;
+  transform: translate(2px, 0.06em) !important;
 }
 
 /* Card progress bar · Apple TV uses a thin (~3px) bar flush along
@@ -4074,7 +4643,7 @@ h3.sectionTitle,
 .innerCardFooter .itemProgressBar {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
-  background-color: rgba(255, 255, 255, 0.18) !important;
+  background-color: var(--fill-1) !important;
   border-radius: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -4147,7 +4716,7 @@ h3.sectionTitle,
     rgba(0, 0, 0, 0) 60%
   ) !important;
   opacity: 0 !important;
-  transition: opacity 0.22s ease !important;
+  transition: opacity var(--dur-fast) var(--ease) !important;
   pointer-events: none !important;
   z-index: 0 !important;
 }
@@ -4166,10 +4735,10 @@ h3.sectionTitle,
   opacity: 1 !important;
   padding: 0 !important;
   transition:
-    background-color 0.2s ease,
-    transform 0.18s ease,
-    box-shadow 0.2s ease,
-    color 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .cardOverlayContainer .cardOverlayButtonIcon-hover,
@@ -4200,10 +4769,10 @@ h3.sectionTitle,
   box-shadow: var(--osd-pill-shadow) !important;
   color: var(--osd-icon) !important;
   transition:
-    background-color 0.2s ease,
-    transform 0.18s ease,
-    box-shadow 0.2s ease,
-    color 0.18s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease) !important;
 }
 
 .cardOverlayFab-primary:hover {
@@ -4264,7 +4833,7 @@ h3.sectionTitle,
   width: 2.2em !important;
   height: 2.2em !important;
   min-width: 2.2em !important;
-  border-radius: 50% !important;
+  border-radius: var(--radius-circle) !important;
   background-color: var(--osd-pill-bg) !important;
   background-image: var(--osd-pill-highlight) !important;
   -webkit-backdrop-filter: var(--osd-pill-blur) !important;
@@ -4282,10 +4851,10 @@ h3.sectionTitle,
   overflow: hidden !important;
   box-sizing: border-box !important;
   transition:
-    background-color 0.2s ease,
-    transform 0.18s ease,
-    color 0.18s ease,
-    box-shadow 0.2s ease !important;
+    background-color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease) !important;
 }
 
 .cardOverlayContainer .paper-icon-button-light:not(.cardOverlayFab-primary):hover:not(:disabled),
@@ -4316,6 +4885,111 @@ h3.sectionTitle,
 .itemsContainer > .card:hover .cardImageContainer {
   transform: translateY(-2px) !important;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* ── Pause / generic icon OSD ─────────────────────────────────────
+ * Compact glass disc. Volume is restyled separately below — the
+ * previous shared `border-radius: 999px` on Jellyfin's padded square
+ * turned the volume toast into a giant mid-screen circle.          */
+.iconOsd:not(.volumeOsd) {
+  background-color: var(--glass-thick) !important;
+  -webkit-backdrop-filter: var(--mat-regular) !important;
+  backdrop-filter: var(--mat-regular) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-circle) !important;
+  box-shadow: var(--rim) !important;
+  color: var(--label) !important;
+  width: 3.6em !important;
+  height: 3.6em !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* Sit just under the top-center volume capsule so the two
+   * toasts never occupy the same slot. */
+  top: calc(var(--osd-top-edge) + var(--osd-btn-size) + 0.75em) !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+}
+
+.iconOsd:not(.volumeOsd) .iconOsdIcon {
+  font-size: 1.45em !important;
+  margin: 0 !important;
+}
+
+/* ── Volume HUD · slim top-center capsule ─────────────────────────
+ * Same height as the header buttons, horizontally centered in the
+ * empty gap between back/home/menu and cast. Jellyfin already
+ * paints the fill as `width: N%`, so the track stays horizontal.   */
+.iconOsd.volumeOsd {
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 11.25em !important;
+  height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  padding: 0 0.85em 0 0.7em !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.55em !important;
+  overflow: hidden !important;
+  transform: translateX(-50%) !important;
+  z-index: 100000 !important;
+  background-color: var(--glass-thick) !important;
+  background-image: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.08) 100%
+  ) !important;
+  -webkit-backdrop-filter: var(--mat-regular) !important;
+  backdrop-filter: var(--mat-regular) !important;
+  border: var(--hairline) !important;
+  border-radius: var(--radius-capsule) !important;
+  box-shadow: var(--rim-strong) !important;
+  color: var(--label) !important;
+}
+
+.iconOsd.volumeOsd .iconOsdIcon {
+  position: relative !important;
+  z-index: 1 !important;
+  flex: 0 0 auto !important;
+  font-size: 1.15em !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  width: 1em !important;
+  height: 1em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.iconOsd.volumeOsd .iconOsdProgressOuter {
+  position: relative !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  height: 0.36em !important;
+  left: auto !important;
+  top: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: var(--radius-capsule) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  overflow: hidden !important;
+  transform: none !important;
+}
+
+.iconOsd.volumeOsd .iconOsdProgressInner,
+.iconOsd.volumeOsd .brightnessOsdProgressInner {
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: var(--osd-accent-blue) !important;
 }
 
 
