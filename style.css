@@ -2520,18 +2520,22 @@ h2 {
 /* Arrows share the same tight-box centering as home/menu — the
  * previous X-nudge pushed Back to the right of the disc. */
 
-/* Back is a dead end on Home — never show it there. Only force it
- * on item detail pages, where the user actually needs a way out.
- * Do NOT globally `display: inline-flex` the back control: that
- * resurrected Jellyfin's `.hide` copy on Home after SPA navigation. */
-html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
-html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
-html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
-html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton,
-html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
-html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
-html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
-html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
+/* Back is a dead end on Home — never show it there. On tablet / mobile
+ * Jellyfin sometimes leaves `#indexPage` / `.homePage` in the DOM
+ * without `.hide` while a detail or library view is on screen; do not
+ * suppress back in that case (`:not(:has(detail))` below).
+ *
+ * Do NOT globally `display: inline-flex` every back control: that
+ * resurrected Jellyfin's `.hide` copy on Home after SPA navigation.
+ * Respect `.hide` everywhere except where we force detail (below). */
+html:has(.homePage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(.homePage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(.homePage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .btnBack,
+html:has(.homePage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton,
+html:has(#indexPage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(#indexPage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(#indexPage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .btnBack,
+html:has(#indexPage:not(.hide)):not(:has(.itemDetailPage:not(.hide))):not(:has(#itemDetailPage:not(.hide))):not(:has(.libraryPage:not(.homePage):not(.hide))) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
@@ -2548,10 +2552,22 @@ html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.he
   box-shadow: none !important;
 }
 
+/* Whenever Jellyfin enables back (`canGoBack` → removes `.hide`), paint
+ * the same glass disc — critical on mobile / tablet where the drawer
+ * is hidden and back is the primary exit. Home hide (above) still wins
+ * on the actual home screen. */
+.skinHeader:not(.osdHeader) .headerBackButton:not(.hide),
+.skinHeader:not(.osdHeader) .headerButton.headerBackButton:not(.hide),
+.skinHeader:not(.osdHeader) .btnBack:not(.hide),
+.skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton:not(.hide),
 html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
 html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
 html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
-html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton,
+html:has(#itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(#itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerButton.headerBackButton,
+html:has(#itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .btnBack,
+html:has(#itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButton.headerBackButton {
   display: inline-flex !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -2593,7 +2609,9 @@ html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerLeftButt
     0 10px 22px rgba(0, 0, 0, 0.22) !important;
 }
 
-html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton::before {
+.skinHeader:not(.osdHeader) .headerBackButton:not(.hide)::before,
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton::before,
+html:has(#itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton::before {
   content: "" !important;
   position: absolute !important;
   inset: 0 !important;
