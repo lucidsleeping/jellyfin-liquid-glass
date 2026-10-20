@@ -152,37 +152,19 @@ a:hover {
   color: var(--cp-ink) !important;
   /* Downward digital smear. Peach/hot core, teal edge streaks.
      Shadows follow the real glyphs so the words stay readable. */
+  /* Straight down from the glyphs. No sideways offset.
+     Tight steps at the letters, longer steps as the echo falls. */
   text-shadow:
-    0 2px 0 rgba(255, 84, 32, 0.55),
-    0 4px 0 rgba(247, 182, 133, 0.4),
-    1px 7px 0 rgba(92, 225, 230, 0.32),
-    -1px 10px 0 rgba(255, 70, 30, 0.22),
-    0 14px 0 rgba(92, 225, 230, 0.16),
-    1px 18px 0 rgba(247, 182, 133, 0.1) !important;
-}
-
-.sectionTitle::after,
-.itemName::after {
-  content: "" !important;
-  position: absolute !important;
-  left: 0 !important;
-  right: 0 !important;
-  top: 72% !important;
-  height: 1.15em !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-  background-image:
-    repeating-linear-gradient(
-      90deg,
-      rgba(92, 225, 230, 0.55) 0 1px,
-      transparent 1px 3px,
-      rgba(255, 84, 32, 0.7) 3px 4px,
-      transparent 4px 6px,
-      rgba(247, 182, 133, 0.45) 6px 7px,
-      transparent 7px 10px
-    ) !important;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%) !important;
-  mask-image: linear-gradient(180deg, #000 0%, transparent 100%) !important;
+    0 1px 0 rgba(255, 84, 32, 0.72),
+    0 2px 0 rgba(247, 182, 133, 0.6),
+    0 3px 0 rgba(92, 225, 230, 0.5),
+    0 5px 0 rgba(255, 70, 30, 0.4),
+    0 7px 0 rgba(247, 182, 133, 0.32),
+    0 10px 0 rgba(92, 225, 230, 0.26),
+    0 14px 0 rgba(255, 84, 32, 0.18),
+    0 19px 0 rgba(92, 225, 230, 0.13),
+    0 25px 0 rgba(247, 182, 133, 0.09),
+    0 32px 0 rgba(92, 225, 230, 0.06) !important;
 }
 
 .sectionTitleContainer .sectionTitle {
@@ -792,6 +774,32 @@ body.mouseIdle .osdHeader .btnCast {
   pointer-events: none !important;
 }
 
+/* Sync, search, and the user button stay in the header flow. With
+   headerLeft pinned fixed, they sat at the left and drew a second
+   square under back, home, and menu. Cast stays, pinned on the right. */
+.osdHeader .headerButton.headerSyncButton,
+.osdHeader .headerButton.syncButton,
+.osdHeader .headerButton.headerSearchButton,
+.osdHeader .headerButton.headerUserButton,
+.osdHeader .headerButton.headerAudioPlayerButton,
+.osdHeader .paper-icon-button-light.headerSyncButton,
+.osdHeader .paper-icon-button-light.headerSearchButton,
+.osdHeader .paper-icon-button-light.headerUserButton,
+.osdHeader .paper-icon-button-light.headerAudioPlayerButton {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
 .osdHeader .headerLeft {
   position: fixed !important;
   top: var(--osd-top-edge) !important;
@@ -809,8 +817,8 @@ body.mouseIdle .osdHeader .btnCast {
   z-index: 5 !important;
 }
 
-.osdHeader .headerButton:not(.hide),
-.osdHeader .paper-icon-button-light:not(.hide):not(.headerCastButton):not(.btnCast) {
+.osdHeader .headerButton:not(.hide):not(.headerSyncButton):not(.headerSearchButton):not(.headerUserButton):not(.headerAudioPlayerButton),
+.osdHeader .paper-icon-button-light:not(.hide):not(.headerCastButton):not(.btnCast):not(.headerSyncButton):not(.headerSearchButton):not(.headerUserButton):not(.headerAudioPlayerButton) {
   width: var(--osd-btn-size) !important;
   height: var(--osd-btn-size) !important;
   min-width: var(--osd-btn-size) !important;
@@ -1249,12 +1257,9 @@ body.mouseIdle .osdHeader .btnCast {
   .detailSectionHeader,
   .itemName,
   .nameContainer .itemName {
-    text-shadow: 0 3px 0 rgba(247, 182, 133, 0.5) !important;
-  }
-
-  .sectionTitle::after,
-  .itemName::after {
-    display: none !important;
+    text-shadow:
+      0 2px 0 rgba(255, 84, 32, 0.45),
+      0 5px 0 rgba(92, 225, 230, 0.28) !important;
   }
 }
 
@@ -1331,12 +1336,9 @@ body.mouseIdle .osdHeader .btnCast {
   .detailSectionHeader,
   .itemName,
   .nameContainer .itemName {
-    text-shadow: 0 3px 0 rgba(247, 182, 133, 0.5) !important;
-  }
-
-  .sectionTitle::after,
-  .itemName::after {
-    display: none !important;
+    text-shadow:
+      0 2px 0 rgba(255, 84, 32, 0.45),
+      0 5px 0 rgba(92, 225, 230, 0.28) !important;
   }
 }
 
@@ -1355,6 +1357,23 @@ body.mouseIdle .osdHeader .btnCast {
       rgba(255, 255, 255, 0.02) 3px 4px
     ) !important;
   }
+}
+
+/* The video page is a later sibling of the player and was painted
+   opaque stage color over the picture. Keep that page clear, lift the
+   player above it, and take the dot field off the video plane. */
+#videoOsdPage,
+#videoOsdPage.page,
+#videoOsdPage.libraryPage,
+#videoOsdPage.mainAnimatedPage {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+.videoPlayerContainer {
+  z-index: 2 !important;
+  background: transparent !important;
 }
 
 html:has(#videoOsdPage:not(.hide)) .backgroundContainer,
