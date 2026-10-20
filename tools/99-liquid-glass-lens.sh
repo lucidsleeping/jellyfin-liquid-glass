@@ -1,16 +1,56 @@
 #!/usr/bin/with-contenv bash
-# Persist Jellyfin liquid-glass WebGL player lens + poster accent
-# across image updates. Ensures index.html always loads the cache-busted
-# ui/*.js tags so SPA navigations get the current scripts on first paint.
+# Persist the chosen Jellyfin theme lens + poster accent across image updates.
+# theme.txt selects one lens. This hook links that script only.
+#   liquid            → osd-lens-glass.js
+#   cyberpunk-liquid  → osd-lens-cyberpunk.js
+#   cyberpunk         → no lens (strip both script tags)
 set -euo pipefail
 
 WEB_DIR="${JELLYFIN_WEB_DIR:-/usr/share/jellyfin/web}"
 UI_DIR="${WEB_DIR}/ui"
 INDEX="${WEB_DIR}/index.html"
-SRC="/config/liquid-glass/osd-lens-glass.js"
-ACCENT_SRC="/config/liquid-glass/poster-accent.js"
-BUST_FILE="/config/liquid-glass/cache-bust.txt"
-ACCENT_BUST_FILE="/config/liquid-glass/accent-bust.txt"
+CONF="/config/liquid-glass"
+THEME_FILE="${CONF}/theme.txt"
+BUST_FILE="${CONF}/cache-bust.txt"
+ACCENT_SRC="${CONF}/poster-accent.js"
+ACCENT_BUST_FILE="${CONF}/accent-bust.txt"
+
+THEME="liquid"
+if [[ -f "$THEME_FILE" ]]; then
+  THEME="$(tr -d '[:space:]' < "$THEME_FILE")"
+  [[ -n "$THEME" ]] || THEME="liquid"
+fi
+
+strip_ui_scripts() {
+  local tmp="${INDEX}.lg.tmp"
+  [[ -f "$INDEX" ]] || return 0
+  sed -E \
+    -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-glass\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+    -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-cyberpunk\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+    -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*poster-accent\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+    "$INDEX" > "$tmp"
+  mv -f "$tmp" "$INDEX"
+}
+
+case "$THEME" in
+  cyberpunk)
+    mkdir -p "$UI_DIR"
+    rm -f "${UI_DIR}/osd-lens-glass.js" "${UI_DIR}/osd-lens-cyberpunk.js" "${UI_DIR}/poster-accent.js"
+    strip_ui_scripts
+    echo "**** [liquid-glass] theme=cyberpunk linked no lens ****"
+    exit 0
+    ;;
+  cyberpunk-liquid)
+    SRC="${CONF}/osd-lens-cyberpunk.js"
+    LENS_NAME="osd-lens-cyberpunk.js"
+    OTHER_NAME="osd-lens-glass.js"
+    ;;
+  *)
+    SRC="${CONF}/osd-lens-glass.js"
+    LENS_NAME="osd-lens-glass.js"
+    OTHER_NAME="osd-lens-cyberpunk.js"
+    ;;
+esac
 
 BUST="refraction"
 if [[ -f "$BUST_FILE" ]]; then
@@ -25,12 +65,13 @@ if [[ -f "$ACCENT_BUST_FILE" ]]; then
 fi
 
 if [[ ! -f "$SRC" ]]; then
-  echo "**** [liquid-glass] osd-lens-glass.js not found — skip ****"
+  echo "**** [liquid-glass] ${LENS_NAME} not found — skip ****"
   exit 0
 fi
 
 mkdir -p "$UI_DIR"
-cp -f "$SRC" "${UI_DIR}/osd-lens-glass.js"
+cp -f "$SRC" "${UI_DIR}/${LENS_NAME}"
+rm -f "${UI_DIR}/${OTHER_NAME}"
 if [[ -f "$ACCENT_SRC" ]]; then
   cp -f "$ACCENT_SRC" "${UI_DIR}/poster-accent.js"
 fi
@@ -42,13 +83,14 @@ fi
 
 [[ -f "${INDEX}.bak.liquid-glass" ]] || cp -f "$INDEX" "${INDEX}.bak.liquid-glass"
 
-LENS_TAG="<script src=\"ui/osd-lens-glass.js?v=${BUST}\" defer></script>"
+LENS_TAG="<script src=\"ui/${LENS_NAME}?v=${BUST}\" defer></script>"
 ACCENT_TAG="<script src=\"ui/poster-accent.js?v=${ACCENT_BUST}\" defer></script>"
 TMP="${INDEX}.lg.tmp"
 
-# Strip existing liquid-glass script tags, then insert ours before </body>.
+# Strip both lens tags, then insert only the theme match.
 sed -E \
   -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-glass\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+  -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-cyberpunk\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
   -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*poster-accent\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
   "$INDEX" > "$TMP"
 
@@ -77,7 +119,7 @@ else
 fi
 rm -f "$TMP"
 
-echo "**** [liquid-glass] linked ${LENS_TAG} ****"
+echo "**** [liquid-glass] theme=${THEME} linked ${LENS_TAG} ****"
 if [[ -f "$ACCENT_SRC" ]]; then
   echo "**** [liquid-glass] linked ${ACCENT_TAG} ****"
 fi
