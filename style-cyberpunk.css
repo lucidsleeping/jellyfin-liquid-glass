@@ -1122,10 +1122,10 @@ body.mouseIdle .osdHeader .btnCast {
 }
 
 .videoOsdBottom .volumeButtons .buttonMute {
-  width: 2.2em !important;
-  height: 2.2em !important;
-  min-width: 2.2em !important;
-  min-height: 2.2em !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1248,6 +1248,16 @@ body.mouseIdle .osdHeader .btnCast {
 
   .backgroundContainer {
     animation: none !important;
+  }
+
+  /* Four right-edge buttons plus an 8em slider cover audio below ~430px. */
+  .videoOsdBottom .volumeButtons .sliderContainer {
+    width: min(8em, calc(100vw - var(--osd-left-edge) - var(--osd-right-edge) - (var(--osd-btn-size) + var(--osd-btn-gap)) * 4 - 5.6em)) !important;
+    min-width: 2.4em !important;
+  }
+
+  .emby-tab-button {
+    min-height: 44px !important;
   }
 
   .sectionTitle,
