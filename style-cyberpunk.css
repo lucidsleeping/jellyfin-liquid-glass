@@ -150,21 +150,18 @@ a:hover {
   letter-spacing: -0.045em !important;
   text-transform: uppercase !important;
   color: var(--cp-ink) !important;
-  /* Downward digital smear. Peach/hot core, teal edge streaks.
-     Shadows follow the real glyphs so the words stay readable. */
-  /* Straight down from the glyphs. No sideways offset.
-     Tight steps at the letters, longer steps as the echo falls. */
+  /* Cast shadow behind the glyphs, down and to the right.
+     X grows faster than Y so the angle is obvious and the line
+     under the title stays clear. Cyan edges, peach/orange core. */
   text-shadow:
-    0 1px 0 rgba(255, 84, 32, 0.72),
-    0 2px 0 rgba(247, 182, 133, 0.6),
-    0 3px 0 rgba(92, 225, 230, 0.5),
-    0 5px 0 rgba(255, 70, 30, 0.4),
-    0 7px 0 rgba(247, 182, 133, 0.32),
-    0 10px 0 rgba(92, 225, 230, 0.26),
-    0 14px 0 rgba(255, 84, 32, 0.18),
-    0 19px 0 rgba(92, 225, 230, 0.13),
-    0 25px 0 rgba(247, 182, 133, 0.09),
-    0 32px 0 rgba(92, 225, 230, 0.06) !important;
+    2px 1px 0 rgba(255, 84, 32, 0.7),
+    4px 1px 0 rgba(247, 182, 133, 0.55),
+    6px 2px 0 rgba(92, 225, 230, 0.42),
+    9px 2px 0 rgba(255, 70, 30, 0.32),
+    12px 3px 0 rgba(247, 182, 133, 0.24),
+    16px 4px 0 rgba(92, 225, 230, 0.16),
+    21px 5px 0 rgba(255, 84, 32, 0.1),
+    27px 6px 0 rgba(92, 225, 230, 0.06) !important;
 }
 
 .sectionTitleContainer .sectionTitle {
@@ -708,6 +705,8 @@ button[type="submit"].emby-button {
   pointer-events: none !important;
   display: block !important;
   font-size: 1rem !important;
+  /* Above .videoPlayerContainer (z-index 2), under dialogs. */
+  z-index: 5 !important;
 }
 
 .videoOsdBottom::before,
@@ -750,7 +749,7 @@ button[type="submit"].emby-button {
   padding: var(--osd-top-edge) var(--osd-right-edge) 0 var(--osd-left-edge) !important;
   pointer-events: none !important;
   position: relative !important;
-  z-index: 4 !important;
+  z-index: 6 !important;
   contain: none !important;
   font-size: 1rem !important;
 }
@@ -1268,8 +1267,8 @@ body.mouseIdle .osdHeader .btnCast {
   .itemName,
   .nameContainer .itemName {
     text-shadow:
-      0 2px 0 rgba(255, 84, 32, 0.45),
-      0 5px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 rgba(255, 84, 32, 0.5),
+      7px 2px 0 rgba(92, 225, 230, 0.28) !important;
   }
 }
 
@@ -1347,8 +1346,8 @@ body.mouseIdle .osdHeader .btnCast {
   .itemName,
   .nameContainer .itemName {
     text-shadow:
-      0 2px 0 rgba(255, 84, 32, 0.45),
-      0 5px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 rgba(255, 84, 32, 0.5),
+      7px 2px 0 rgba(92, 225, 230, 0.28) !important;
   }
 }
 
