@@ -252,6 +252,43 @@ if [[ -n "$CONFIG_SRC" ]]; then
   printf '%s\n' "$THEME" > "${CONFIG_SRC}/liquid-glass/theme.txt"
 fi
 
+# Spotlight's backdrop mask fades to a transparent canvas. Browsers paint
+# that canvas white, which is the fog over the home hero. Void it when the
+# Abyss file is present. Idempotent.
+void_spotlight_canvas() {
+  local tmp
+  tmp="$(mktemp)"
+  if ! docker cp "${CONTAINER}:/usr/share/jellyfin/web/ui/spotlight.css" "$tmp" 2>/dev/null; then
+    rm -f "$tmp"
+    return 0
+  fi
+  python3 - "$tmp" <<'PY'
+import sys
+from pathlib import Path
+p = Path(sys.argv[1])
+text = p.read_text(encoding="utf-8")
+# `body` is unindented; its background declaration is tab-indented.
+body_bg = "\tbackground: transparent;"
+if body_bg in text:
+    text = text.replace(body_bg, "\tbackground: #000;", 1)
+marker = "html {\n\tbackground: #000;\n\tcolor-scheme: dark;\n}"
+if marker not in text:
+    needle = ":root {\n\t/* --ease: ease-out; */\n\t--ease: cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n"
+    insert = needle + "/* Backdrop mask fades to transparent. Unset canvas is white. */\nhtml {\n\tbackground: #000;\n\tcolor-scheme: dark;\n}\n\n"
+    if needle not in text:
+        print("spotlight.css root block not found; left unchanged")
+    else:
+        text = text.replace(needle, insert, 1)
+p.write_text(text, encoding="utf-8")
+print("spotlight canvas void")
+PY
+  docker cp "$tmp" "${CONTAINER}:/usr/share/jellyfin/web/ui/spotlight.css"
+  rm -f "$tmp"
+  log "Spotlight hero canvas is void black"
+}
+
+void_spotlight_canvas
+
 if [[ "$NO_LENS" == "1" ]]; then
   upsert_ui_script_tags "" "" "" ""
   log "Removed lens and poster-accent script tags"
@@ -262,13 +299,23 @@ else
   log "Did not link /web/ui/${OTHER_LENS_FILE}"
 fi
 
+VOID_HOOK_SRC="${ROOT}/tools/zz-cyberpunk-spotlight-void.sh"
+install_void_hook() {
+  local dest="$1"
+  cp -f "$VOID_HOOK_SRC" "$dest"
+  chmod +x "$dest"
+  log "Wrote spotlight void hook: ${dest}"
+}
+
 if [[ -n "$CONFIG_SRC" ]]; then
   if [[ -d "${CONFIG_SRC}/custom-cont-init.d" ]]; then
     install_persist_hook "${CONFIG_SRC}/custom-cont-init.d/99-liquid-glass-lens.sh"
+    install_void_hook "${CONFIG_SRC}/custom-cont-init.d/zz-cyberpunk-spotlight-void.sh"
   fi
   if [[ -n "$INIT_SRC" && -d "$INIT_SRC" && "$INIT_SRC" != "${CONFIG_SRC}/custom-cont-init.d" ]]; then
     if install_persist_hook "${INIT_SRC}/99-liquid-glass-lens.sh" 2>/dev/null; then
-      :
+      install_void_hook "${INIT_SRC}/zz-cyberpunk-spotlight-void.sh" || \
+        docker cp "$VOID_HOOK_SRC" "${CONTAINER}:/custom-cont-init.d/zz-cyberpunk-spotlight-void.sh"
     else
       docker cp "$HOOK_SRC" "${CONTAINER}:/custom-cont-init.d/99-liquid-glass-lens.sh"
       docker exec -u root "$CONTAINER" chmod +x /custom-cont-init.d/99-liquid-glass-lens.sh

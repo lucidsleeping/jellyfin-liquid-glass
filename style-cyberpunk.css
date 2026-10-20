@@ -72,10 +72,29 @@ body {
 }
 
 .backgroundContainer {
+  background-color: var(--cp-void) !important;
   background-image:
     radial-gradient(circle at 50% 0%, rgba(247, 182, 133, 0.06), transparent 42%),
     radial-gradient(rgba(233, 237, 245, 0.07) 1px, transparent 1.2px) !important;
   background-size: auto, 22px 22px !important;
+}
+
+/* Abyss Spotlight hero is an iframe. Its mask fades the artwork to
+   transparent, and the iframe canvas defaults to white — the fog on
+   the home banner. Force a void canvas from the parent document. */
+#indexPage,
+#homeTab,
+.homePage,
+.sections {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+iframe.featurediframe,
+.featurediframe {
+  color-scheme: dark !important;
+  background-color: var(--cp-void) !important;
+  border: 0 !important;
 }
 
 a {
@@ -107,13 +126,29 @@ a:hover {
 /* ── App header ─────────────────────────────────────────────────── */
 
 .skinHeader:not(.osdHeader) {
-  background: rgba(0, 0, 0, 0.72) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
-  backdrop-filter: blur(6px) !important;
+  background: rgba(0, 0, 0, 0.94) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border: 0 !important;
   border-bottom: 1px solid var(--cp-line) !important;
   box-shadow: none !important;
   color: var(--cp-ink) !important;
+  /* Stock `contain: paint` plus the wide-screen negative tab margin
+     clips the button row into a sliver under the browser chrome. */
+  contain: none !important;
+  overflow: visible !important;
+  min-height: 3.5rem !important;
+  height: auto !important;
+  top: 0 !important;
+  transform: none !important;
+  z-index: 1000 !important;
+}
+
+.skinHeader:not(.osdHeader).headroom,
+.skinHeader:not(.osdHeader).headroom--pinned,
+.skinHeader:not(.osdHeader).headroom--unpinned {
+  transform: none !important;
+  top: 0 !important;
 }
 
 .skinHeader:not(.osdHeader) .headerTop,
@@ -124,11 +159,21 @@ a:hover {
   box-shadow: none !important;
 }
 
+.skinHeader:not(.osdHeader) .headerTop {
+  position: relative !important;
+  z-index: 2 !important;
+  min-height: 3.25rem !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+
 .skinHeader:not(.osdHeader) .headerLeft,
 .skinHeader:not(.osdHeader) .headerRight {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
+  overflow: visible !important;
+  min-width: 0 !important;
 }
 
 .skinHeader:not(.osdHeader) .headerButton:not(.hide),
@@ -208,39 +253,63 @@ html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButt
   color: var(--cp-faint) !important;
 }
 
-/* Tabs read as index section chips, not a glass capsule. */
+/* Tabs sit in the header row. The ≥100em rule pulls them up with
+   margin-top:-4.3em, which collapses the header and floats HOME /
+   FAVORITES in the chrome. Keep them centered under the buttons. */
 .headerTabs {
   background: none !important;
   border: 0 !important;
   box-shadow: none !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+  position: relative !important;
+  top: auto !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  align-self: stretch !important;
+  overflow: visible !important;
+  padding: 0 12px 10px !important;
+  z-index: 1 !important;
 }
 
 .emby-tabs,
 .emby-tabs-slider {
   background: transparent !important;
   border: 0 !important;
-  border-bottom: 1px solid var(--cp-line) !important;
+  border-bottom: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   padding: 0 !important;
   gap: 8px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin-inline: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .emby-tab-button {
-  font-family: var(--cp-font) !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.14em !important;
+  font-family: var(--cp-mono) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
   text-transform: uppercase !important;
   color: var(--cp-muted) !important;
   background: transparent !important;
-  border: 1px solid color-mix(in srgb, var(--cp-accent) 28%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--cp-accent) 45%, transparent) !important;
   border-radius: 0 !important;
-  padding: 7px 10px !important;
+  padding: 8px 16px !important;
+  min-height: 34px !important;
+  line-height: 1 !important;
   box-shadow: none !important;
 }
 
@@ -298,19 +367,33 @@ html:has(.itemDetailPage:not(.hide)) .skinHeader .headerTabs,
 
 .card,
 .cardBox,
-.cardContent,
 .listItem {
-  background: transparent !important;
+  background-color: transparent !important;
   color: var(--cp-ink) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
 
+/* `background` shorthand here wipes the inline poster URL. The image
+   element is `.cardContent.cardImageContainer`. */
+.cardContent:not(.cardImageContainer) {
+  background-color: transparent !important;
+  color: var(--cp-ink) !important;
+}
+
 .cardImageContainer,
 .cardBox .cardImageContainer {
-  border: 1px solid var(--cp-line) !important;
+  border: 1px solid rgba(243, 240, 255, 0.14) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  background-color: var(--cp-panel) !important;
+}
+
+.cardImage,
+.cardScalable .cardImage {
+  opacity: 1 !important;
+  visibility: visible !important;
+  background-color: transparent !important;
 }
 
 .card:hover .cardImageContainer,
@@ -335,9 +418,26 @@ html:has(.itemDetailPage:not(.hide)) .skinHeader .headerTabs,
   text-transform: uppercase !important;
 }
 
+/* Hover scrim only. Forcing opacity:1 paints a black plate and the
+   centered play glyph over every poster. */
 .cardOverlayContainer,
-.cardOverlayButton,
 .cardOverlayButton-hover {
+  opacity: 0 !important;
+  background: rgba(0, 0, 0, 0.42) !important;
+}
+
+.card:hover .cardOverlayContainer,
+.card:focus-within .cardOverlayContainer,
+.card-hoverable:hover .cardOverlayContainer,
+.card-hoverable:focus-within .cardOverlayContainer,
+.card:hover .cardOverlayButton-hover,
+.card:focus-within .cardOverlayButton-hover,
+.card-hoverable:hover .cardOverlayButton-hover,
+.card-hoverable:focus-within .cardOverlayButton-hover {
+  opacity: 1 !important;
+}
+
+.cardOverlayButton {
   opacity: 1 !important;
 }
 
