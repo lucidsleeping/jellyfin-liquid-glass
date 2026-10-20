@@ -920,6 +920,38 @@ body.mouseIdle .osdHeader .btnCast {
 
 .videoOsdBottom .buttons > div:first-child .btnRewind,
 .videoOsdBottom .buttons > div:first-child .btnFastForward,
+.videoOsdBottom .buttons > div:first-child .btnPause,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause,
+.videoOsdBottom .buttons > div:first-child .btnPlay,
+#videoOsdPage .videoOsdBottom .btnRewind,
+#videoOsdPage .videoOsdBottom .btnFastForward,
+#videoOsdPage .videoOsdBottom .btnPause,
+#videoOsdPage .videoOsdBottom .btnPlayPause,
+#videoOsdPage .videoOsdBottom .btnPlay {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid var(--cp-line-strong) !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  /* Same down-right halo as the titles. Behind the square, not a fill. */
+  box-shadow:
+    3px 1px 0 rgba(255, 84, 32, 0.7),
+    6px 2px 0 rgba(247, 182, 133, 0.5),
+    9px 3px 0 rgba(92, 225, 230, 0.38),
+    13px 4px 0 rgba(255, 70, 30, 0.26),
+    18px 5px 0 rgba(92, 225, 230, 0.16),
+    24px 7px 0 rgba(247, 182, 133, 0.08) !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .btnRewind,
+.videoOsdBottom .buttons > div:first-child .btnFastForward,
 #videoOsdPage .videoOsdBottom .btnRewind,
 #videoOsdPage .videoOsdBottom .btnFastForward {
   width: var(--osd-transport-size) !important;
@@ -928,16 +960,6 @@ body.mouseIdle .osdHeader .btnCast {
   min-height: var(--osd-transport-size) !important;
   max-width: var(--osd-transport-size) !important;
   max-height: var(--osd-transport-size) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: #fff !important;
-  background: rgba(0, 0, 0, 0.55) !important;
-  border: 1px solid var(--cp-line-strong) !important;
-  border-radius: 0 !important;
-  box-shadow: inset 0 2px 0 var(--cp-accent) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
-  backdrop-filter: blur(6px) !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .btnPause,
@@ -952,16 +974,6 @@ body.mouseIdle .osdHeader .btnCast {
   min-height: var(--osd-transport-large) !important;
   max-width: var(--osd-transport-large) !important;
   max-height: var(--osd-transport-large) !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  color: var(--cp-accent-ink) !important;
-  background: var(--cp-accent) !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .material-icons {
@@ -974,7 +986,7 @@ body.mouseIdle .osdHeader .btnCast {
 .videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons,
 .videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
   font-size: 2.1em !important;
-  color: var(--cp-accent-ink) !important;
+  color: #fff !important;
 }
 
 .osdControls {
@@ -1259,6 +1271,21 @@ body.mouseIdle .osdHeader .btnCast {
     min-height: 44px !important;
   }
 
+  .videoOsdBottom .buttons > div:first-child .btnRewind,
+  .videoOsdBottom .buttons > div:first-child .btnFastForward,
+  .videoOsdBottom .buttons > div:first-child .btnPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlay,
+  #videoOsdPage .videoOsdBottom .btnRewind,
+  #videoOsdPage .videoOsdBottom .btnFastForward,
+  #videoOsdPage .videoOsdBottom .btnPause,
+  #videoOsdPage .videoOsdBottom .btnPlayPause,
+  #videoOsdPage .videoOsdBottom .btnPlay {
+    box-shadow:
+      3px 1px 0 rgba(255, 84, 32, 0.55),
+      8px 2px 0 rgba(92, 225, 230, 0.28) !important;
+  }
+
   .sectionTitle,
   .sectionTitleText,
   .sectionTitleTextButton,
@@ -1336,6 +1363,21 @@ body.mouseIdle .osdHeader .btnCast {
 
   .backgroundContainer {
     animation: none !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .btnRewind,
+  .videoOsdBottom .buttons > div:first-child .btnFastForward,
+  .videoOsdBottom .buttons > div:first-child .btnPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlay,
+  #videoOsdPage .videoOsdBottom .btnRewind,
+  #videoOsdPage .videoOsdBottom .btnFastForward,
+  #videoOsdPage .videoOsdBottom .btnPause,
+  #videoOsdPage .videoOsdBottom .btnPlayPause,
+  #videoOsdPage .videoOsdBottom .btnPlay {
+    box-shadow:
+      3px 1px 0 rgba(255, 84, 32, 0.55),
+      8px 2px 0 rgba(92, 225, 230, 0.28) !important;
   }
 
   .sectionTitle,
