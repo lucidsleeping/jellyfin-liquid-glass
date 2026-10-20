@@ -13,6 +13,8 @@
  *  - Activates only when :root --liquid-glass-theme is set by theme CSS.
  *  - Client opt-out: localStorage jellyfin-liquid-glass-lens=off,
  *    URL ?nolens=1, or liquidGlassLens.disable() — stock OSD left alone.
+ *  - Low FX (no WebGL): (pointer: coarse), max-width ~60em, or
+ *    prefers-reduced-motion: reduce — CSS frost discs remain.
  */
 (function () {
   'use strict';
@@ -64,8 +66,56 @@
     }
   }
 
+  /** Mobile / tablet / a11y: skip WebGL; leave CSS frost discs. */
+  function isLowFx() {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return true;
+      }
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        return true;
+      }
+      if (window.matchMedia('(max-width: 60em)').matches) {
+        return true;
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return false;
+  }
+
+  function lowFxReason() {
+    try {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return 'prefers-reduced-motion';
+      }
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        return 'coarse pointer (touch)';
+      }
+      if (window.matchMedia('(max-width: 60em)').matches) {
+        return 'narrow viewport (≤60em)';
+      }
+    } catch (err) {
+      /* ignore */
+    }
+    return 'low FX';
+  }
+
   function lensAllowed() {
-    return !userOptedOut() && themeCssPresent();
+    return !userOptedOut() && themeCssPresent() && !isLowFx();
+  }
+
+  function idleReason() {
+    if (userOptedOut()) {
+      return 'client opted out of lens';
+    }
+    if (!themeCssPresent()) {
+      return 'theme CSS not active';
+    }
+    if (isLowFx()) {
+      return 'low FX — ' + lowFxReason();
+    }
+    return 'idle';
   }
 
   function noteIdle(reason) {
@@ -675,7 +725,7 @@
         markButtons('off');
         buttons = [];
         destroyLayer();
-        noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
+        noteIdle(idleReason());
         return;
       }
       idleLogged = false;
@@ -714,7 +764,7 @@
       if (buttons.length || layer) {
         teardown();
       }
-      noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
+      noteIdle(idleReason());
       return;
     }
     idleLogged = false;
@@ -760,8 +810,9 @@
       if (buttons.length || layer) {
         teardown();
       }
-      noteIdle(userOptedOut() ? 'client opted out of lens' : 'theme CSS not active');
-      /* Keep a light poll so re-enabling CSS / clearing opt-out can wake us. */
+      noteIdle(idleReason());
+      /* Keep a light poll so re-enabling CSS / clearing opt-out / leaving
+       * low-FX can wake us. */
       startPoll();
       return;
     }
@@ -799,6 +850,9 @@
   function onResize() {
     texW = 0;
     texH = 0;
+    /* Viewport may cross the 60em low-FX boundary. */
+    idleLogged = false;
+    init();
   }
 
   function onPageHide() {
@@ -846,7 +900,8 @@
     },
     isAllowed: lensAllowed,
     isOptedOut: userOptedOut,
-    themeActive: themeCssPresent
+    themeActive: themeCssPresent,
+    isLowFx: isLowFx
   };
 
   document.addEventListener('viewshow', onViewShow);

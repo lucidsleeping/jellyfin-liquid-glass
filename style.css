@@ -1207,9 +1207,9 @@ body > .osd-lens-layer,
 .osdHeader .paper-icon-button-light.btnCast {
   position: fixed !important;
   top: var(--osd-top-edge) !important;
-  right: auto !important;
+  right: var(--osd-right-edge) !important;
   bottom: auto !important;
-  left: calc(100vw - var(--osd-right-edge) - var(--osd-btn-size)) !important;
+  left: auto !important;
   margin: 0 !important;
   z-index: 5 !important;
   pointer-events: all !important;
@@ -5007,3 +5007,227 @@ a.sectionTitleTextButton:hover {
  *   and add before </body> in index.html:
  *     <script src="ui/osd-lens-glass.js" defer></script>
  */
+
+/* ═══════════════════════════════════════════════════════════════════
+ * FX PERFORMANCE TIERS + RESPONSIVE HARDENING (liquid-glass)
+ * Low FX when: pointer:coarse OR max-width:60em OR prefers-reduced-motion.
+ * High FX keeps baked SVG displacement + full materials on fine-pointer desktop.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+/* Wire materials / OSD glass through --fx-* so low-FX media can retarget once. */
+:root {
+  /* High-FX defaults (fine pointer desktop). Overridden below for low FX. */
+  --fx-blur-thin: 14px;
+  --fx-blur-regular: 22px;
+  --fx-blur-thick: 40px;
+  --fx-blur-osd: 10px;
+  --fx-blur-scrim: 30px;
+  --fx-disp: var(--liquid-glass-disp);
+  --fx-grain-opacity: 0;
+  --fx-shadow-lift: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --fx-shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  --mat-thin: blur(var(--fx-blur-thin)) saturate(170%);
+  --mat-regular: blur(var(--fx-blur-regular)) saturate(170%) brightness(102%);
+  --mat-thick: blur(var(--fx-blur-thick)) saturate(150%);
+  --mat-scrim: blur(var(--fx-blur-scrim)) saturate(80%) brightness(60%);
+
+  --osd-pill-blur:
+    var(--fx-disp)
+    blur(var(--fx-blur-osd))
+    saturate(135%)
+    brightness(103%)
+    contrast(102%);
+}
+
+/* Low FX: kill SVG displacement, cap blur, simplify shadows, no grain/scan. */
+@media (pointer: coarse), (max-width: 60em), (prefers-reduced-motion: reduce) {
+  :root {
+    --fx-blur-thin: 8px;
+    --fx-blur-regular: 10px;
+    --fx-blur-thick: 12px;
+    --fx-blur-osd: 8px;
+    --fx-blur-scrim: 12px;
+    /* Empty url() token: displacement filter off; plain blur/tint remains. */
+    --fx-disp: ;
+    --fx-grain-opacity: 0;
+    --fx-shadow-lift: 0 4px 14px rgba(0, 0, 0, 0.4);
+    --fx-shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.32);
+
+    --mat-thin: blur(var(--fx-blur-thin)) saturate(140%);
+    --mat-regular: blur(var(--fx-blur-regular)) saturate(140%) brightness(100%);
+    --mat-thick: blur(var(--fx-blur-thick)) saturate(130%);
+    --mat-scrim: blur(var(--fx-blur-scrim)) saturate(80%) brightness(55%);
+
+    --osd-pill-blur:
+      blur(var(--fx-blur-osd))
+      saturate(120%)
+      brightness(102%);
+
+    /* Single soft rim instead of multi-layer bezel stack */
+    --osd-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), var(--fx-shadow-soft);
+  }
+
+  /* Large panels: prefer solid tint over heavy backdrop on coarse/narrow. */
+  .mainDrawer,
+  .actionSheet,
+  .dialog,
+  .toast,
+  .upNextContainer,
+  .upNextDialog {
+    -webkit-backdrop-filter: blur(var(--fx-blur-thick)) saturate(130%) !important;
+    backdrop-filter: blur(var(--fx-blur-thick)) saturate(130%) !important;
+  }
+
+  /* Chrome-only grain/scan overlays stay off (never on video). */
+  .skinHeader::after,
+  .mainDrawer::after,
+  .liquid-glass-grain,
+  .cyberpunk-grain,
+  .cyberpunk-scan {
+    opacity: 0 !important;
+    content: none !important;
+    background: none !important;
+    animation: none !important;
+  }
+}
+
+/* Prefer reduced motion: freeze neon/pulse and hover scale. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Cast: pin with right edge token (not left: calc(100vw − …)). */
+.osdHeader .headerCastButton,
+.osdHeader .btnCast,
+.osdHeader .headerButton.headerCastButton,
+.osdHeader .headerButton.btnCast,
+.osdHeader .paper-icon-button-light.headerCastButton,
+.osdHeader .paper-icon-button-light.btnCast {
+  left: auto !important;
+  right: var(--osd-right-edge) !important;
+}
+
+/* Touch / tablet: ~44px minimum targets without moving transport off center. */
+@media (pointer: coarse), (max-width: 60em) {
+  :root {
+    --osd-btn-size: max(2.75em, 44px);
+    --osd-btn-gap: 0.45em;
+  }
+
+  .osdHeader .headerButton:not(.hide),
+  .osdHeader .paper-icon-button-light:not(.hide),
+  .videoOsdBottom .btnVideoOsdSettings,
+  .videoOsdBottom .btnAudio,
+  .videoOsdBottom .btnSubtitles,
+  .videoOsdBottom .btnFullscreen,
+  .videoOsdBottom .volumeButtons .buttonMute,
+  .skinHeader:not(.osdHeader) .headerButton:not(.hide),
+  .skinHeader:not(.osdHeader) .paper-icon-button-light:not(.hide),
+  .skinHeader:not(.osdHeader) .headerHomeButton,
+  .skinHeader:not(.osdHeader) .headerSearchButton {
+    min-width: max(var(--osd-btn-size), 44px) !important;
+    min-height: max(var(--osd-btn-size), 44px) !important;
+  }
+}
+
+/* Short landscape: shrink transport + scrub lift; keep center fixed. */
+@media (max-height: 32em) and (orientation: landscape) {
+  :root {
+    --osd-transport-size: 3.4em;
+    --osd-transport-large: 4.4em;
+    --osd-btn-size: 2.2em;
+    --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.45em);
+  }
+
+  .videoOsdBottom .buttons > div:first-child {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    gap: 0.75em !important;
+  }
+}
+
+@media (max-height: 26em) and (orientation: landscape) {
+  :root {
+    --osd-transport-size: 2.8em;
+    --osd-transport-large: 3.6em;
+    --osd-btn-size: 2em;
+    --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.3em);
+  }
+}
+
+/* Ensure critical chrome stays visible (menu/home/search; player clusters). */
+.skinHeader:not(.osdHeader) .headerHomeButton:not(.hide),
+.skinHeader:not(.osdHeader) .headerSearchButton:not(.hide),
+.skinHeader:not(.osdHeader) .headerMenuButton:not(.hide),
+.skinHeader:not(.osdHeader) .btnMainMenu:not(.hide),
+.osdHeader .headerBackButton:not(.hide),
+.osdHeader .headerHomeButton:not(.hide),
+.osdHeader .headerButton:not(.hide),
+.osdHeader .headerCastButton:not(.hide),
+.osdHeader .btnCast:not(.hide),
+.videoOsdBottom .volumeButtons,
+.videoOsdBottom .volumeButtons .buttonMute:not(.hide),
+.videoOsdBottom .btnAudio:not(.hide),
+.videoOsdBottom .btnSubtitles:not(.hide),
+.videoOsdBottom .btnVideoOsdSettings:not(.hide),
+.videoOsdBottom .btnFullscreen:not(.hide),
+.videoOsdBottom .buttons > div:first-child .btnRewind,
+.videoOsdBottom .buttons > div:first-child .btnFastForward,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause,
+.videoOsdBottom .buttons > div:first-child .btnPause,
+.videoOsdBottom .buttons > div:first-child .btnPlay {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+}
+
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+  display: inline-flex !important;
+}
+
+/* TV layout: larger targets + theme focus rings. */
+.layout-tv .osdHeader .headerButton,
+.layout-tv .osdHeader .paper-icon-button-light,
+.layout-tv .videoOsdBottom .paper-icon-button-light,
+.layout-tv .videoOsdBottom .btnVideoOsdSettings,
+.layout-tv .videoOsdBottom .btnAudio,
+.layout-tv .videoOsdBottom .btnSubtitles,
+.layout-tv .videoOsdBottom .btnFullscreen,
+.layout-tv .videoOsdBottom .volumeButtons .buttonMute,
+.layout-tv .skinHeader:not(.osdHeader) .headerButton,
+.layout-tv .skinHeader:not(.osdHeader) .paper-icon-button-light {
+  min-width: max(var(--osd-btn-size), 48px) !important;
+  min-height: max(var(--osd-btn-size), 48px) !important;
+}
+
+.layout-tv :focus-visible,
+.layout-tv .paper-icon-button-light:focus-visible,
+.layout-tv .headerButton:focus-visible,
+.layout-tv .btnPlay:focus-visible,
+.layout-tv .emby-button:focus-visible,
+.layout-tv .card:focus-visible,
+.layout-tv .listItem:focus-visible {
+  outline: 2px solid var(--sys-blue) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sys-blue) 28%, transparent) !important;
+}
+
+.layout-tv .videoOsdBottom .buttons > div:first-child {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
