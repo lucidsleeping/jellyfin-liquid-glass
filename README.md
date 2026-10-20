@@ -1,8 +1,20 @@
 # Jellyfin Liquid Glass
 
-A full-app theme for [Jellyfin](https://jellyfin.org) built around **Apple’s liquid-glass language** — translucent surfaces, live refraction, and a single Apple-blue accent — applied to the home screen, libraries, detail pages, settings, menus, **and** the video player.
+Three full-app themes for [Jellyfin](https://jellyfin.org). Paste **one** CSS file into Custom CSS. Do not paste more than one file.
 
-The cinematic **home spotlight** is from **[Abyss](https://github.com/AumGupta/abyss-jellyfin)** (installed alongside this theme). The rest of the UI is this repo’s CSS + optional WebGL transport lenses.
+| Theme | CSS file | Lens script | Sentinel |
+|-------|----------|-------------|----------|
+| **Liquid** (default) | [`style.css`](./style.css) | `tools/osd-lens-glass.js` | `--liquid-glass-theme: on` |
+| **Cyberpunk liquid** | [`style-cyberpunk-liquid.css`](./style-cyberpunk-liquid.css) | `tools/osd-lens-cyberpunk.js` | `--cyberpunk-liquid-theme: on` |
+| **Cyberpunk** | [`style-cyberpunk.css`](./style-cyberpunk.css) | none | `--cyberpunk-theme: on` |
+
+**Liquid** uses translucent surfaces, live refraction, and Apple system blue (`#0a84ff`) on the home screen, libraries, detail pages, settings, menus, and the video player.
+
+**Cyberpunk liquid** keeps that floating OSD and glass. The stage is void (`#090c12` / `#10131a`). The accent is neon lime (`#b8ff2e`), with sparse cyan and magenta. Text uses Switzer and JetBrains Mono. On a fine-pointer desktop, the transport lens is spectral WebGL (lime, cyan, and magenta rim, plus fresnel). Phone and tablet do not run that WebGL lens.
+
+**Cyberpunk** matches the dark index on [jyothin.com](https://jyothin.com). The stage is void black (`#000` / `#090c12`). Type is Switzer, with JetBrains Mono tracked uppercase labels. Rules and progress use the idle-spectrum peach (`#f7b685`). There is no glass frost, no SVG displacement, and no WebGL lens.
+
+The cinematic **home spotlight** is from **[Abyss](https://github.com/AumGupta/abyss-jellyfin)** (installed alongside this theme). The rest of the UI is this repo’s CSS. Liquid and cyberpunk liquid also load a matching WebGL transport lens. Cyberpunk does not.
 
 <p align="center">
   <img src="docs/screenshots/01-home.png" alt="Home with Abyss spotlight" width="900" />
@@ -50,36 +62,66 @@ If you only want Liquid Glass CSS without Spotlight, skip the Abyss spotlight in
 
 ## Features
 
-- **One design language** — header, drawer, dialogs, action sheets, settings, forms, cards, and player share the same glass recipe and accent.
+- **One design language per theme** — header, drawer, dialogs, action sheets, settings, forms, cards, and player share one glass recipe and one accent.
 - **Abyss Spotlight home** (optional companion) — cinematic resume banner.
-- **Live player glass** — CSS displacement on pills; **WebGL lenses** on rewind / play-pause / forward (rim refraction + chroma; green channel slightly desaturated in the fringe).
-- **Graceful degrade** — disable Custom CSS in the client → stock buttons/menus. Lens JS only runs when `--liquid-glass-theme: on` is present. Opt out of lenses only: `liquidGlassLens.disable()` or `?nolens=1`.
-- **Responsive** — desktop / tablet / mobile breakpoints for OSD and library UI.
+- **Live player glass** — CSS displacement on pills (desktop). **WebGL lenses** on rewind / play-pause / forward. Liquid uses a clear rim with chroma. Cyberpunk liquid uses a spectral rim on desktop only.
+- **Low FX on phone and tablet** — `(pointer: coarse)` or `max-width: 60em` turns off SVG displacement (`--fx-disp`) and skips WebGL. `prefers-reduced-motion: reduce` does the same. CSS frost discs stay. Blur is capped. Grain and scan overlays turn off.
+- **Graceful degrade** — disable Custom CSS in the client and stock buttons and menus return. Each lens runs only when its sentinel is present. Liquid sentinel: `--liquid-glass-theme: on`. Cyberpunk liquid sentinel: `--cyberpunk-liquid-theme: on`. `style-cyberpunk-liquid.css` does not set `--liquid-glass-theme`.
+- **Responsive** — desktop, tablet, and mobile breakpoints for the OSD and the library UI. Transport stays center-fixed. Cast uses `right: var(--osd-right-edge)`.
 
 ---
 
 ## Installation
 
+Paste one theme. Install the lens that matches that CSS. The installer injects one lens script, not both. `THEME=cyberpunk` injects no lens.
+
 ### 1. Theme CSS (required)
 
 **Dashboard → General → Custom CSS** (server-wide), or paste into `branding.xml` `<CustomCss>`.
 
-Copy all of [`style.css`](./style.css), save, then hard-refresh (`Ctrl+Shift+R`). Jellyfin often needs a **container restart** after branding changes.
+| Theme | Paste this file |
+|-------|-----------------|
+| Liquid | all of [`style.css`](./style.css) |
+| Cyberpunk liquid | all of [`style-cyberpunk-liquid.css`](./style-cyberpunk-liquid.css) |
+| Cyberpunk | all of [`style-cyberpunk.css`](./style-cyberpunk.css) |
+
+Save, then hard-refresh (`Ctrl+Shift+R`). Jellyfin often needs a **container restart** after branding changes.
 
 ### 2. WebGL transport lens (recommended)
 
-Custom CSS is text inside a `<style>` tag — it cannot load scripts. Install the lens as a real file:
+Custom CSS is text inside a `<style>` tag. It cannot load scripts. Install the matching lens as a real file.
+
+Liquid (default). This writes `style.css`, copies `osd-lens-glass.js`, and links `?v=refraction-<hash>`:
 
 ```bash
 ./tools/install-into-docker.sh
+# same as: THEME=liquid ./tools/install-into-docker.sh
 ```
 
-This writes branding CSS, copies `tools/osd-lens-glass.js` → `/usr/share/jellyfin/web/ui/`, links it from `index.html` with `?v=refraction-<hash>`, and installs a `custom-cont-init.d` persist hook.
+Cyberpunk liquid. This writes `style-cyberpunk-liquid.css`, copies `osd-lens-cyberpunk.js`, and links `?v=spectral-<hash>`:
 
-**Manual:** copy `osd-lens-glass.js` into Jellyfin web `ui/` and add before `</body>`:
+```bash
+THEME=cyberpunk-liquid ./tools/install-into-docker.sh
+```
+
+`THEME` accepts `liquid`, `cyberpunk-liquid`, or `cyberpunk`. The script removes the other lens tag from `index.html`. `THEME=cyberpunk` removes both lens tags and does not add one. It also installs a `custom-cont-init.d` persist hook. The hook reads `/config/liquid-glass/theme.txt` and links only that lens after an image update. For `cyberpunk` the hook strips lens tags and does not add one.
+
+Cyberpunk (no lens):
+
+```bash
+THEME=cyberpunk ./tools/install-into-docker.sh
+```
+
+**Manual (liquid):** copy `osd-lens-glass.js` into Jellyfin web `ui/` and add before `</body>`:
 
 ```html
 <script src="ui/osd-lens-glass.js?v=refraction-1" defer></script>
+```
+
+**Manual (cyberpunk liquid):** copy `osd-lens-cyberpunk.js` instead. Do not add both script tags.
+
+```html
+<script src="ui/osd-lens-cyberpunk.js?v=spectral-1" defer></script>
 ```
 
 ### 3. Abyss Spotlight (optional, for the home hero)
@@ -100,11 +142,11 @@ This repo assumes Spotlight is already on the server (as in the screenshots). Li
 
 ## Customization
 
-Tokens live at the top of `style.css`:
+Liquid tokens live at the top of `style.css`:
 
 ```css
 :root {
-  --liquid-glass-theme: on;   /* sentinel for lens JS — do not remove if you use lenses */
+  --liquid-glass-theme: on;   /* sentinel for osd-lens-glass.js — do not remove if you use that lens */
   --accent-blue: #0a84ff;
   --blur: blur(22px) saturate(170%) brightness(102%);
   /* Player */
@@ -113,7 +155,16 @@ Tokens live at the top of `style.css`:
 }
 ```
 
-Lens look (edit `tools/osd-lens-glass.js`, then re-run the install script):
+Cyberpunk liquid tokens live at the top of `style-cyberpunk-liquid.css`. Keep `--cyberpunk-liquid-theme: on`. Do not add `--liquid-glass-theme` to that file.
+
+```css
+:root {
+  --cyberpunk-liquid-theme: on; /* sentinel for osd-lens-cyberpunk.js */
+  --sys-lime: #b8ff2e;
+}
+```
+
+Liquid lens look (edit `tools/osd-lens-glass.js`, then re-run the install script with `THEME=liquid`):
 
 | Constant | Role |
 |----------|------|
@@ -122,6 +173,19 @@ Lens look (edit `tools/osd-lens-glass.js`, then re-run the install script):
 | `CHROMA_SAT` | How much fringe replaces the base |
 | `CHROMA_GREEN_SAT` | Green-only desaturation in the fringe (`1` = full green) |
 
+Cyberpunk liquid lens look is in `tools/osd-lens-cyberpunk.js`. Re-run with `THEME=cyberpunk-liquid` after edits. Console prefix: `[osd-lens-cyberpunk]`.
+
+Cyberpunk tokens live at the top of `style-cyberpunk.css`. Keep `--cyberpunk-theme: on`. Do not add `--liquid-glass-theme` or `--cyberpunk-liquid-theme` to that file. There is no lens script for this theme.
+
+```css
+:root {
+  --cyberpunk-theme: on;
+  --cp-stage: #090c12;
+  --cp-ink: #f3f0ff;
+  --cp-accent: #f7b685;
+}
+```
+
 ---
 
 ## Client opt-out
@@ -129,7 +193,11 @@ Lens look (edit `tools/osd-lens-glass.js`, then re-run the install script):
 | Goal | How |
 |------|-----|
 | Stock Jellyfin UI | Settings → Display → **Disable server-provided custom CSS** |
-| Keep theme, skip WebGL lenses | Console: `liquidGlassLens.disable()` / `.enable()`, or `localStorage.jellyfin-liquid-glass-lens = 'off'`, or `?nolens=1` |
+| Keep liquid CSS, skip WebGL | Console: `liquidGlassLens.disable()` / `.enable()`, or `localStorage.jellyfin-liquid-glass-lens = 'off'`, or `?nolens=1` |
+| Keep cyberpunk liquid CSS, skip WebGL | Console: `cyberpunkLiquidLens.disable()` / `.enable()`, or `localStorage.jellyfin-cyberpunk-liquid-lens = 'off'`, or `?nolens=1` |
+| Cyberpunk (no WebGL) | The theme has no lens. Disable Custom CSS to return to stock Jellyfin |
+
+On phone and tablet the lens script exits before it creates a WebGL context. You do not need the opt-out key for that path.
 
 ---
 
@@ -137,13 +205,16 @@ Lens look (edit `tools/osd-lens-glass.js`, then re-run the install script):
 
 | Path | Role |
 |------|------|
-| `style.css` | Theme + OSD layout (CustomCss source of truth) |
-| `tools/osd-lens-glass.js` | WebGL transport lens |
-| `tools/install-into-docker.sh` | Branding + lens deploy + cache-bust |
-| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook |
+| `style.css` | Liquid theme + OSD layout |
+| `style-cyberpunk-liquid.css` | Cyberpunk liquid theme + same OSD layout |
+| `style-cyberpunk.css` | Pure cyberpunk theme (jyothin.com index). No lens |
+| `tools/osd-lens-glass.js` | Liquid WebGL transport lens |
+| `tools/osd-lens-cyberpunk.js` | Cyberpunk liquid WebGL transport lens (desktop only) |
+| `tools/install-into-docker.sh` | `THEME=liquid`, `THEME=cyberpunk-liquid`, or `THEME=cyberpunk` |
+| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook (one lens, or none for `cyberpunk`) |
 | `tools/generate-liquid-glass.py` | Bake CSS displacement map (kube.io math) |
 | `tools/capture-readme-shots.py` | Headless Chromium gallery capture |
-| `info.md` | OSD hard rules & history |
+| `info.md` | OSD hard rules and history |
 | `docs/screenshots/` | README images |
 
 ---

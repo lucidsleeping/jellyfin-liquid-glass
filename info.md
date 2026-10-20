@@ -1,6 +1,53 @@
 # Jellyfin Liquid Glass — layout, rules, history
 
-Living notes for this theme. Update when OSD placement or the WebGL lens changes.
+Living notes for the themes in this repo. Update when OSD placement or a WebGL lens changes.
+
+Player composition below is canonical for **liquid**, **cyberpunk liquid**, and **cyberpunk**. Do not fork the five-cluster map per theme. Cyberpunk uses the same anchors with HUD squares instead of glass pills, and it loads no WebGL lens.
+
+---
+
+## Themes
+
+Paste one Custom CSS file. Do not paste more than one.
+
+| Theme | CSS | Sentinel on `:root` | Lens | Console prefix |
+|-------|-----|---------------------|------|----------------|
+| Liquid (default) | `style.css` | `--liquid-glass-theme: on` | `tools/osd-lens-glass.js` | `[osd-lens-glass]` |
+| Cyberpunk liquid | `style-cyberpunk-liquid.css` | `--cyberpunk-liquid-theme: on` | `tools/osd-lens-cyberpunk.js` | `[osd-lens-cyberpunk]` |
+| Cyberpunk | `style-cyberpunk.css` | `--cyberpunk-theme: on` | none | none |
+
+`style.css` sets `--liquid-glass-theme` and does not set `--cyberpunk-liquid-theme` or `--cyberpunk-theme`.
+
+`style-cyberpunk-liquid.css` sets `--cyberpunk-liquid-theme: on` and does **not** set `--liquid-glass-theme`. The stock lens does not start on the hybrid file. The hybrid lens does not start on stock CSS.
+
+`style-cyberpunk.css` sets `--cyberpunk-theme: on` only. It does not set `--liquid-glass-theme` or `--cyberpunk-liquid-theme`. It does not load a lens.
+
+Installer values:
+
+- `THEME=liquid` (default) writes `style.css` and links only `osd-lens-glass.js?v=refraction-<hash>`.
+- `THEME=cyberpunk-liquid` writes `style-cyberpunk-liquid.css` and links only `osd-lens-cyberpunk.js?v=spectral-<hash>`.
+- `THEME=cyberpunk` writes `style-cyberpunk.css` and removes both lens script tags. The persist hook does the same after an image update.
+
+### Low FX (both themes)
+
+Low FX applies when any of these match: `(pointer: coarse)`, `(max-width: 60em)`, `prefers-reduced-motion: reduce`.
+
+CSS sets `--fx-disp` empty inside `@media (pointer: coarse), (max-width: 60em), (prefers-reduced-motion: reduce)`. SVG displacement turns off. Blur is capped (about 8–12px). Grain and scan overlays turn off. A single soft shadow remains.
+
+Both lens scripts return before they create a WebGL context on that same low-FX set: coarse pointer, max-width 60em, or reduced motion. CSS frost discs remain.
+
+Spectral WebGL (lime / cyan / magenta rim and fresnel) runs only on the hybrid theme, and only on the high-FX desktop path.
+
+### Responsive verify
+
+On a phone or tablet viewport (coarse pointer, or width ≤ 60em):
+
+1. Transport host `getComputedStyle(…).position === "fixed"` at screen center.
+2. Cast uses `right: var(--osd-right-edge)`. It does not use `left: calc(100vw - …)`.
+3. Header, volume, and settings controls stay visible. Touch targets are at least 44px.
+4. No WebGL context. Liquid logs use `[osd-lens-glass]`. Hybrid logs use `[osd-lens-cyberpunk]`.
+
+On a fine-pointer desktop wider than 60em, `--fx-disp` stays on and the matching lens may start.
 
 ---
 
@@ -55,16 +102,18 @@ Play/pause uses `--osd-transport-large`; rewind/forward use `--osd-transport-siz
    Putting `backdrop-filter` / `transform` / `filter` on `.osdControls` itself creates a containing block and pulls `position: fixed` descendants back into the pill.
 
 5. **Custom CSS is text-only**  
-   Jellyfin injects branding CustomCss into a `<style>` node. JS cannot run from CSS. The WebGL lens must be a real `<script src="ui/osd-lens-glass.js?v=…">` in `index.html`.
+   Jellyfin injects branding CustomCss into a `<style>` node. JS cannot run from CSS. The WebGL lens must be a real script in `index.html`: `ui/osd-lens-glass.js?v=…` **or** `ui/osd-lens-cyberpunk.js?v=…`. Link only the script that matches the CSS.
 
 6. **Graceful degrade (CSS off / skip JS)**  
-   - Theme sets `--liquid-glass-theme: on` on `:root`. Lens JS **only** runs when that var is present, so disabling Custom CSS in the client leaves stock buttons/menus alone.  
-   - To keep theme CSS but skip the lens: `localStorage.jellyfin-liquid-glass-lens = 'off'`, URL `?nolens=1`, or console `liquidGlassLens.disable()` / `.enable()`.
+   - Stock CSS sets `--liquid-glass-theme: on`. Hybrid CSS sets `--cyberpunk-liquid-theme: on` and does not set `--liquid-glass-theme`. Each lens runs only when its sentinel is present. Disabling Custom CSS leaves stock buttons and menus alone.  
+   - Liquid opt-out: `localStorage.jellyfin-liquid-glass-lens = 'off'`, URL `?nolens=1`, or console `liquidGlassLens.disable()` / `.enable()`.  
+   - Hybrid opt-out: `localStorage.jellyfin-cyberpunk-liquid-lens = 'off'`, URL `?nolens=1`, or console `cyberpunkLiquidLens.disable()` / `.enable()`.
 
 7. **Deploy path**  
-   - Theme CSS → `branding.xml` `<CustomCss>` (and Jellyfin often needs a **container restart** to serve the new branding).  
-   - Lens JS → `/usr/share/jellyfin/web/ui/osd-lens-glass.js` + persist under `/config/liquid-glass/` via `./tools/install-into-docker.sh`.  
-   - Always cache-bust: `?v=refraction-<hash>`.
+   - Theme CSS → `branding.xml` `<CustomCss>` (one file). Jellyfin often needs a **container restart** to serve the new branding.  
+   - Lens JS → `/usr/share/jellyfin/web/ui/<matching-lens>.js`, persisted under `/config/liquid-glass/` by `./tools/install-into-docker.sh`. `THEME=cyberpunk` copies no lens.  
+   - `THEME=liquid` (default) deploys `style.css` + `osd-lens-glass.js`. `THEME=cyberpunk-liquid` deploys `style-cyberpunk-liquid.css` + `osd-lens-cyberpunk.js`. `THEME=cyberpunk` deploys `style-cyberpunk.css` and injects no lens. The installer and the persist hook inject one lens script, or none.  
+   - Cache-bust query: `?v=refraction-<hash>` (liquid) or `?v=spectral-<hash>` (cyberpunk liquid). Cyberpunk has no script query.
 
 8. **Hidden player page clones**  
    Jellyfin keeps a `.mainAnimatedPage.hide` copy of the player. Lens code must only attach to **visible** transport buttons (skip pages with `.hide`).
@@ -94,10 +143,13 @@ Play/pause uses `--osd-transport-large`; rewind/forward use `--osd-transport-siz
 
 | File | Role |
 |------|------|
-| `style.css` | Theme + OSD layout (source of truth for CustomCss) |
-| `tools/osd-lens-glass.js` | WebGL transport lens |
-| `tools/install-into-docker.sh` | Writes branding + installs lens + cache-bust |
-| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook |
+| `style.css` | Liquid theme + OSD layout (CustomCss for `THEME=liquid`) |
+| `style-cyberpunk-liquid.css` | Cyberpunk liquid theme + same OSD map |
+| `style-cyberpunk.css` | Pure cyberpunk theme. Sentinel `--cyberpunk-theme: on`. No lens |
+| `tools/osd-lens-glass.js` | Liquid WebGL transport lens. Console prefix `[osd-lens-glass]` |
+| `tools/osd-lens-cyberpunk.js` | Hybrid WebGL transport lens. Console prefix `[osd-lens-cyberpunk]` |
+| `tools/install-into-docker.sh` | `THEME=liquid`, `THEME=cyberpunk-liquid`, or `THEME=cyberpunk` |
+| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook (reads `theme.txt`; `cyberpunk` links no lens) |
 | `info.md` | This document |
 
 ---
@@ -110,4 +162,5 @@ With OSD visible:
 2. Host `getComputedStyle(…).position === "fixed"`.  
 3. Scrubber bottom edge is well below the transport cluster (no overlap).  
 4. Volume and settings share the same bottom baseline (`--osd-edge`).  
-5. Console: `[osd-lens-glass] loaded (refraction-v…)`.
+5. Desktop console: `[osd-lens-glass] loaded` or `[osd-lens-cyberpunk] loaded`, matching the installed theme.  
+6. Phone or tablet: host stays `fixed`; `--fx-disp` is empty; the lens does not create WebGL. The same console prefix may log a low-FX skip.
