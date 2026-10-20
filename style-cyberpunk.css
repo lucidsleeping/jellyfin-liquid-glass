@@ -1,0 +1,1181 @@
+/*
+ * Jellyfin Cyberpunk theme
+ *
+ * Matches the dark index on https://jyothin.com (idle mood):
+ * void stage, Switzer UI, JetBrains Mono tracked labels, thin warm rules.
+ * Not liquid glass. No SVG displacement. No WebGL lens.
+ *
+ * Paste this file alone into Dashboard → General → Custom CSS.
+ * Sentinel: --cyberpunk-theme: on
+ * Do not set --liquid-glass-theme or --cyberpunk-liquid-theme here.
+ */
+
+@import url("https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+:root {
+  --cyberpunk-theme: on;
+
+  /* Measured from jyothin.com dark index, data-mood=idle, --spectrum-h: 196. */
+  --cp-void: #000000;
+  --cp-stage: #090c12;
+  --cp-panel: #10131a;
+  --cp-panel-2: #101620;
+  --cp-ink: #f3f0ff;
+  --cp-muted: rgba(232, 226, 255, 0.78);
+  --cp-faint: rgba(200, 190, 255, 0.52);
+  --cp-line: rgba(232, 171, 125, 0.28);
+  --cp-line-strong: rgba(247, 182, 133, 0.55);
+  --cp-accent: #f7b685;
+  --cp-accent-ink: #1a1008;
+  --cp-glow: rgba(247, 182, 133, 0.36);
+  --cp-fill: rgba(247, 182, 133, 0.12);
+  --cp-font: "Switzer", "Segoe UI", sans-serif;
+  --cp-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --cp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --osd-edge: max(1.1em, env(safe-area-inset-bottom));
+  --osd-top-edge: max(1em, env(safe-area-inset-top));
+  --osd-right-edge: max(1.2em, env(safe-area-inset-right));
+  --osd-left-edge: max(1.2em, env(safe-area-inset-left));
+  --osd-btn-size: 2.6em;
+  --osd-btn-gap: 0.4em;
+  --osd-transport-size: 5.2em;
+  --osd-transport-large: 6.6em;
+  --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.85em);
+  --osd-icon: var(--cp-ink);
+  --osd-track: rgba(243, 240, 255, 0.16);
+  --osd-fill: var(--cp-accent);
+}
+
+/* ── Stage ──────────────────────────────────────────────────────── */
+
+html,
+body {
+  background: var(--cp-void) !important;
+  color: var(--cp-ink) !important;
+  font-family: var(--cp-font) !important;
+  color-scheme: dark;
+}
+
+.backgroundContainer,
+.mainAnimatedPage,
+.page,
+.libraryPage,
+.homePage,
+.itemDetailPage,
+.dashboardPage,
+.userSettingsPage {
+  background-color: var(--cp-stage) !important;
+  color: var(--cp-ink) !important;
+  font-family: var(--cp-font) !important;
+}
+
+.backgroundContainer {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(247, 182, 133, 0.06), transparent 42%),
+    radial-gradient(rgba(233, 237, 245, 0.07) 1px, transparent 1.2px) !important;
+  background-size: auto, 22px 22px !important;
+}
+
+a {
+  color: var(--cp-ink);
+}
+
+a:hover {
+  color: #fff;
+}
+
+/* Micro-labels: tracked uppercase mono, same job as index__col-label. */
+.sectionTitle,
+.sectionTitleText,
+.sectionTitleTextButton,
+.pageTitle,
+.listHeader,
+.detailSectionHeader,
+.verticalSection .sectionTitleContainer {
+  font-family: var(--cp-font) !important;
+  letter-spacing: -0.03em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-ink) !important;
+}
+
+.sectionTitleContainer .sectionTitle {
+  font-weight: 600 !important;
+}
+
+/* ── App header ─────────────────────────────────────────────────── */
+
+.skinHeader:not(.osdHeader) {
+  background: rgba(0, 0, 0, 0.72) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--cp-line) !important;
+  box-shadow: none !important;
+  color: var(--cp-ink) !important;
+}
+
+.skinHeader:not(.osdHeader) .headerTop,
+.skinHeader:not(.osdHeader) .headerLeft,
+.skinHeader:not(.osdHeader) .headerRight {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.skinHeader:not(.osdHeader) .headerLeft,
+.skinHeader:not(.osdHeader) .headerRight {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.skinHeader:not(.osdHeader) .headerButton:not(.hide),
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.hide),
+.skinHeader:not(.osdHeader) .headerHomeButton:not(.hide),
+.skinHeader:not(.osdHeader) .headerSearchButton:not(.hide),
+.skinHeader:not(.osdHeader) .headerMenuButton:not(.hide),
+.skinHeader:not(.osdHeader) .btnMainMenu:not(.hide) {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  color: var(--cp-ink) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.skinHeader:not(.osdHeader) .headerButton:not(.hide):hover,
+.skinHeader:not(.osdHeader) .paper-icon-button-light:not(.hide):hover,
+.skinHeader:not(.osdHeader) .headerHomeButton:not(.hide):hover,
+.skinHeader:not(.osdHeader) .headerSearchButton:not(.hide):hover {
+  color: #fff !important;
+  border-color: var(--cp-line-strong) !important;
+  background: var(--cp-fill) !important;
+}
+
+.skinHeader:not(.osdHeader) .material-icons {
+  font-size: 20px !important;
+  color: inherit !important;
+}
+
+/* Back is unused on Home. Force it on item detail. */
+html:has(.homePage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton,
+html:has(#indexPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: 0 !important;
+}
+
+html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+}
+
+.skinHeader:not(.osdHeader) .pageTitle,
+.skinHeader:not(.osdHeader) .headerTitle,
+.skinHeader:not(.osdHeader) .pageTitleWithDefaultLogo {
+  font-family: var(--cp-mono) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-faint) !important;
+}
+
+/* Tabs read as index section chips, not a glass capsule. */
+.headerTabs {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.emby-tabs,
+.emby-tabs-slider {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+}
+
+.emby-tab-button {
+  font-family: var(--cp-font) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-muted) !important;
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--cp-accent) 28%, transparent) !important;
+  border-radius: 0 !important;
+  padding: 7px 10px !important;
+  box-shadow: none !important;
+}
+
+.emby-tab-button-active,
+.emby-tab-button[aria-selected="true"] {
+  color: #fff !important;
+  border-color: var(--cp-line-strong) !important;
+  background: var(--cp-fill) !important;
+}
+
+html:has(.itemDetailPage:not(.hide)) .skinHeader .headerTabs,
+.headerTabs:not(:has(.emby-tab-button)) {
+  display: none !important;
+}
+
+/* ── Drawer ─────────────────────────────────────────────────────── */
+
+.mainDrawer {
+  background: var(--cp-panel) !important;
+  color: var(--cp-ink) !important;
+  border: 0 !important;
+  border-right: 1px solid var(--cp-line) !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.mainDrawer .navMenuOption,
+.mainDrawer .listItem {
+  color: var(--cp-muted) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-left: 2px solid transparent !important;
+  border-radius: 0 !important;
+  font-family: var(--cp-mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.mainDrawer .navMenuOption-selected,
+.mainDrawer .listItem-selected,
+.mainDrawer .navMenuOption:hover {
+  color: #fff !important;
+  background: linear-gradient(90deg, var(--cp-fill), transparent 70%) !important;
+  border-left-color: var(--cp-accent) !important;
+}
+
+.mainDrawer .navMenuOptionIcon,
+.mainDrawer .listItemIcon {
+  color: var(--cp-accent) !important;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+
+.card,
+.cardBox,
+.cardContent,
+.listItem {
+  background: transparent !important;
+  color: var(--cp-ink) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.cardImageContainer,
+.cardBox .cardImageContainer {
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.card:hover .cardImageContainer,
+.itemsContainer > .card:hover .cardImageContainer {
+  border-color: var(--cp-line-strong) !important;
+  transform: none !important;
+  box-shadow: inset 3px 0 0 var(--cp-accent) !important;
+}
+
+.cardText,
+.cardText-first,
+.cardText-secondary {
+  font-family: var(--cp-font) !important;
+  color: var(--cp-ink) !important;
+}
+
+.cardText-secondary {
+  color: var(--cp-faint) !important;
+  font-family: var(--cp-mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.cardOverlayContainer,
+.cardOverlayButton,
+.cardOverlayButton-hover {
+  opacity: 1 !important;
+}
+
+.itemProgressBar {
+  background: var(--osd-track) !important;
+  border-radius: 0 !important;
+  height: 2px !important;
+}
+
+.itemProgressBarForeground {
+  background: var(--cp-accent) !important;
+  border-radius: 0 !important;
+}
+
+/* ── Detail ─────────────────────────────────────────────────────── */
+
+.detailPageWrapper,
+.detailPagePrimaryContainer,
+.detailPageSecondaryContainer,
+.itemDetailPage {
+  color: var(--cp-ink) !important;
+}
+
+.itemName,
+.nameContainer .itemName {
+  font-family: var(--cp-font) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.04em !important;
+  text-transform: uppercase !important;
+  color: #fff !important;
+}
+
+.parentName,
+.itemMiscInfo,
+.mediaInfoItem,
+.genreItems,
+.itemTags {
+  font-family: var(--cp-mono) !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-faint) !important;
+}
+
+.overview,
+.detailPagePrimaryContainer .overview {
+  color: var(--cp-muted) !important;
+  font-family: var(--cp-font) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.btnPlay,
+.mainDetailButtons .detailButton.btnPlay,
+.detailPagePrimaryContainer .btnPlay {
+  background: var(--cp-accent) !important;
+  color: var(--cp-accent-ink) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--cp-font) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+}
+
+.detailButton:not(.btnPlay),
+.button-flat,
+.itemDetailPage .paper-icon-button-light:not(.hide) {
+  background: transparent !important;
+  color: var(--cp-ink) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.detailButton:not(.btnPlay):hover,
+.button-flat:hover {
+  border-color: var(--cp-line-strong) !important;
+  color: #fff !important;
+}
+
+.itemDetailsGroup,
+.detailSectionContent,
+.trackList,
+.listItem.listItem-border {
+  border-color: var(--cp-line) !important;
+}
+
+/* ── Dialogs, sheets, settings ──────────────────────────────────── */
+
+.dialog,
+.formDialog,
+.actionSheet,
+.toast,
+.popup,
+.upNextDialog,
+.upNextContainer {
+  background: var(--cp-panel) !important;
+  color: var(--cp-ink) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.85) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.dialog .formDialogHeader,
+.formDialogHeader {
+  font-family: var(--cp-mono) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-muted) !important;
+  border-bottom: 1px solid var(--cp-line) !important;
+  background: transparent !important;
+}
+
+.formDialogFooter,
+.dialog .formDialogFooter {
+  border-top: 1px solid var(--cp-line) !important;
+  background: transparent !important;
+}
+
+.listItem,
+.actionSheetMenuItem,
+.listItemBody {
+  color: var(--cp-ink) !important;
+  background: transparent !important;
+}
+
+.listItem:hover,
+.actionSheetMenuItem:hover,
+.listItem-selected {
+  background: var(--cp-fill) !important;
+  color: #fff !important;
+}
+
+.paperList,
+.listItem-border {
+  border-color: var(--cp-line) !important;
+}
+
+input,
+textarea,
+select,
+.emby-input,
+.paper-input,
+.inputLabel,
+.selectLabel,
+.checkboxLabel,
+.fieldDescription {
+  font-family: var(--cp-font) !important;
+  color: var(--cp-ink) !important;
+}
+
+.inputLabel,
+.selectLabel,
+.checkboxLabel,
+.fieldDescription,
+.paperListLabel {
+  font-family: var(--cp-mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--cp-faint) !important;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+textarea,
+select,
+.emby-input {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  color: var(--cp-ink) !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+.emby-input:focus {
+  border-color: var(--cp-accent) !important;
+  outline: none !important;
+}
+
+.emby-button,
+.raised,
+.btnSubmit,
+button[type="submit"].emby-button {
+  background: transparent !important;
+  color: var(--cp-ink) !important;
+  border: 1px solid var(--cp-line-strong) !important;
+  border-radius: 0 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+}
+
+.emby-button:hover,
+.raised:hover {
+  background: var(--cp-fill) !important;
+  color: #fff !important;
+}
+
+.checkboxOutline {
+  border-color: var(--cp-line-strong) !important;
+  border-radius: 0 !important;
+}
+
+/* ── Player OSD · five clusters, HUD not glass ──────────────────── */
+
+.videoOsdBottom,
+.videoOsdBottom-maincontrols {
+  position: fixed !important;
+  inset: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  pointer-events: none !important;
+  display: block !important;
+  font-size: 1rem !important;
+}
+
+.videoOsdBottom::before,
+.videoOsdBottom::after {
+  content: none !important;
+  display: none !important;
+}
+
+.videoOsdBottom .osdMainTextContainer,
+.videoOsdBottom .osdMainText,
+.videoOsdBottom .osdSecondaryText,
+.videoOsdBottom .osdTitle,
+.videoOsdBottom .osdSecondaryMediaInfo,
+.osdControls .osdMainTextContainer,
+.osdControls .osdMainText,
+.osdControls .osdSecondaryText,
+.osdControls .osdTitle,
+.osdControls .osdSecondaryMediaInfo,
+.osdControls .endsAtTextSpacer {
+  display: none !important;
+}
+
+.videoOsdBottom .buttons,
+.osdControls > .flex.flex-direction-row,
+.osdControls .flex.flex-direction-row {
+  display: contents !important;
+}
+
+.skinHeader-withBackground.osdHeader {
+  background: none !important;
+  border: 0 !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  color: var(--cp-ink) !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: auto !important;
+  padding: var(--osd-top-edge) var(--osd-right-edge) 0 var(--osd-left-edge) !important;
+  pointer-events: none !important;
+  position: relative !important;
+  z-index: 4 !important;
+  contain: none !important;
+  font-size: 1rem !important;
+}
+
+.skinHeader.osdHeader.hide,
+.skinHeader.osdHeader.osdHeader-hidden,
+html.mouseIdle .skinHeader.osdHeader,
+body.mouseIdle .skinHeader.osdHeader,
+.osdHeader.hide .headerLeft,
+.osdHeader.hide .headerCastButton,
+.osdHeader.hide .btnCast,
+html.mouseIdle .osdHeader .headerLeft,
+html.mouseIdle .osdHeader .headerCastButton,
+html.mouseIdle .osdHeader .btnCast,
+body.mouseIdle .osdHeader .headerLeft,
+body.mouseIdle .osdHeader .headerCastButton,
+body.mouseIdle .osdHeader .btnCast {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.osdHeader .headerLeft {
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
+  left: var(--osd-left-edge) !important;
+  right: auto !important;
+  bottom: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--osd-btn-gap) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  pointer-events: all !important;
+  z-index: 5 !important;
+}
+
+.osdHeader .headerButton:not(.hide),
+.osdHeader .paper-icon-button-light:not(.hide):not(.headerCastButton):not(.btnCast) {
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: var(--osd-icon) !important;
+  background: rgba(0, 0, 0, 0.62) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  pointer-events: all !important;
+}
+
+.osdHeader .headerCastButton,
+.osdHeader .btnCast,
+.osdHeader .headerButton.headerCastButton,
+.osdHeader .headerButton.btnCast,
+.osdHeader .paper-icon-button-light.headerCastButton,
+.osdHeader .paper-icon-button-light.btnCast {
+  position: fixed !important;
+  top: var(--osd-top-edge) !important;
+  right: var(--osd-right-edge) !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+  pointer-events: all !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--osd-icon) !important;
+  background: rgba(0, 0, 0, 0.62) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.videoOsdBottom .btnAirPlay,
+.videoOsdBottom .btnPip {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Transport host stays fixed. Never relative. */
+.videoOsdBottom .buttons > div:first-child,
+#videoOsdPage .videoOsdBottom .buttons > div[dir="ltr"],
+#videoOsdPage .videoOsdBottom .buttons > div:first-child {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 1.4em !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+  overflow: visible !important;
+}
+
+#videoOsdPage .videoOsdBottom .buttons > div:first-child::before,
+#videoOsdPage .videoOsdBottom .buttons > div:first-child::after,
+.videoOsdBottom .buttons > div:first-child::before,
+.videoOsdBottom .buttons > div:first-child::after {
+  content: none !important;
+  display: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child > *:not(.btnRewind):not(.btnFastForward):not(.btnPlayPause):not(.btnPause):not(.btnPlay) {
+  display: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .btnRewind,
+.videoOsdBottom .buttons > div:first-child .btnFastForward,
+#videoOsdPage .videoOsdBottom .btnRewind,
+#videoOsdPage .videoOsdBottom .btnFastForward {
+  width: var(--osd-transport-size) !important;
+  height: var(--osd-transport-size) !important;
+  min-width: var(--osd-transport-size) !important;
+  min-height: var(--osd-transport-size) !important;
+  max-width: var(--osd-transport-size) !important;
+  max-height: var(--osd-transport-size) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border: 1px solid var(--cp-line-strong) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 2px 0 var(--cp-accent) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .btnPause,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause,
+.videoOsdBottom .buttons > div:first-child .btnPlay,
+#videoOsdPage .videoOsdBottom .btnPause,
+#videoOsdPage .videoOsdBottom .btnPlayPause,
+#videoOsdPage .videoOsdBottom .btnPlay {
+  width: var(--osd-transport-large) !important;
+  height: var(--osd-transport-large) !important;
+  min-width: var(--osd-transport-large) !important;
+  min-height: var(--osd-transport-large) !important;
+  max-width: var(--osd-transport-large) !important;
+  max-height: var(--osd-transport-large) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--cp-accent-ink) !important;
+  background: var(--cp-accent) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .material-icons {
+  color: inherit !important;
+  font-size: 1.6em !important;
+  text-shadow: none !important;
+}
+
+.videoOsdBottom .buttons > div:first-child .btnPause .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnPlayPause .material-icons,
+.videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
+  font-size: 2.1em !important;
+  color: var(--cp-accent-ink) !important;
+}
+
+.osdControls {
+  position: fixed !important;
+  left: var(--osd-left-edge) !important;
+  right: var(--osd-right-edge) !important;
+  bottom: var(--osd-scrub-lift) !important;
+  margin: 0 !important;
+  width: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.85em !important;
+  padding: 0.55em 0.9em !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  pointer-events: all !important;
+  z-index: 3 !important;
+}
+
+.osdControls::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  border-radius: 0 !important;
+  background: rgba(0, 0, 0, 0.72) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-top: 2px solid var(--cp-accent) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  pointer-events: none !important;
+}
+
+.osdControls::after {
+  content: none !important;
+  display: none !important;
+}
+
+.osdControls .osdTextContainer:not(.endsAt):not(.endsAtTextContainer):not(.osdMainTextContainer) {
+  display: contents !important;
+}
+
+.osdControls .startTimeText,
+.osdControls .osdPositionText,
+.osdControls .positionTime,
+.osdControls .endTimeText,
+.osdControls .osdDurationText,
+.osdControls .runtimeDuration,
+.osdControls .osdTimeText,
+.videoOsdBottom .osdTimeText {
+  font-family: var(--cp-mono) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.08em !important;
+  color: var(--cp-ink) !important;
+  background: none !important;
+  position: static !important;
+}
+
+.osdControls .startTimeText,
+.osdControls .osdPositionText,
+.osdControls .positionTime {
+  order: 1 !important;
+  min-width: 3.6em !important;
+}
+
+.osdControls .sliderContainer {
+  order: 2 !important;
+  flex: 1 1 auto !important;
+  height: 0.35em !important;
+  margin: 0 !important;
+}
+
+.osdControls .endTimeText,
+.osdControls .osdDurationText,
+.osdControls .runtimeDuration {
+  order: 3 !important;
+  min-width: 3.6em !important;
+  text-align: right !important;
+}
+
+.osdControls .osdTextContainer.endsAt,
+.osdControls .osdTextContainer.endsAtTextContainer,
+.osdControls .osdTimeText,
+.videoOsdBottom .osdTimeText {
+  order: 4 !important;
+  color: var(--cp-faint) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.videoOsdBottom .mdl-slider-background-flex,
+.osdControls .mdl-slider-background-flex {
+  height: 2px !important;
+  border-radius: 0 !important;
+  background: var(--osd-track) !important;
+}
+
+.videoOsdBottom .mdl-slider-background-lower,
+.osdControls .mdl-slider-background-lower {
+  background: var(--osd-fill) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.videoOsdBottom .mdl-slider::-webkit-slider-thumb,
+.osdControls .mdl-slider::-webkit-slider-thumb,
+.videoOsdBottom .mdl-slider::-moz-range-thumb,
+.osdControls .mdl-slider::-moz-range-thumb {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 0 !important;
+  background: var(--cp-accent) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.videoOsdBottom .volumeButtons {
+  position: fixed !important;
+  left: var(--osd-left-edge) !important;
+  right: auto !important;
+  bottom: var(--osd-edge) !important;
+  top: auto !important;
+  height: var(--osd-btn-size) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.55em !important;
+  margin: 0 !important;
+  padding: 0 0.85em 0 0.35em !important;
+  background: rgba(0, 0, 0, 0.62) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+}
+
+.videoOsdBottom .volumeButtons .buttonMute {
+  width: 2.2em !important;
+  height: 2.2em !important;
+  min-width: 2.2em !important;
+  min-height: 2.2em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--cp-ink) !important;
+  box-shadow: none !important;
+}
+
+.videoOsdBottom .volumeButtons .sliderContainer {
+  width: 8em !important;
+  height: 2px !important;
+}
+
+.videoOsdBottom .btnAudio:not(.hide),
+.videoOsdBottom .btnSubtitles:not(.hide),
+.videoOsdBottom .btnVideoOsdSettings:not(.hide),
+.videoOsdBottom .btnFullscreen:not(.hide) {
+  position: fixed !important;
+  top: auto !important;
+  bottom: var(--osd-edge) !important;
+  left: auto !important;
+  width: var(--osd-btn-size) !important;
+  height: var(--osd-btn-size) !important;
+  min-width: var(--osd-btn-size) !important;
+  min-height: var(--osd-btn-size) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: var(--cp-ink) !important;
+  background: rgba(0, 0, 0, 0.62) !important;
+  border: 1px solid var(--cp-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  backdrop-filter: blur(6px) !important;
+  pointer-events: all !important;
+  z-index: 4 !important;
+}
+
+.videoOsdBottom .btnAudio.hide,
+.videoOsdBottom .btnSubtitles.hide,
+.videoOsdBottom .btnVideoOsdSettings.hide,
+.videoOsdBottom .btnFullscreen.hide {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  border: 0 !important;
+}
+
+.videoOsdBottom .btnFullscreen:not(.hide) {
+  right: var(--osd-right-edge) !important;
+}
+
+.videoOsdBottom .btnVideoOsdSettings:not(.hide) {
+  right: calc(var(--osd-right-edge) + var(--osd-btn-size) + var(--osd-btn-gap)) !important;
+}
+
+.videoOsdBottom .btnSubtitles:not(.hide) {
+  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 2) !important;
+}
+
+.videoOsdBottom .btnAudio:not(.hide) {
+  right: calc(var(--osd-right-edge) + (var(--osd-btn-size) + var(--osd-btn-gap)) * 3) !important;
+}
+
+#videoOsdPage .videoOsdBottom .btnRewind::before,
+#videoOsdPage .videoOsdBottom .btnFastForward::before,
+#videoOsdPage .videoOsdBottom .btnPlayPause::before,
+#videoOsdPage .videoOsdBottom .btnPause::before,
+#videoOsdPage .videoOsdBottom .btnPlay::before,
+#videoOsdPage .videoOsdBottom .btnRewind::after,
+#videoOsdPage .videoOsdBottom .btnFastForward::after,
+#videoOsdPage .videoOsdBottom .btnPlayPause::after,
+#videoOsdPage .videoOsdBottom .btnPause::after,
+#videoOsdPage .videoOsdBottom .btnPlay::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* ── Touch, short landscape, TV ─────────────────────────────────── */
+
+@media (pointer: coarse), (max-width: 60em) {
+  :root {
+    --osd-btn-size: max(2.75em, 44px);
+    --osd-btn-gap: 0.45em;
+  }
+
+  .skinHeader:not(.osdHeader) .headerButton:not(.hide),
+  .skinHeader:not(.osdHeader) .paper-icon-button-light:not(.hide),
+  .skinHeader:not(.osdHeader) .headerHomeButton:not(.hide),
+  .skinHeader:not(.osdHeader) .headerSearchButton:not(.hide),
+  .skinHeader:not(.osdHeader) .headerMenuButton:not(.hide),
+  .osdHeader .headerButton:not(.hide),
+  .osdHeader .paper-icon-button-light:not(.hide),
+  .videoOsdBottom .btnVideoOsdSettings,
+  .videoOsdBottom .btnAudio,
+  .videoOsdBottom .btnSubtitles,
+  .videoOsdBottom .btnFullscreen,
+  .videoOsdBottom .volumeButtons .buttonMute {
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  html:has(.itemDetailPage:not(.hide)) .skinHeader:not(.osdHeader) .headerBackButton {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+
+  .backgroundContainer {
+    background-image: none !important;
+  }
+}
+
+@media (max-height: 32em) and (orientation: landscape) {
+  :root {
+    --osd-transport-size: 3.4em;
+    --osd-transport-large: 4.4em;
+    --osd-btn-size: 2.2em;
+    --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.45em);
+  }
+
+  .videoOsdBottom .buttons > div:first-child {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    gap: 0.75em !important;
+  }
+}
+
+@media (max-height: 26em) and (orientation: landscape) {
+  :root {
+    --osd-transport-size: 2.8em;
+    --osd-transport-large: 3.6em;
+    --osd-btn-size: 2em;
+    --osd-scrub-lift: calc(var(--osd-edge) + var(--osd-btn-size) + 0.3em);
+  }
+}
+
+.layout-tv .osdHeader .headerButton,
+.layout-tv .osdHeader .paper-icon-button-light,
+.layout-tv .videoOsdBottom .paper-icon-button-light,
+.layout-tv .videoOsdBottom .btnVideoOsdSettings,
+.layout-tv .videoOsdBottom .btnAudio,
+.layout-tv .videoOsdBottom .btnSubtitles,
+.layout-tv .videoOsdBottom .btnFullscreen,
+.layout-tv .videoOsdBottom .volumeButtons .buttonMute,
+.layout-tv .skinHeader:not(.osdHeader) .headerButton,
+.layout-tv .skinHeader:not(.osdHeader) .paper-icon-button-light {
+  min-width: max(var(--osd-btn-size), 48px) !important;
+  min-height: max(var(--osd-btn-size), 48px) !important;
+}
+
+.layout-tv :focus-visible,
+:focus-visible {
+  outline: 2px solid var(--cp-accent) !important;
+  outline-offset: 3px !important;
+}
+
+.layout-tv .videoOsdBottom .buttons > div:first-child {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Desktop-only static grain. No scanline animation. Off on coarse / narrow. */
+@media (pointer: fine) and (min-width: 60.01em) {
+  .backgroundContainer::after {
+    content: "" !important;
+    position: fixed !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+    opacity: 0.35 !important;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent 0 3px,
+      rgba(255, 255, 255, 0.02) 3px 4px
+    ) !important;
+  }
+}
+
+html:has(#videoOsdPage:not(.hide)) .backgroundContainer::after,
+html:has(.videoPlayerContainer:not(.hide)) .backgroundContainer::after {
+  display: none !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(247, 182, 133, 0.45);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
