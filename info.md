@@ -145,12 +145,15 @@ Play/pause uses `--osd-transport-large`; rewind/forward use `--osd-transport-siz
 |------|------|
 | `style.css` | Liquid theme + OSD layout (CustomCss for `THEME=liquid`) |
 | `style-cyberpunk-liquid.css` | Cyberpunk liquid theme + same OSD map |
-| `style-cyberpunk.css` | Pure cyberpunk theme. Sentinel `--cyberpunk-theme: on`. No lens |
+| `style-cyberpunk.css` | Pure cyberpunk theme. Sentinel `--cyberpunk-theme: on`. No lens. Halo, hairline, ink, and blooms are CSS variables |
+| `tools/cyberpunk-palette.js` | Login palettes for `THEME=cyberpunk` only. Console prefix `[cyberpunk-palette]`. 14 sets. Store key `cyberpunk-palette` |
 | `tools/osd-lens-glass.js` | Liquid WebGL transport lens. Console prefix `[osd-lens-glass]` |
 | `tools/osd-lens-cyberpunk.js` | Hybrid WebGL transport lens. Console prefix `[osd-lens-cyberpunk]` |
 | `tools/install-into-docker.sh` | `THEME=liquid`, `THEME=cyberpunk-liquid`, or `THEME=cyberpunk` |
-| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook (reads `theme.txt`; `cyberpunk` links no lens) |
+| `tools/99-liquid-glass-lens.sh` | Cont-init persist hook. `cyberpunk` links `cyberpunk-palette.js` and no lens |
 | `info.md` | This document |
+
+`THEME=cyberpunk` loads `tools/cyberpunk-palette.js`. The script runs only when `--cyberpunk-theme` is `on` or `1`. It reads the Jellyfin user id and access token from `ApiClient` or from a localStorage credential record. The login marker is `localStorage['cyberpunk-palette']` (`userId`, `loginId`, `paletteId`). A matching marker keeps that palette across refresh and navigation. The login page, a signed-out token, or `localusersignedout` clears the marker. The next sign-in rolls a different palette (14 sets) and writes the color variables on `documentElement`. `--cp-void` and `--cp-stage` stay black.
 
 ---
 

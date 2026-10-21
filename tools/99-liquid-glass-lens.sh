@@ -3,7 +3,7 @@
 # theme.txt selects one lens. This hook links that script only.
 #   liquid            → osd-lens-glass.js
 #   cyberpunk-liquid  → osd-lens-cyberpunk.js
-#   cyberpunk         → no lens (strip both script tags)
+#   cyberpunk         → no lens; link cyberpunk-palette.js
 set -euo pipefail
 
 WEB_DIR="${JELLYFIN_WEB_DIR:-/usr/share/jellyfin/web}"
@@ -14,6 +14,8 @@ THEME_FILE="${CONF}/theme.txt"
 BUST_FILE="${CONF}/cache-bust.txt"
 ACCENT_SRC="${CONF}/poster-accent.js"
 ACCENT_BUST_FILE="${CONF}/accent-bust.txt"
+PALETTE_SRC="${CONF}/cyberpunk-palette.js"
+PALETTE_BUST_FILE="${CONF}/palette-bust.txt"
 
 THEME="liquid"
 if [[ -f "$THEME_FILE" ]]; then
@@ -28,16 +30,50 @@ strip_ui_scripts() {
     -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-glass\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
     -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-cyberpunk\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
     -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*poster-accent\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+    -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*cyberpunk-palette\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
     "$INDEX" > "$tmp"
   mv -f "$tmp" "$INDEX"
+}
+
+link_palette() {
+  local bust="palette" tag tmp
+  [[ -f "$PALETTE_SRC" ]] || {
+    echo "**** [liquid-glass] cyberpunk-palette.js missing — skip ****"
+    return 0
+  }
+  if [[ -f "$PALETTE_BUST_FILE" ]]; then
+    bust="$(tr -d '[:space:]' < "$PALETTE_BUST_FILE")"
+    [[ -n "$bust" ]] || bust="palette"
+  fi
+  mkdir -p "$UI_DIR"
+  cp -f "$PALETTE_SRC" "${UI_DIR}/cyberpunk-palette.js"
+  [[ -f "$INDEX" ]] || return 0
+  [[ -f "${INDEX}.bak.liquid-glass" ]] || cp -f "$INDEX" "${INDEX}.bak.liquid-glass"
+  strip_ui_scripts
+  tag="<script src=\"ui/cyberpunk-palette.js?v=${bust}\" defer></script>"
+  tmp="${INDEX}.lg.tmp"
+  if grep -qi '</body>' "$INDEX"; then
+    awk -v tag="$tag" '
+      BEGIN { done=0 }
+      tolower($0) ~ /<\/body>/ && !done {
+        print tag
+        done=1
+      }
+      { print }
+      END { if (!done) print tag }
+    ' "$INDEX" > "$tmp"
+    mv -f "$tmp" "$INDEX"
+  else
+    printf '%s\n' "$tag" >> "$INDEX"
+  fi
+  echo "**** [liquid-glass] theme=cyberpunk linked ${tag} ****"
 }
 
 case "$THEME" in
   cyberpunk)
     mkdir -p "$UI_DIR"
     rm -f "${UI_DIR}/osd-lens-glass.js" "${UI_DIR}/osd-lens-cyberpunk.js" "${UI_DIR}/poster-accent.js"
-    strip_ui_scripts
-    echo "**** [liquid-glass] theme=cyberpunk linked no lens ****"
+    link_palette
     exit 0
     ;;
   cyberpunk-liquid)
@@ -71,7 +107,7 @@ fi
 
 mkdir -p "$UI_DIR"
 cp -f "$SRC" "${UI_DIR}/${LENS_NAME}"
-rm -f "${UI_DIR}/${OTHER_NAME}"
+rm -f "${UI_DIR}/${OTHER_NAME}" "${UI_DIR}/cyberpunk-palette.js"
 if [[ -f "$ACCENT_SRC" ]]; then
   cp -f "$ACCENT_SRC" "${UI_DIR}/poster-accent.js"
 fi
@@ -92,6 +128,7 @@ sed -E \
   -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-glass\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
   -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*osd-lens-cyberpunk\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
   -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*poster-accent\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
+  -e 's#[ \t]*<script[^>]*src=["'"'"'][^"'"'"']*cyberpunk-palette\.js[^"'"'"']*["'"'"'][^>]*>[[:space:]]*</script>[[:space:]]*##Ig' \
   "$INDEX" > "$TMP"
 
 TAGS="${LENS_TAG}"

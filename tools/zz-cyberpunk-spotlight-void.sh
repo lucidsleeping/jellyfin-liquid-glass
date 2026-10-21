@@ -7,7 +7,12 @@ set -euo pipefail
 CSS="${JELLYFIN_WEB_DIR:-/usr/share/jellyfin/web}/ui/spotlight.css"
 [ -f "$CSS" ] || exit 0
 
-sed -i 's/background: transparent;/background: #000;/' "$CSS"
+# Only the body canvas. A global replace also paints #clickzone, which
+# covers the right 55% of the hero and hides the preview.
+sed -i '/^body {/,/^}/ s/background: transparent;/background: #000;/' "$CSS"
+# Repair a previous global replace. These controls are transparent upstream.
+sed -i '/^#clickzone {/,/^}/ s/background: #000;/background: transparent;/' "$CSS"
+sed -i '/^#update-mute {/,/^}/ s/background: #000;/background: transparent;/' "$CSS"
 
 if ! grep -q 'color-scheme: dark' "$CSS"; then
   sed -i '/^body {/i\

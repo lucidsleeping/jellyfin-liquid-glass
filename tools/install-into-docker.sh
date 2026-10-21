@@ -12,10 +12,12 @@
 # THEME=cyberpunk
 #   Custom CSS → style-cyberpunk.css
 #   Lens JS    → none (both lens tags are removed)
+#   Palette JS → /usr/share/jellyfin/web/ui/cyberpunk-palette.js
 #
 # The installer injects only the matching lens <script>, not both.
 # poster-accent.js is installed with liquid and cyberpunk-liquid.
 # THEME=cyberpunk does not inject a lens or poster-accent.js.
+# It does inject cyberpunk-palette.js?v=palette-<hash>. Liquid themes do not.
 # Persist → /config/liquid-glass + custom-cont-init.d hook.
 #
 # The WebGL lens MUST be a real <script> tag. Jellyfin injects CustomCss as
@@ -40,6 +42,7 @@ THEME="${THEME:-liquid}"
 NO_LENS=0
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ACCENT_SRC="${ROOT}/tools/poster-accent.js"
+PALETTE_SRC="${ROOT}/tools/cyberpunk-palette.js"
 HOOK_SRC="${ROOT}/tools/99-liquid-glass-lens.sh"
 
 log() { echo "**** [liquid-glass] $* ****"; }
@@ -121,6 +124,8 @@ upsert_ui_script_tags() {
   local lens_bust="$2"
   local accent_bust="$3"
   local other_lens="$4"
+  local palette_file="${5:-}"
+  local palette_bust="${6:-}"
   local tmp
   tmp="$(mktemp)"
   docker cp "${CONTAINER}:/usr/share/jellyfin/web/index.html" "$tmp"
@@ -128,7 +133,7 @@ upsert_ui_script_tags() {
     INDEX=/usr/share/jellyfin/web/index.html
     [ -f "${INDEX}.bak.liquid-glass" ] || cp -f "$INDEX" "${INDEX}.bak.liquid-glass"
   ' || true
-  python3 - "$tmp" "$lens_file" "$lens_bust" "$accent_bust" "$other_lens" <<'PY'
+  python3 - "$tmp" "$lens_file" "$lens_bust" "$accent_bust" "$other_lens" "$palette_file" "$palette_bust" <<'PY'
 import re
 import sys
 from pathlib import Path
@@ -138,6 +143,8 @@ lens_file = sys.argv[2]
 lens_bust = sys.argv[3]
 accent_bust = sys.argv[4]
 other_lens = sys.argv[5]
+palette_file = sys.argv[6] if len(sys.argv) > 6 else ""
+palette_bust = sys.argv[7] if len(sys.argv) > 7 else ""
 text = index.read_text(encoding="utf-8", errors="replace")
 
 def script_pat(name):
@@ -151,10 +158,19 @@ def insert_before_body(html, tag):
         return re.sub(r"(?i)</body>", tag + "\n</body>", html, count=1)
     return html.rstrip() + "\n" + tag + "\n"
 
-# Pure cyberpunk: CSS only. Strip every lens and the poster accent.
+def finish_palette(html):
+    html = script_pat("cyberpunk-palette.js").sub("", html)
+    if palette_file:
+        tag = f'<script src="ui/{palette_file}?v={palette_bust}" defer></script>'
+        html = insert_before_body(html, tag)
+        print(tag)
+    return html
+
+# Pure cyberpunk: no lens. Palette script only.
 if not lens_file:
     for name in ("osd-lens-glass.js", "osd-lens-cyberpunk.js", "poster-accent.js"):
         text = script_pat(name).sub("", text)
+    text = finish_palette(text)
     index.write_text(text, encoding="utf-8")
     print("no-lens")
     raise SystemExit(0)
@@ -174,6 +190,7 @@ for name, bust in scripts:
     text = script_pat(name).sub("", text)
     text = insert_before_body(text, tag)
 
+text = finish_palette(text)
 index.write_text(text, encoding="utf-8")
 print("\n".join(tags))
 PY
@@ -201,11 +218,14 @@ fi
 [[ -f "$HOOK_SRC" ]] || { log "ERROR: missing $HOOK_SRC"; exit 1; }
 
 if [[ "$NO_LENS" == "1" ]]; then
+  [[ -f "$PALETTE_SRC" ]] || { log "ERROR: missing $PALETTE_SRC"; exit 1; }
   BUST=""
   ACCENT_BUST=""
+  PALETTE_BUST="palette-$(sha256sum "$PALETTE_SRC" | awk '{print substr($1,1,8)}')"
   log "THEME=${THEME}"
-  log "Installing into Docker container: ${CONTAINER} (no lens)"
+  log "Installing into Docker container: ${CONTAINER} (no lens, palette=${PALETTE_BUST})"
 else
+  PALETTE_BUST=""
   BUST="$(lens_cache_bust)"
   ACCENT_BUST="accent-$(sha256sum "$ACCENT_SRC" | awk '{print substr($1,1,8)}')"
   log "THEME=${THEME}"
@@ -227,9 +247,12 @@ if [[ "$NO_LENS" == "1" ]]; then
     /usr/share/jellyfin/web/ui/osd-lens-glass.js \
     /usr/share/jellyfin/web/ui/osd-lens-cyberpunk.js \
     /usr/share/jellyfin/web/ui/poster-accent.js
+  docker cp "$PALETTE_SRC" "${CONTAINER}:/usr/share/jellyfin/web/ui/cyberpunk-palette.js"
 else
   docker cp "$JS_SRC" "${CONTAINER}:/usr/share/jellyfin/web/ui/${LENS_FILE}"
-  docker exec "$CONTAINER" rm -f "/usr/share/jellyfin/web/ui/${OTHER_LENS_FILE}"
+  docker exec "$CONTAINER" rm -f \
+    "/usr/share/jellyfin/web/ui/${OTHER_LENS_FILE}" \
+    /usr/share/jellyfin/web/ui/cyberpunk-palette.js
   docker cp "$ACCENT_SRC" "${CONTAINER}:/usr/share/jellyfin/web/ui/poster-accent.js"
 fi
 
@@ -240,14 +263,19 @@ if [[ -n "$CONFIG_SRC" ]]; then
       "${CONFIG_SRC}/liquid-glass/osd-lens-glass.js" \
       "${CONFIG_SRC}/liquid-glass/osd-lens-cyberpunk.js" \
       "${CONFIG_SRC}/liquid-glass/poster-accent.js"
+    cp -f "$PALETTE_SRC" "${CONFIG_SRC}/liquid-glass/cyberpunk-palette.js"
     printf '%s\n' "none" > "${CONFIG_SRC}/liquid-glass/cache-bust.txt"
     printf '%s\n' "none" > "${CONFIG_SRC}/liquid-glass/accent-bust.txt"
+    printf '%s\n' "$PALETTE_BUST" > "${CONFIG_SRC}/liquid-glass/palette-bust.txt"
   else
     cp -f "$JS_SRC" "${CONFIG_SRC}/liquid-glass/${LENS_FILE}"
-    rm -f "${CONFIG_SRC}/liquid-glass/${OTHER_LENS_FILE}"
+    rm -f \
+      "${CONFIG_SRC}/liquid-glass/${OTHER_LENS_FILE}" \
+      "${CONFIG_SRC}/liquid-glass/cyberpunk-palette.js"
     cp -f "$ACCENT_SRC" "${CONFIG_SRC}/liquid-glass/poster-accent.js"
     printf '%s\n' "$BUST" > "${CONFIG_SRC}/liquid-glass/cache-bust.txt"
     printf '%s\n' "$ACCENT_BUST" > "${CONFIG_SRC}/liquid-glass/accent-bust.txt"
+    printf '%s\n' "none" > "${CONFIG_SRC}/liquid-glass/palette-bust.txt"
   fi
   printf '%s\n' "$THEME" > "${CONFIG_SRC}/liquid-glass/theme.txt"
 fi
@@ -267,10 +295,24 @@ import sys
 from pathlib import Path
 p = Path(sys.argv[1])
 text = p.read_text(encoding="utf-8")
-# `body` is unindented; its background declaration is tab-indented.
-body_bg = "\tbackground: transparent;"
-if body_bg in text:
-    text = text.replace(body_bg, "\tbackground: #000;", 1)
+# Only the body canvas. #clickzone is also `background: transparent`;
+# painting that black covers the right 55% of the hero.
+def paint_block(css, header, old, new):
+    start = css.find(header)
+    if start < 0:
+        return css
+    end = css.find("\n}", start)
+    if end < 0:
+        return css
+    block = css[start:end].replace(old, new, 1)
+    return css[:start] + block + css[end:]
+
+text = paint_block(text, "\nbody {", "background: transparent;", "background: #000;")
+if text.find("\nbody {") < 0:
+    text = paint_block(text, "body {", "background: transparent;", "background: #000;")
+# Repair a previous global replace that hid the preview behind #clickzone.
+text = paint_block(text, "\n#clickzone {", "background: #000;", "background: transparent;")
+text = paint_block(text, "\n#update-mute {", "background: #000;", "background: transparent;")
 marker = "html {\n\tbackground: #000;\n\tcolor-scheme: dark;\n}"
 if marker not in text:
     needle = ":root {\n\t/* --ease: ease-out; */\n\t--ease: cubic-bezier(0.16, 1, 0.3, 1);\n}\n\n"
@@ -290,10 +332,11 @@ PY
 void_spotlight_canvas
 
 if [[ "$NO_LENS" == "1" ]]; then
-  upsert_ui_script_tags "" "" "" ""
+  upsert_ui_script_tags "" "" "" "" "cyberpunk-palette.js" "$PALETTE_BUST"
   log "Removed lens and poster-accent script tags"
+  log "Installed + linked /web/ui/cyberpunk-palette.js?v=${PALETTE_BUST}"
 else
-  upsert_ui_script_tags "$LENS_FILE" "$BUST" "$ACCENT_BUST" "$OTHER_LENS_FILE"
+  upsert_ui_script_tags "$LENS_FILE" "$BUST" "$ACCENT_BUST" "$OTHER_LENS_FILE" "" ""
   log "Installed + linked /web/ui/${LENS_FILE}?v=${BUST}"
   log "Installed + linked /web/ui/poster-accent.js?v=${ACCENT_BUST}"
   log "Did not link /web/ui/${OTHER_LENS_FILE}"
@@ -332,6 +375,11 @@ if [[ "$NO_LENS" == "1" ]]; then
   else
     log "index.html has no lens script"
   fi
+  if curl -sS 'http://127.0.0.1:8096/web/index.html' | grep -q "cyberpunk-palette.js?v=${PALETTE_BUST}"; then
+    log "index.html references cyberpunk-palette.js?v=${PALETTE_BUST}"
+  else
+    log "WARNING: index.html does not reference cyberpunk-palette.js?v=${PALETTE_BUST}"
+  fi
 else
   code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:8096/web/ui/${LENS_FILE}" || true)"
   log "HTTP /web/ui/${LENS_FILE} → ${code}"
@@ -356,7 +404,7 @@ fi
 
 log "Done. Hard-refresh Jellyfin (Ctrl+Shift+R)."
 if [[ "$NO_LENS" == "1" ]]; then
-  log "THEME=cyberpunk serves CSS only. No WebGL lens."
+  log "THEME=cyberpunk serves CSS and cyberpunk-palette.js. No WebGL lens."
 else
   log "Look for '${CONSOLE_PREFIX} loaded' in the browser console."
 fi

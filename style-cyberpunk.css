@@ -30,6 +30,36 @@
   --cp-accent-ink: #1a1008;
   --cp-glow: rgba(247, 182, 133, 0.36);
   --cp-fill: rgba(247, 182, 133, 0.12);
+  /* Title halo. Peach/cyan is the fallback. tools/cyberpunk-palette.js
+     replaces these on each login. Void and stage stay black. */
+  --cp-halo-warm: rgba(255, 84, 32, 0.7);
+  --cp-halo-peach: rgba(247, 182, 133, 0.55);
+  --cp-halo-cool: rgba(92, 225, 230, 0.42);
+  --cp-halo-hot: rgba(255, 70, 30, 0.32);
+  --cp-halo-peach-dim: rgba(247, 182, 133, 0.24);
+  --cp-halo-cool-dim: rgba(92, 225, 230, 0.16);
+  --cp-halo-warm-dim: rgba(255, 84, 32, 0.1);
+  --cp-halo-cool-faint: rgba(92, 225, 230, 0.06);
+  --cp-bloom-warm: rgba(247, 182, 133, 0.12);
+  --cp-bloom-cool: rgba(78, 121, 191, 0.14);
+  --cp-halo-rest:
+    2px 1px 0 var(--cp-halo-warm),
+    4px 1px 0 var(--cp-halo-peach),
+    6px 2px 0 var(--cp-halo-cool),
+    9px 2px 0 var(--cp-halo-hot),
+    12px 3px 0 var(--cp-halo-peach-dim),
+    16px 4px 0 var(--cp-halo-cool-dim),
+    21px 5px 0 var(--cp-halo-warm-dim),
+    27px 6px 0 var(--cp-halo-cool-faint);
+  --cp-halo-step:
+    6px 2px 0 var(--cp-halo-warm),
+    11px 3px 0 var(--cp-halo-peach),
+    16px 4px 0 var(--cp-halo-cool),
+    22px 5px 0 var(--cp-halo-hot),
+    28px 6px 0 var(--cp-halo-peach-dim),
+    36px 8px 0 var(--cp-halo-cool-dim),
+    44px 10px 0 var(--cp-halo-warm-dim),
+    54px 12px 0 var(--cp-halo-cool-faint);
   --cp-font: "Switzer", "Segoe UI", sans-serif;
   --cp-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
   --cp-ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -79,8 +109,8 @@ body {
 .backgroundContainer {
   background-color: var(--cp-void) !important;
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(247, 182, 133, 0.12), transparent 45%),
-    radial-gradient(circle at 100% 100%, rgba(78, 121, 191, 0.14), transparent 40%),
+    radial-gradient(circle at 50% 0%, var(--cp-bloom-warm), transparent 45%),
+    radial-gradient(circle at 100% 100%, var(--cp-bloom-cool), transparent 40%),
     radial-gradient(rgba(233, 237, 245, 0.16) 1.1px, transparent 1.2px) !important;
   background-size: 100% 100%, 100% 100%, 22px 22px !important;
   background-position: 0 0, 0 0, 0 0;
@@ -150,18 +180,8 @@ a:hover {
   letter-spacing: -0.045em !important;
   text-transform: uppercase !important;
   color: var(--cp-ink) !important;
-  /* Cast shadow behind the glyphs, down and to the right.
-     X grows faster than Y so the angle is obvious and the line
-     under the title stays clear. Cyan edges, peach/orange core. */
-  text-shadow:
-    2px 1px 0 rgba(255, 84, 32, 0.7),
-    4px 1px 0 rgba(247, 182, 133, 0.55),
-    6px 2px 0 rgba(92, 225, 230, 0.42),
-    9px 2px 0 rgba(255, 70, 30, 0.32),
-    12px 3px 0 rgba(247, 182, 133, 0.24),
-    16px 4px 0 rgba(92, 225, 230, 0.16),
-    21px 5px 0 rgba(255, 84, 32, 0.1),
-    27px 6px 0 rgba(92, 225, 230, 0.06) !important;
+  /* Same down-right stack the transport buttons step. */
+  text-shadow: var(--cp-halo-rest) !important;
 }
 
 .sectionTitleContainer .sectionTitle {
@@ -694,6 +714,63 @@ button[type="submit"].emby-button {
   border-radius: 0 !important;
 }
 
+/* Player settings sheet. Jellyfin pins it with an inline left that
+   runs past the viewport, and the scrubber's black bar shows through
+   the overflow. Keep it inside the screen, above the bottom OSD row. */
+html:has(#videoOsdPage:not(.hide)) .dialogContainer .actionSheet.opened {
+  position: fixed !important;
+  left: auto !important;
+  right: max(12px, var(--osd-right-edge)) !important;
+  top: auto !important;
+  bottom: calc(var(--osd-edge) + var(--osd-btn-size) + 1.25em) !important;
+  width: min(32rem, calc(100vw - 24px)) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - var(--osd-edge) - var(--osd-btn-size) - 3em) !important;
+  margin: 0 !important;
+  transform: none !important;
+  animation: none !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+  background: var(--cp-panel) !important;
+}
+
+html:has(#videoOsdPage:not(.hide)) .actionSheet .actionSheetContent {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+html:has(#videoOsdPage:not(.hide)) .actionSheet .actionSheetMenuItem {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1.25em !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  letter-spacing: 0.06em !important;
+}
+
+html:has(#videoOsdPage:not(.hide)) .actionSheet .listItemBody,
+html:has(#videoOsdPage:not(.hide)) .actionSheet .actionSheetItemText {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: left !important;
+}
+
+html:has(#videoOsdPage:not(.hide)) .actionSheet .listItemAside,
+html:has(#videoOsdPage:not(.hide)) .actionSheet .actionSheetItemAsideText {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+  margin-right: 0.35em !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
 /* ── Player OSD · five clusters, HUD not glass ──────────────────── */
 
 .videoOsdBottom,
@@ -940,14 +1017,17 @@ body.mouseIdle .osdHeader .btnCast {
   overflow: visible !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
-  /* Same down-right halo as the titles. Behind the square, not a fill. */
+  /* Same layers as the title halo. --cp-halo-push steps them down-right. */
+  --cp-halo-push: 1;
   box-shadow:
-    3px 1px 0 rgba(255, 84, 32, 0.7),
-    6px 2px 0 rgba(247, 182, 133, 0.5),
-    9px 3px 0 rgba(92, 225, 230, 0.38),
-    13px 4px 0 rgba(255, 70, 30, 0.26),
-    18px 5px 0 rgba(92, 225, 230, 0.16),
-    24px 7px 0 rgba(247, 182, 133, 0.08) !important;
+    calc(2px * var(--cp-halo-push)) calc(1px * var(--cp-halo-push)) 0 var(--cp-halo-warm),
+    calc(4px * var(--cp-halo-push)) calc(1px * var(--cp-halo-push)) 0 var(--cp-halo-peach),
+    calc(6px * var(--cp-halo-push)) calc(2px * var(--cp-halo-push)) 0 var(--cp-halo-cool),
+    calc(9px * var(--cp-halo-push)) calc(2px * var(--cp-halo-push)) 0 var(--cp-halo-hot),
+    calc(12px * var(--cp-halo-push)) calc(3px * var(--cp-halo-push)) 0 var(--cp-halo-peach-dim),
+    calc(16px * var(--cp-halo-push)) calc(4px * var(--cp-halo-push)) 0 var(--cp-halo-cool-dim),
+    calc(21px * var(--cp-halo-push)) calc(5px * var(--cp-halo-push)) 0 var(--cp-halo-warm-dim),
+    calc(27px * var(--cp-halo-push)) calc(6px * var(--cp-halo-push)) 0 var(--cp-halo-cool-faint) !important;
 }
 
 .videoOsdBottom .buttons > div:first-child .btnRewind,
@@ -987,6 +1067,30 @@ body.mouseIdle .osdHeader .btnCast {
 .videoOsdBottom .buttons > div:first-child .btnPlay .material-icons {
   font-size: 2.1em !important;
   color: #fff !important;
+}
+
+/* A number, so the transport buttons can scale the title halo in calc().
+   Keyframe box-shadows do not win over the button's own shadow. */
+@property --cp-halo-push {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Center cluster only. Steps the title halo further down-right, then
+   back. The face stays empty. Play stays the large square. */
+@keyframes cp-transport-halo {
+  0%, 42% {
+    --cp-halo-push: 1;
+  }
+
+  43%, 74% {
+    --cp-halo-push: 2.15;
+  }
+
+  75%, 100% {
+    --cp-halo-push: 1;
+  }
 }
 
 .osdControls {
@@ -1226,6 +1330,44 @@ body.mouseIdle .osdHeader .btnCast {
   display: none !important;
 }
 
+/* Fine desktop only. Coarse, max-width 60em, and reduced motion
+   keep the static halo from the base rule. */
+@media (pointer: fine) and (min-width: 60.01em) and (prefers-reduced-motion: no-preference) {
+  .videoOsdBottom .buttons > div:first-child .btnRewind,
+  .videoOsdBottom .buttons > div:first-child .btnFastForward,
+  .videoOsdBottom .buttons > div:first-child .btnPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlay,
+  #videoOsdPage .videoOsdBottom .btnRewind,
+  #videoOsdPage .videoOsdBottom .btnFastForward,
+  #videoOsdPage .videoOsdBottom .btnPause,
+  #videoOsdPage .videoOsdBottom .btnPlayPause,
+  #videoOsdPage .videoOsdBottom .btnPlay {
+    background-color: transparent !important;
+    background-image: none !important;
+    animation: cp-transport-halo 3.2s steps(1, end) infinite !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .btnRewind,
+  #videoOsdPage .videoOsdBottom .btnRewind {
+    animation-delay: 0s !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .btnPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlayPause,
+  .videoOsdBottom .buttons > div:first-child .btnPlay,
+  #videoOsdPage .videoOsdBottom .btnPause,
+  #videoOsdPage .videoOsdBottom .btnPlayPause,
+  #videoOsdPage .videoOsdBottom .btnPlay {
+    animation-delay: 0.55s !important;
+  }
+
+  .videoOsdBottom .buttons > div:first-child .btnFastForward,
+  #videoOsdPage .videoOsdBottom .btnFastForward {
+    animation-delay: 1.1s !important;
+  }
+}
+
 /* ── Touch, short landscape, TV ─────────────────────────────────── */
 
 @media (pointer: coarse), (max-width: 60em) {
@@ -1281,9 +1423,13 @@ body.mouseIdle .osdHeader .btnCast {
   #videoOsdPage .videoOsdBottom .btnPause,
   #videoOsdPage .videoOsdBottom .btnPlayPause,
   #videoOsdPage .videoOsdBottom .btnPlay {
+    animation: none !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: var(--cp-line-strong) !important;
     box-shadow:
-      3px 1px 0 rgba(255, 84, 32, 0.55),
-      8px 2px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 var(--cp-halo-warm),
+      8px 2px 0 var(--cp-halo-cool) !important;
   }
 
   .sectionTitle,
@@ -1294,8 +1440,8 @@ body.mouseIdle .osdHeader .btnCast {
   .itemName,
   .nameContainer .itemName {
     text-shadow:
-      3px 1px 0 rgba(255, 84, 32, 0.5),
-      7px 2px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 var(--cp-halo-warm),
+      7px 2px 0 var(--cp-halo-cool) !important;
   }
 }
 
@@ -1375,9 +1521,13 @@ body.mouseIdle .osdHeader .btnCast {
   #videoOsdPage .videoOsdBottom .btnPause,
   #videoOsdPage .videoOsdBottom .btnPlayPause,
   #videoOsdPage .videoOsdBottom .btnPlay {
+    animation: none !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: var(--cp-line-strong) !important;
     box-shadow:
-      3px 1px 0 rgba(255, 84, 32, 0.55),
-      8px 2px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 var(--cp-halo-warm),
+      8px 2px 0 var(--cp-halo-cool) !important;
   }
 
   .sectionTitle,
@@ -1388,8 +1538,8 @@ body.mouseIdle .osdHeader .btnCast {
   .itemName,
   .nameContainer .itemName {
     text-shadow:
-      3px 1px 0 rgba(255, 84, 32, 0.5),
-      7px 2px 0 rgba(92, 225, 230, 0.28) !important;
+      3px 1px 0 var(--cp-halo-warm),
+      7px 2px 0 var(--cp-halo-cool) !important;
   }
 }
 
@@ -1441,7 +1591,7 @@ html:has(.videoPlayerContainer:not(.hide)) .backgroundContainer::after {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(247, 182, 133, 0.45);
+  background: var(--cp-line-strong);
   border-radius: 0;
 }
 
