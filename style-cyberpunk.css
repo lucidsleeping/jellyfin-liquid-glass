@@ -625,10 +625,43 @@ html:has(.itemDetailPage:not(.hide)) .skinHeader .headerTabs,
   height: auto !important;
 }
 
+/* Play, check, and heart sit in one bottom row. Jellyfin pins the
+   play square on top of the other two unless those anchors are cleared. */
+.cardOverlayContainer {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 0 6px 8px !important;
+  box-sizing: border-box !important;
+}
+
+.cardOverlayContainer .cardOverlayFab-primary,
+.cardOverlayContainer .cardOverlayButton,
+.cardOverlayButton-br,
+.cardOverlayButton-br .cardOverlayButton {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  float: none !important;
+}
+
 .cardOverlayButton-br {
   display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   align-items: center !important;
-  gap: 0.45em !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
 }
 
 /* List rows and detail icon actions that were still circles or gray pills. */

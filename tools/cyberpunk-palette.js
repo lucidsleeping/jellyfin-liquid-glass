@@ -1,14 +1,12 @@
 /**
- * Cyberpunk login palettes.
+ * Cyberpunk palettes.
  * Runs only when --cyberpunk-theme is on or 1.
- * One palette per login. Refresh and in-app navigation keep it.
- * Logout clears the login marker so the next sign-in rolls again.
+ * A new palette is chosen on every document load. Nothing is stored.
+ * html.layout-tv removes the theme and applies no colors.
  * Console prefix: [cyberpunk-palette]
  */
 (function () {
   var PREFIX = "[cyberpunk-palette]";
-  var STORE = "cyberpunk-palette";
-  var LAST = "cyberpunk-palette-last";
 
   function rgba(hex, alpha) {
     var n = parseInt(String(hex).replace("#", ""), 16);
@@ -60,11 +58,7 @@
     expand({ id: "ultraviolet", accent: "#8a7dff", accentInk: "#0c0a18", ink: "#f2f0ff", warm: "#c06bff", peach: "#d2c6ff", cool: "#5ce1e6", hot: "#6a3dff" })
   ];
 
-  var byId = {};
-  for (var i = 0; i < PALETTES.length; i++) byId[PALETTES[i].id] = PALETTES[i];
-
   var currentId = "";
-  var hadUser = "";
   var applied = false;
 
   function isTv() {
@@ -115,60 +109,6 @@
     styleObs.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  function readJson(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key) || "null");
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function tokenFrom(node) {
-    if (!node || typeof node !== "object") return null;
-    var token = node.AccessToken || node.accessToken || "";
-    var userId = node.UserId || node.userId || "";
-    if (token && userId) return { userId: String(userId), token: String(token) };
-    return null;
-  }
-
-  function readAuth() {
-    var api = window.ApiClient;
-    if (api && typeof api.accessToken === "function" && typeof api.getCurrentUserId === "function") {
-      try {
-        var apiToken = api.accessToken();
-        var apiUser = api.getCurrentUserId();
-        if (apiToken && apiUser) return { userId: String(apiUser), token: String(apiToken) };
-      } catch (e) { /* credentials below */ }
-    }
-
-    var keys = [];
-    try {
-      for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
-    } catch (e) {
-      return null;
-    }
-
-    for (var k = 0; k < keys.length; k++) {
-      var key = keys[k];
-      if (!key || key === STORE || key === LAST) continue;
-      var data = readJson(key);
-      var direct = tokenFrom(data);
-      if (direct) return direct;
-      var servers = data && (data.Servers || data.servers);
-      if (!servers || !servers.length) continue;
-      for (var s = 0; s < servers.length; s++) {
-        var hit = tokenFrom(servers[s]);
-        if (hit) return hit;
-      }
-    }
-    return null;
-  }
-
-  function onLoginPage() {
-    if (/#\/(login|startup)\b/.test(location.hash || "")) return true;
-    return !!document.querySelector("#loginPage:not(.hide), .loginPage:not(.hide)");
-  }
-
   function apply(palette) {
     if (isTv()) {
       stripTheme();
@@ -184,73 +124,21 @@
     applied = true;
   }
 
-  function pick(exceptId) {
-    var pool = [];
-    for (var i = 0; i < PALETTES.length; i++) {
-      if (PALETTES[i].id !== exceptId) pool.push(PALETTES[i]);
-    }
-    if (!pool.length) pool = PALETTES;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  function clearLogin() {
-    try { localStorage.removeItem(STORE); } catch (e) { /* private mode */ }
-  }
+  var rolled = false;
 
   function sync() {
     if (isTv()) {
       stripTheme();
       return;
     }
-    if (!themeOn()) return;
-    var auth = readAuth();
-    if (!auth) {
-      if (hadUser || onLoginPage()) clearLogin();
-      hadUser = "";
-      return;
-    }
-
-    hadUser = auth.userId;
-    var saved = readJson(STORE);
-    if (saved && saved.userId === auth.userId && saved.loginId && byId[saved.paletteId]) {
-      if (currentId !== saved.paletteId) {
-        apply(byId[saved.paletteId]);
-        console.info(PREFIX, "kept", saved.paletteId, "login", saved.loginId);
-      }
-      return;
-    }
-
-    var previous = "";
-    try { previous = localStorage.getItem(LAST) || (saved && saved.paletteId) || ""; } catch (e) { previous = ""; }
-    var palette = pick(previous);
-    var loginId = Date.now().toString(36) + "-" + Math.random().toString(16).slice(2, 10);
-    try {
-      localStorage.setItem(STORE, JSON.stringify({
-        userId: auth.userId,
-        loginId: loginId,
-        paletteId: palette.id
-      }));
-      localStorage.setItem(LAST, palette.id);
-    } catch (e) { /* still apply for this document */ }
+    if (!themeOn() || rolled) return;
+    rolled = true;
+    var palette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
     apply(palette);
-    console.info(PREFIX, "login", auth.userId, "palette", palette.id);
-  }
-
-  function hookEvents() {
-    var events = window.Events;
-    var api = window.ApiClient;
-    if (!events || !api || hookEvents.done || typeof events.on !== "function") return;
-    hookEvents.done = true;
-    events.on(api, "localusersignedout", function () {
-      hadUser = hadUser || "signed-out";
-      clearLogin();
-      hadUser = "";
-      console.info(PREFIX, "logout");
-    });
+    console.info(PREFIX, "load", palette.id);
   }
 
   function boot() {
-    hookEvents();
     sync();
   }
 
@@ -341,8 +229,7 @@
 
   window.cyberpunkPalette = {
     current: function () { return currentId; },
-    palettes: PALETTES.map(function (p) { return p.id; }),
-    forgetLogin: function () { clearLogin(); }
+    palettes: PALETTES.map(function (p) { return p.id; })
   };
 
   console.info(PREFIX, "loaded", PALETTES.length);
