@@ -67,9 +67,52 @@
   var hadUser = "";
   var applied = false;
 
+  function isTv() {
+    return document.documentElement.classList.contains("layout-tv");
+  }
+
   function themeOn() {
+    if (isTv()) return false;
     var v = getComputedStyle(document.documentElement).getPropertyValue("--cyberpunk-theme").trim().toLowerCase();
     return v === "on" || v === "1";
+  }
+
+  var PALETTE_PROPS = Object.keys(PALETTES[0].vars);
+  var tvNoted = false;
+
+  function stripTheme() {
+    var nodes = document.querySelectorAll("style");
+    for (var i = nodes.length - 1; i >= 0; i--) {
+      var text = nodes[i].textContent || "";
+      if (text.indexOf("--cyberpunk-theme") !== -1 && nodes[i].parentNode) {
+        nodes[i].parentNode.removeChild(nodes[i]);
+      }
+    }
+    var root = document.documentElement;
+    root.removeAttribute("data-cp-palette");
+    for (var p = 0; p < PALETTE_PROPS.length; p++) {
+      root.style.removeProperty(PALETTE_PROPS[p]);
+    }
+    currentId = "";
+    applied = false;
+    if (typeof stopGlitch === "function") stopGlitch();
+    if (!tvNoted) {
+      tvNoted = true;
+      console.info(PREFIX, "tv layout, theme removed");
+    }
+  }
+
+  function watchTv() {
+    if (isTv()) stripTheme();
+    if (typeof MutationObserver !== "function") return;
+    var classObs = new MutationObserver(function () {
+      if (isTv()) stripTheme();
+    });
+    classObs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    var styleObs = new MutationObserver(function () {
+      if (isTv()) stripTheme();
+    });
+    styleObs.observe(document.documentElement, { childList: true, subtree: true });
   }
 
   function readJson(key) {
@@ -127,6 +170,10 @@
   }
 
   function apply(palette) {
+    if (isTv()) {
+      stripTheme();
+      return;
+    }
     var root = document.documentElement;
     var names = Object.keys(palette.vars);
     for (var i = 0; i < names.length; i++) {
@@ -151,6 +198,10 @@
   }
 
   function sync() {
+    if (isTv()) {
+      stripTheme();
+      return;
+    }
     if (!themeOn()) return;
     var auth = readAuth();
     if (!auth) {
@@ -213,8 +264,80 @@
     }
   }, 250);
 
+  var GLITCHES = ["cp-glitch-chroma", "cp-glitch-jitter", "cp-glitch-flash", "cp-glitch-dip"];
+  var glitchTimer = 0;
+  var glitchClear = 0;
+
+  function glitchAllowed() {
+    if (isTv() || !themeOn()) return false;
+    if (!window.matchMedia) return false;
+    if (window.matchMedia("(pointer: coarse)").matches) return false;
+    if (window.matchMedia("(max-width: 60em)").matches) return false;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    return true;
+  }
+
+  function transportButtons() {
+    var page = document.querySelector("#videoOsdPage:not(.hide)");
+    if (!page) return [];
+    var sels = [".btnRewind", ".btnPause", ".btnPlayPause", ".btnPlay", ".btnFastForward"];
+    var out = [];
+    for (var i = 0; i < sels.length; i++) {
+      var nodes = page.querySelectorAll(sels[i]);
+      for (var n = 0; n < nodes.length; n++) {
+        var el = nodes[n];
+        if (el.classList.contains("hide")) continue;
+        var cs = getComputedStyle(el);
+        if (cs.display === "none" || cs.visibility === "hidden") continue;
+        var r = el.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8) continue;
+        out.push(el);
+      }
+    }
+    return out;
+  }
+
+  function clearGlitchClasses(list) {
+    for (var i = 0; i < list.length; i++) {
+      for (var g = 0; g < GLITCHES.length; g++) list[i].classList.remove(GLITCHES[g]);
+    }
+  }
+
+  function stopGlitch() {
+    if (glitchTimer) clearTimeout(glitchTimer);
+    if (glitchClear) clearTimeout(glitchClear);
+    glitchTimer = 0;
+    glitchClear = 0;
+    clearGlitchClasses(transportButtons());
+  }
+
+  function tickGlitch() {
+    if (glitchTimer) clearTimeout(glitchTimer);
+    glitchTimer = 0;
+    if (isTv()) {
+      stopGlitch();
+      return;
+    }
+    var buttons = transportButtons();
+    clearGlitchClasses(buttons);
+    if (glitchAllowed() && buttons.length) {
+      var btn = buttons[Math.floor(Math.random() * buttons.length)];
+      var name = GLITCHES[Math.floor(Math.random() * GLITCHES.length)];
+      btn.classList.add(name);
+      if (glitchClear) clearTimeout(glitchClear);
+      glitchClear = setTimeout(function () {
+        btn.classList.remove(name);
+        glitchClear = 0;
+      }, 180);
+    }
+    glitchTimer = setTimeout(tickGlitch, 1500 + Math.random() * 2000);
+  }
+
+  watchTv();
+  tickGlitch();
   window.addEventListener("hashchange", boot);
   document.addEventListener("visibilitychange", boot);
+  window.addEventListener("pagehide", stopGlitch);
 
   window.cyberpunkPalette = {
     current: function () { return currentId; },
